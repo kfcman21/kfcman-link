@@ -1,0 +1,43 @@
+const fs = require('fs');
+const readline = require('readline');
+
+const logFile = "C:\\Users\\박찬규\\.gemini\\antigravity\\brain\\341c3581-5121-42fa-900e-90668eea8c2f\\.system_generated\\logs\\	ranscript.jsonl";
+
+async function run() {
+  const fileStream = fs.createReadStream(logFile);
+  const rl = readline.createInterface({
+    input: fileStream,
+    crlfDelay: Infinity
+  });
+
+  let lineCount = 0;
+  for await (const line of rl) {
+    lineCount++;
+    if (line.includes('classroom-settings-section') || line.includes('settings-privacy-card') || line.includes('btn-subtab-privacy')) {
+      console.log(`Found match in line ${lineCount}`);
+      // Find the tool calls or content in the JSON object
+      try {
+        const obj = JSON.parse(line);
+        console.log(`Source: ${obj.source}, Type: ${obj.type}`);
+        // If it's a write or edit tool, let's print a snippet
+        if (obj.tool_calls) {
+          obj.tool_calls.forEach(tc => {
+            if (tc.name === 'write_to_file' || tc.name === 'replace_file_content' || tc.name === 'multi_replace_file_content') {
+              console.log(`Tool: ${tc.name}`);
+              console.log(JSON.stringify(tc.arguments).substring(0, 1000));
+            }
+          });
+        }
+        if (obj.content && obj.content.includes('classroom-settings-section')) {
+          console.log(`Content length: ${obj.content.length}`);
+          console.log(obj.content.substring(obj.content.indexOf('classroom-settings-section') - 200, obj.content.indexOf('classroom-settings-section') + 2000));
+        }
+      } catch (e) {
+        console.log("Error parsing JSON line");
+      }
+      console.log('----------------------------------------------------');
+    }
+  }
+}
+
+run();

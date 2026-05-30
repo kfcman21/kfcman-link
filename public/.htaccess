@@ -1,0 +1,18 @@
+RewriteEngine On
+
+# 1. Allow direct access to real files and folders (HTML, CSS, JS, favicon, etc.)
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# 2. Route API requests to api.php (including the auth login endpoint)
+RewriteRule ^api/auth$ api.php [QSA,L]
+RewriteRule ^api/shorten$ api.php [QSA,L]
+RewriteRule ^api/links$ api.php [QSA,L]
+RewriteRule ^api/stats/([^/]+)$ api.php?code=$1 [QSA,L]
+
+# 3. Route short codes to redirect.php (e.g., kfcman.link/my-alias -> redirect.php?code=my-alias)
+# Exclude certain file extensions to avoid breaking standard static requests
+RewriteCond %{REQUEST_URI} !^/data/
+RewriteCond %{REQUEST_URI} !\.(css|js|png|jpg|jpeg|gif|ico|svg|txt)$
+RewriteRule ^([^/]+)$ redirect.php?code=$1 [QSA,L]

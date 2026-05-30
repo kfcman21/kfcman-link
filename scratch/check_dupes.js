@@ -1,0 +1,10 @@
+const fs = require('fs');
+const html = fs.readFileSync('public/index.html', 'utf8');
+const ids = [];
+const rx = /id="([^"]+)"/g;
+let m;
+while(m = rx.exec(html)) ids.push(m[1]);
+const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
+const uniqueDupes = [...new Set(dupes)];
+console.log('Duplicate IDs found:', uniqueDupes);
+console.log('Total IDs:', ids.length);

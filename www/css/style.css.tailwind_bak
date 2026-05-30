@@ -1,0 +1,267 @@
+/* ==========================================================================
+   kfcman.link URL Shortener Premium Animated Effects & Custom Scrollbars
+   ========================================================================== */
+
+/* Theme Variables (Custom non-Tailwind parameters) */
+:root {
+  --bg-primary: #070a13;
+  --bg-secondary: #0c1122;
+  --bg-glass: rgba(12, 17, 34, 0.65);
+  --border-glass: rgba(255, 255, 255, 0.07);
+  --border-glass-hover: rgba(255, 255, 255, 0.15);
+  
+  --primary-gradient: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+  
+  --color-purple: #8b5cf6;
+  --color-cyan: #06b6d4;
+  --color-green: #10b981;
+  --color-red: #ef4444;
+  --color-yellow: #f59e0b;
+  
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+  
+  --shadow-glow-purple: 0 0 25px rgba(139, 92, 246, 0.35);
+  --shadow-glow-cyan: 0 0 25px rgba(6, 182, 212, 0.35);
+  --shadow-premium: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+/* Light Theme Variables */
+body.light-theme {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-glass: rgba(255, 255, 255, 0.7);
+  --border-glass: rgba(15, 23, 42, 0.08);
+  --border-glass-hover: rgba(15, 23, 42, 0.15);
+  
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  
+  --shadow-premium: 0 20px 40px rgba(15, 23, 42, 0.05);
+}
+
+/* Custom Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  border: 2px solid var(--bg-primary);
+  transition: all 0.25s ease;
+}
+
+body.light-theme ::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-cyan);
+}
+
+/* Global resets for standard transitions */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  min-height: 100vh;
+  position: relative;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Decorative Background Glow Orbs */
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(130px);
+  z-index: -1;
+  opacity: 0.22;
+  pointer-events: none;
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+body.light-theme .glow-orb {
+  opacity: 0.08;
+  filter: blur(150px);
+}
+
+.orb-1 {
+  top: -10%;
+  left: -10%;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, var(--color-purple) 0%, transparent 80%);
+  animation: floatOrb 25s infinite alternate ease-in-out;
+}
+
+.orb-2 {
+  bottom: 10%;
+  right: -5%;
+  width: 45vw;
+  height: 45vw;
+  background: radial-gradient(circle, var(--color-cyan) 0%, transparent 80%);
+  animation: floatOrb 20s infinite alternate-reverse ease-in-out;
+}
+
+.orb-3 {
+  top: 40%;
+  left: 45%;
+  width: 30vw;
+  height: 30vw;
+  background: radial-gradient(circle, #ec4899 0%, transparent 80%);
+  opacity: 0.1;
+  animation: floatOrb 30s infinite alternate ease-in-out;
+}
+
+@keyframes floatOrb {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(8%, 10%) scale(1.15); }
+}
+
+/* Glass panel premium definitions */
+.glass-panel {
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid var(--border-glass);
+  box-shadow: var(--shadow-premium);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel:hover {
+  border-color: var(--border-glass-hover);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+}
+
+body.light-theme .glass-panel:hover {
+  box-shadow: 0 25px 45px rgba(15, 23, 42, 0.07);
+}
+
+/* Animations */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Toast Notifications System */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  min-width: 320px;
+  max-width: 400px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: rgba(12, 17, 34, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+  color: #ffffff;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  position: relative;
+}
+
+body.light-theme .toast {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.08);
+  color: #0f172a;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(110%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.toast.toast-success {
+  border-left: 4px solid var(--color-green);
+}
+
+.toast.toast-error {
+  border-left: 4px solid var(--color-red);
+}
+
+.toast.toast-info {
+  border-left: 4px solid var(--color-cyan);
+}
+
+.toast-icon {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.toast.toast-success .toast-icon { color: var(--color-green); }
+.toast.toast-error .toast-icon { color: var(--color-red); }
+.toast.toast-info .toast-icon { color: var(--color-cyan); }
+
+.toast-content {
+  flex: 1;
+}
+
+.toast-title {
+  font-weight: 700;
+  font-size: 13.5px;
+  margin-bottom: 2px;
+}
+
+.toast-message {
+  font-size: 11.5px;
+  color: #9ca3af;
+  line-height: 1.4;
+}
+
+body.light-theme .toast-message {
+  color: #64748b;
+}
+
+.toast-close {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  padding: 2px;
+  transition: all 0.15s ease;
+  margin-top: 1px;
+}
+
+body.light-theme .toast-close {
+  color: rgba(15, 23, 42, 0.3);
+}
+
+.toast-close:hover {
+  color: #ffffff;
+}
+
+body.light-theme .toast-close:hover {
+  color: #0f172a;
+}

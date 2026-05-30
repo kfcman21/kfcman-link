@@ -1,0 +1,734 @@
+// ==========================================================================
+// kfcman.link URL Shortener Frontend Controller (With Theme Toggle & Security Lock)
+// ==========================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  // --- DOM Elements Cache ---
+  const shortenForm = document.getElementById('shorten-form');
+  const urlInput = document.getElementById('url-input');
+  const customAliasInput = document.getElementById('custom-alias-input');
+  const shortenBtn = document.getElementById('shorten-btn');
+  
+  const inputContainer = document.getElementById('input-container');
+  const resultContainer = document.getElementById('result-container');
+  const brandUrlDisplay = document.getElementById('brand-url-display');
+  const localUrlDisplay = document.getElementById('local-url-display');
+  
+  const btnCopyBrand = document.getElementById('btn-copy-brand');
+  const btnCopyLocal = document.getElementById('btn-copy-local');
+  const btnQrTrigger = document.getElementById('btn-qr-trigger');
+  const btnReset = document.getElementById('btn-reset');
+  
+  // Theme & Security Lock Elements
+  const themeToggleBtn = document.getElementById('theme-toggle-btn');
+  const logoutBtn = document.getElementById('logout-btn');
+  const loginContainer = document.getElementById('login-container');
+  const loginForm = document.getElementById('login-form');
+  const passwordInput = document.getElementById('password-input');
+  const mainContent = document.getElementById('main-content');
+  
+  // Dashboard Elements
+  const btnClearHistory = document.getElementById('btn-clear-history');
+  const statTotalLinks = document.getElementById('stat-total-links');
+  const statTotalClicks = document.getElementById('stat-total-clicks');
+  const statAvgClicks = document.getElementById('stat-avg-clicks');
+  
+  const listEmptyState = document.getElementById('list-empty-state');
+  const linksTableWrapper = document.getElementById('links-table-wrapper');
+  const linksTableBody = document.getElementById('links-table-body');
+  
+  // Modals
+  const qrModal = document.getElementById('qr-modal');
+  const btnQrModalClose = document.getElementById('btn-qr-modal-close');
+  const qrCanvas = document.getElementById('qr-canvas');
+  const btnQrDownload = document.getElementById('btn-qr-download');
+  
+  const statsModal = document.getElementById('stats-modal');
+  const btnStatsModalClose = document.getElementById('btn-stats-modal-close');
+  const statsModalCode = document.getElementById('stats-modal-code');
+  const statsOriginalUrl = document.getElementById('stats-original-url');
+  const statsClicksTotal = document.getElementById('stats-clicks-total');
+  const statsReferrersContainer = document.getElementById('stats-referrers-container');
+  const statsClicksLogBody = document.getElementById('stats-clicks-log-body');
+  
+  const toastContainer = document.getElementById('toast-container');
+
+  // Admin Approval Elements
+  const adminApprovalSection = document.getElementById('admin-approval-section');
+  const adminEmptyState = document.getElementById('admin-empty-state');
+  const adminTableWrapper = document.getElementById('admin-table-wrapper');
+  const adminPendingBody = document.getElementById('admin-pending-body');
+  
+  // Server Monitor Elements
+  const monitorCpuVal = document.getElementById('monitor-cpu-val');
+  const monitorMemVal = document.getElementById('monitor-mem-val');
+  const monitorDiskVal = document.getElementById('monitor-disk-val');
+  const monitorUptimeVal = document.getElementById('monitor-uptime-val');
+
+  // --- State Variables ---
+  let generatedCode = '';
+  let activeQrUrl = '';
+
+  // --- 1. Theme Module (Light / Dark Mode Option) ---
+  function initTheme() {
+    const savedTheme = localStorage.getItem('kfcman_theme');
+    if (savedTheme === 'light') {
+      document.body.classList.add('light-theme');
+    } else {
+      document.body.classList.remove('light-theme');
+    }
+    lucide.createIcons();
+  }
+
+  themeToggleBtn.addEventListener('click', () => {
+    document.body.classList.toggle('light-theme');
+    const isLight = document.body.classList.contains('light-theme');
+    localStorage.setItem('kfcman_theme', isLight ? 'light' : 'dark');
+    lucide.createIcons();
+    showToast(
+      isLight ? '화이트 테마 활성화' : '블랙 테마 활성화',
+      isLight ? '눈이 편안한 밝은 화이트 모드로 전환되었습니다.' : '세련되고 깊이 있는 다크 모드로 전환되었습니다.',
+      'info'
+    );
+  });
+
+  initTheme();
+
+  // --- 2. Security Auth Module (Login / Logout Control) ---
+  function getAuthToken() {
+    return localStorage.getItem('kfcman_auth_token');
+  }
+
+  function setAuthToken(token) {
+    localStorage.setItem('kfcman_auth_token', token);
+  }
+
+  function removeAuthToken() {
+    localStorage.removeItem('kfcman_auth_token');
+  }
+
+  function checkLoginState() {
+    const token = getAuthToken();
+    if (token) {
+      // Authenticated
+      loginContainer.classList.add('hidden');
+      mainContent.classList.remove('hidden');
+      logoutBtn.classList.remove('hidden');
+      renderDashboard();
+    } else {
+      // Unauthenticated
+      loginContainer.classList.remove('hidden');
+      mainContent.classList.add('hidden');
+      logoutBtn.classList.add('hidden');
+    }
+  }
+
+  // Handle Login submission
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const password = passwordInput.value.trim();
+    if (!password) return;
+
+    const loginBtn = document.getElementById('login-btn');
+    const btnSpan = loginBtn.querySelector('span');
+    loginBtn.disabled = true;
+    btnSpan.textContent = '인증 중...';
+
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '비밀번호 검증에 실패했습니다.');
+      }
+
+      // Success
+      setAuthToken(data.token);
+      passwordInput.value = '';
+      showToast('인증 완료', '대시보드와 단축기능 잠금이 정상적으로 해제되었습니다.', 'success');
+      checkLoginState();
+
+    } catch (err) {
+      showToast('인증 실패', err.message, 'error');
+    } finally {
+      loginBtn.disabled = false;
+      btnSpan.textContent = '확인';
+    }
+  });
+
+  // Handle Logout
+  logoutBtn.addEventListener('click', () => {
+    if (confirm('대시보드 접속을 끊고 잠금 모드로 전환하시겠습니까?')) {
+      removeAuthToken();
+      showToast('로그아웃 완료', '시스템이 안전하게 다시 잠겼습니다.', 'info');
+      checkLoginState();
+    }
+  });
+
+  // --- 3. Secure Custom Fetch Wrapper ---
+  // Automatically attaches X-KFCMan-Auth header and handles 401 Unauthorized token expirations.
+  async function secureFetch(url, options = {}) {
+    const token = getAuthToken();
+    if (!options.headers) {
+      options.headers = {};
+    }
+    if (token) {
+      options.headers['X-KFCMan-Auth'] = token;
+    }
+
+    try {
+      const response = await fetch(url, options);
+      if (response.status === 401) {
+        // Token has expired or password changed
+        removeAuthToken();
+        checkLoginState();
+        showToast('세션 만료', '인증이 만료되었습니다. 다시 비밀번호를 입력해 주세요.', 'error');
+        throw new Error('Unauthorized');
+      }
+      return response;
+    } catch (err) {
+      if (err.message === 'Unauthorized') {
+        throw err;
+      }
+      console.error('Network Error:', err);
+      throw new Error('서버와 통신하는 중 네트워크 에러가 발생했습니다.');
+    }
+  }
+
+  // --- 4. Local Storage Code Registries ---
+  function getLocalCodes() {
+    const codes = localStorage.getItem('kfcman_user_codes');
+    return codes ? JSON.parse(codes) : [];
+  }
+
+  function addLocalCode(code) {
+    const codes = getLocalCodes();
+    if (!codes.includes(code)) {
+      codes.push(code);
+      localStorage.setItem('kfcman_user_codes', JSON.stringify(codes));
+    }
+  }
+
+  function removeLocalCode(code) {
+    let codes = getLocalCodes();
+    codes = codes.filter(c => c !== code);
+    localStorage.setItem('kfcman_user_codes', JSON.stringify(codes));
+  }
+
+  function clearAllLocalCodes() {
+    localStorage.removeItem('kfcman_user_codes');
+  }
+
+  // --- 5. Toast Notification Utility ---
+  function showToast(title, message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    let iconName = 'info';
+    if (type === 'success') iconName = 'check-circle';
+    if (type === 'error') iconName = 'alert-triangle';
+
+    toast.innerHTML = `
+      <div class="toast-icon"><i data-lucide="${iconName}"></i></div>
+      <div class="toast-content">
+        <h4 class="toast-title">${title}</h4>
+        <p class="toast-message">${message}</p>
+      </div>
+      <button class="toast-close"><i data-lucide="x"></i></button>
+    `;
+
+    toastContainer.appendChild(toast);
+    lucide.createIcons();
+
+    const closeBtn = toast.querySelector('.toast-close');
+    closeBtn.addEventListener('click', () => {
+      toast.style.animation = 'slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) reverse forwards';
+      setTimeout(() => toast.remove(), 300);
+    });
+
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.style.animation = 'slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) reverse forwards';
+        setTimeout(() => toast.remove(), 300);
+      }
+    }, 4500);
+  }
+
+  // --- 6. URL Error Handler from Route ---
+  function checkUrlErrors() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('error') === 'notfound') {
+      const missingCode = urlParams.get('code');
+      showToast('주소를 찾을 수 없음', `요청하신 단축 주소코드 [${missingCode}]는 존재하지 않거나 만료되었습니다.`, 'error');
+      const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+      window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+    }
+  }
+  checkUrlErrors();
+
+  // --- 7. (Accordion Logic Removed in Direct View Upgrade) ---
+
+  // --- 8. Shortener Submit Handler ---
+  shortenForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const urlValue = urlInput.value.trim();
+    const customCodeValue = customAliasInput.value.trim();
+
+    if (!urlValue) return;
+
+    shortenBtn.disabled = true;
+    const prevBtnHtml = shortenBtn.innerHTML;
+    shortenBtn.innerHTML = `<span>단축 중...</span><i data-lucide="loader" class="animate-spin"></i>`;
+    lucide.createIcons();
+
+    try {
+      const response = await secureFetch('/api/shorten', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: urlValue,
+          customCode: customCodeValue || undefined
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '단축 주소 생성에 실패했습니다.');
+      }
+
+      generatedCode = data.link.code;
+      activeQrUrl = `${window.location.origin}/${generatedCode}`;
+      
+      brandUrlDisplay.textContent = `http://kfcman.link/${generatedCode}`;
+      localUrlDisplay.textContent = activeQrUrl;
+
+      addLocalCode(generatedCode);
+
+      inputContainer.classList.add('hidden');
+      resultContainer.classList.remove('hidden');
+      resultContainer.classList.add('animate-fade-in');
+
+      showToast('성공!', '단축 URL이 정상적으로 만들어졌습니다.', 'success');
+      renderDashboard();
+
+    } catch (err) {
+      if (err.message !== 'Unauthorized') {
+        showToast('오류 발생', err.message, 'error');
+      }
+    } finally {
+      shortenBtn.disabled = false;
+      shortenBtn.innerHTML = prevBtnHtml;
+      lucide.createIcons();
+    }
+  });
+
+  // Reset form for new link
+  btnReset.addEventListener('click', () => {
+    urlInput.value = '';
+    customAliasInput.value = '';
+    
+    resultContainer.classList.add('hidden');
+    inputContainer.classList.remove('hidden');
+    inputContainer.classList.add('animate-fade-in');
+    
+    urlInput.focus();
+  });
+
+  // --- 9. Clipboard Copy Handlers ---
+  function copyTextToClipboard(text, clickButton) {
+    // Create a temporary textarea element
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.setAttribute('readonly', '');
+    el.style.position = 'absolute';
+    el.style.left = '-9999px';
+    document.body.appendChild(el);
+    
+    // Save current selection range if any exists
+    const selected = document.getSelection().rangeCount > 0 
+      ? document.getSelection().getRangeAt(0) 
+      : false;
+    
+    el.select();
+    // iOS Safari compatibility range selection
+    el.setSelectionRange(0, 99999);
+    
+    let success = false;
+    try {
+      // document.execCommand works flawlessly on non-secure HTTP contexts!
+      success = document.execCommand('copy');
+    } catch (err) {
+      success = false;
+    }
+    
+    document.body.removeChild(el);
+    
+    // Restore original selection range
+    if (selected) {
+      document.getSelection().removeAllRanges();
+      document.getSelection().addRange(selected);
+    }
+    
+    if (success) {
+      triggerCopyFeedback(clickButton);
+    } else {
+      // Modern API fallback if legacy execCommand fails
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          triggerCopyFeedback(clickButton);
+        }).catch(() => {
+          showToast('복사 실패', '클립보드 복사에 실패했습니다.', 'error');
+        });
+      } else {
+        showToast('복사 실패', '브라우저 보안 제약으로 복사 기능을 사용할 수 없습니다.', 'error');
+      }
+    }
+  }
+
+  function triggerCopyFeedback(button) {
+    const icon = button.querySelector('i');
+    const originalIconName = icon.getAttribute('data-lucide');
+    
+    icon.setAttribute('data-lucide', 'check');
+    icon.style.color = 'var(--color-green)';
+    button.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+    button.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.2)';
+    lucide.createIcons();
+
+    showToast('복사 성공', '링크가 클립보드에 안전하게 복사되었습니다.', 'success');
+
+    setTimeout(() => {
+      icon.setAttribute('data-lucide', originalIconName);
+      icon.style.color = '';
+      button.style.borderColor = '';
+      button.style.boxShadow = '';
+      lucide.createIcons();
+    }, 1500);
+  }
+
+  btnCopyBrand.addEventListener('click', () => {
+    copyTextToClipboard(`http://kfcman.link/${generatedCode}`, btnCopyBrand);
+  });
+
+  btnCopyLocal.addEventListener('click', () => {
+    copyTextToClipboard(activeQrUrl, btnCopyLocal);
+  });
+
+  // --- 10. QR Modals Control ---
+  btnQrTrigger.addEventListener('click', () => {
+    new QRious({
+      element: qrCanvas,
+      value: activeQrUrl,
+      size: 200,
+      foreground: '#070a13',
+      background: '#ffffff',
+      level: 'H'
+    });
+    qrModal.classList.remove('hidden');
+  });
+
+  btnQrModalClose.addEventListener('click', () => {
+    qrModal.classList.add('hidden');
+  });
+
+  btnQrDownload.addEventListener('click', () => {
+    const link = document.createElement('a');
+    link.download = `kfcman-link-qr-${generatedCode}.png`;
+    link.href = qrCanvas.toDataURL('image/png');
+    link.click();
+  });
+
+  window.addEventListener('click', (e) => {
+    if (e.target === qrModal) {
+      qrModal.classList.add('hidden');
+    }
+    if (e.target === statsModal) {
+      statsModal.classList.add('hidden');
+    }
+  });
+
+  // --- 11. Dashboard Rendering ---
+  async function renderDashboard() {
+    const codes = getLocalCodes();
+    
+    if (codes.length === 0) {
+      listEmptyState.classList.remove('hidden');
+      linksTableWrapper.classList.add('hidden');
+      btnClearHistory.classList.add('hidden');
+      
+      statTotalLinks.textContent = '0';
+      statTotalClicks.textContent = '0';
+      statAvgClicks.textContent = '0.0';
+      return;
+    }
+
+    try {
+      const response = await secureFetch('/api/links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codes })
+      });
+
+      if (!response.ok) {
+        throw new Error('링크 통계를 불러오지 못했습니다.');
+      }
+
+      const { links } = await response.json();
+
+      // Clean broken codes (if deleted on the server db)
+      const validCodesOnServer = links.map(l => l.code);
+      let storageUpdated = false;
+      for (const localCode of codes) {
+        if (!validCodesOnServer.includes(localCode)) {
+          removeLocalCode(localCode);
+          storageUpdated = true;
+        }
+      }
+      if (storageUpdated) {
+        renderDashboard();
+        return;
+      }
+
+      links.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      const totalLinksCount = links.length;
+      const totalClicksSum = links.reduce((sum, link) => sum + (link.clicks || 0), 0);
+      const avgClicksRate = totalLinksCount > 0 ? (totalClicksSum / totalLinksCount).toFixed(1) : '0.0';
+
+      statTotalLinks.textContent = totalLinksCount;
+      statTotalClicks.textContent = totalClicksSum;
+      statAvgClicks.textContent = avgClicksRate;
+
+      linksTableBody.innerHTML = '';
+      
+      links.forEach(link => {
+        const row = document.createElement('tr');
+        
+        const localLinkUrl = `${window.location.origin}/${link.code}`;
+        const visualBrandUrl = `http://kfcman.link/${link.code}`;
+        
+        const originalUrlClean = link.originalUrl.replace(/^https?:\/\/(www\.)?/, '');
+        const dateStr = new Date(link.createdAt).toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+
+        const clickClass = link.clicks > 0 ? 'click-badge has-clicks' : 'click-badge';
+
+        row.innerHTML = `
+          <td>
+            <div class="table-link-pair">
+              <a href="${localLinkUrl}" target="_blank" class="table-short-link" title="이동하기">
+                <span>kfcman.link/${link.code}</span>
+                <i data-lucide="external-link" style="width:12px; height:12px;"></i>
+              </a>
+              <a href="${link.originalUrl}" target="_blank" class="table-original-link" title="${link.originalUrl}">
+                ${originalUrlClean}
+              </a>
+            </div>
+          </td>
+          <td>
+            <span class="table-date">${dateStr}</span>
+          </td>
+          <td>
+            <span class="${clickClass}"><i data-lucide="mouse-pointer-click" style="width:12px; height:12px;"></i> ${link.clicks}</span>
+          </td>
+          <td>
+            <div class="table-actions">
+              <button class="btn-action-icon btn-table-copy" data-url="${visualBrandUrl}" title="주소 복사">
+                <i data-lucide="copy"></i>
+              </button>
+              <button class="btn-action-icon btn-table-qr" data-url="${localLinkUrl}" data-code="${link.code}" title="QR 코드">
+                <i data-lucide="qr-code"></i>
+              </button>
+              <button class="btn-action-icon btn-table-stats" data-code="${link.code}" title="상세 통계">
+                <i data-lucide="bar-chart-3"></i>
+              </button>
+              <button class="btn-action-icon btn-table-delete" data-code="${link.code}" title="대시보드에서 제거" style="color: rgba(239, 68, 68, 0.65);">
+                <i data-lucide="trash"></i>
+              </button>
+            </div>
+          </td>
+        `;
+
+        linksTableBody.appendChild(row);
+      });
+
+      listEmptyState.classList.add('hidden');
+      linksTableWrapper.classList.remove('hidden');
+      btnClearHistory.classList.remove('hidden');
+
+      lucide.createIcons();
+      bindTableActionEvents();
+
+    } catch (err) {
+      if (err.message !== 'Unauthorized') {
+        console.error(err);
+        showToast('대시보드 오류', '통계 정보를 불러오는데 실패했습니다.', 'error');
+      }
+    }
+  }
+
+  // --- 12. Bind Actions in Table Rows ---
+  function bindTableActionEvents() {
+    document.querySelectorAll('.btn-table-copy').forEach(button => {
+      button.addEventListener('click', () => {
+        const urlToCopy = button.getAttribute('data-url');
+        copyTextToClipboard(urlToCopy, button);
+      });
+    });
+
+    document.querySelectorAll('.btn-table-qr').forEach(button => {
+      button.addEventListener('click', () => {
+        const qrUrl = button.getAttribute('data-url');
+        generatedCode = button.getAttribute('data-code');
+        activeQrUrl = qrUrl;
+
+        new QRious({
+          element: qrCanvas,
+          value: activeQrUrl,
+          size: 200,
+          foreground: '#070a13',
+          background: '#ffffff',
+          level: 'H'
+        });
+
+        qrModal.classList.remove('hidden');
+      });
+    });
+
+    document.querySelectorAll('.btn-table-stats').forEach(button => {
+      button.addEventListener('click', () => {
+        const code = button.getAttribute('data-code');
+        showStatsModal(code);
+      });
+    });
+
+    document.querySelectorAll('.btn-table-delete').forEach(button => {
+      button.addEventListener('click', () => {
+        const code = button.getAttribute('data-code');
+        removeLocalCode(code);
+        showToast('링크 제외 완료', `대시보드에서 [${code}] 링크를 제외했습니다. (실제 리디렉션은 계속 유지됩니다)`, 'info');
+        renderDashboard();
+      });
+    });
+  }
+
+  // --- 13. Detail Stats Modal Loader ---
+  async function showStatsModal(code) {
+    try {
+      const response = await secureFetch(`/api/stats/${code}`);
+      if (!response.ok) {
+        throw new Error('서버에서 통계 데이터를 수집할 수 없습니다.');
+      }
+      
+      const { link } = await response.json();
+      
+      statsModalCode.textContent = link.code;
+      statsOriginalUrl.textContent = link.originalUrl;
+      statsOriginalUrl.href = link.originalUrl;
+      statsClicksTotal.textContent = link.clicks || '0';
+
+      const clicksData = link.clicksData || [];
+      const referrersMap = {};
+      
+      clicksData.forEach(click => {
+        const ref = click.referrer || 'Direct';
+        referrersMap[ref] = (referrersMap[ref] || 0) + 1;
+      });
+
+      const sortedRefs = Object.entries(referrersMap).sort((a, b) => b[1] - a[1]);
+      
+      statsReferrersContainer.innerHTML = '';
+      if (sortedRefs.length === 0) {
+        statsReferrersContainer.innerHTML = `
+          <div style="font-size:13px; color:var(--text-muted); text-align:center; padding: 24px 0;">
+            아직 수집된 방문 유입 경로가 없습니다.
+          </div>
+        `;
+      } else {
+        sortedRefs.forEach(([name, count]) => {
+          const percentage = ((count / clicksData.length) * 100).toFixed(0);
+          
+          const refRow = document.createElement('div');
+          refRow.className = 'referral-row';
+          refRow.innerHTML = `
+            <div class="referral-info">
+              <span class="referral-name">${name}</span>
+              <span class="referral-count">${count}회 (${percentage}%)</span>
+            </div>
+            <div class="referral-bar-bg">
+              <div class="referral-bar-fill" style="width: 0%;"></div>
+            </div>
+          `;
+          
+          statsReferrersContainer.appendChild(refRow);
+          
+          setTimeout(() => {
+            const barFill = refRow.querySelector('.referral-bar-fill');
+            if (barFill) barFill.style.width = `${percentage}%`;
+          }, 50);
+        });
+      }
+
+      statsClicksLogBody.innerHTML = '';
+      if (clicksData.length === 0) {
+        statsClicksLogBody.innerHTML = `
+          <tr>
+            <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">
+              수집된 접속 기록이 존재하지 않습니다.
+            </td>
+          </tr>
+        `;
+      } else {
+        const sortedClicks = [...clicksData].reverse().slice(0, 15);
+        
+        sortedClicks.forEach(click => {
+          const tr = document.createElement('tr');
+          const timeStr = new Date(click.timestamp).toLocaleString('ko-KR', {
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          });
+
+          tr.innerHTML = `
+            <td>${timeStr}</td>
+            <td><strong style="color:var(--color-cyan);">${click.referrer}</strong></td>
+            <td style="font-family:monospace; color:rgba(255,255,255,0.6);">${click.ip}</td>
+          `;
+          statsClicksLogBody.appendChild(tr);
+        });
+      }
+
+      statsModal.classList.remove('hidden');
+
+    } catch (err) {
+      if (err.message !== 'Unauthorized') {
+        showToast('통계 오류', err.message, 'error');
+      }
+    }
+  }
+
+  btnStatsModalClose.addEventListener('click', () => {
+    statsModal.classList.add('hidden');
+  });
+
+  // Reset entire dashboard
+  btnClearHistory.addEventListener('click', () => {
+    if (confirm('대시보드의 기록을 초기화하시겠습니까? (서버에 저장된 단축 링크 자체는 소멸되지 않습니다)')) {
+      clearAllLocalCodes();
+      showToast('대시보드 초기화', '모든 로컬 대시보드 리스트가 삭제되었습니다.', 'info');
+      renderDashboard();
+    }
+"  });\n\n  // --- 14. Admin Panel Rendering ---\n  async function renderAdminPanel() {\n    try {\n      const response = await secureFetch('/api/admin/pending');\n      if (!response.ok) {\n        throw new Error('가입 신청 대기 목록을 불러오지 못했습니다.');\n      }\n\n      const { users } = await response.json();\n\n      if (users.length === 0) {\n        adminEmptyState.classList.remove('hidden');\n        adminTableWrapper.classList.add('hidden');\n        return;\n      }\n\n      adminPendingBody.innerHTML = '';\n      users.forEach(user => {\n        const row = document.createElement('tr');\n        \n        const dateStr = new Date(user.createdAt).toLocaleString('ko-KR', {\n          year: 'numeric',\n          month: '2-digit',\n          day: '2-digit',\n          hour: '2-digit',\n          minute: '2-digit'\n        });\n\n        row.innerHTML = `\n          <td>\n            <div style=\"font-weight:600; color:var(--color-cyan); display:flex; align-items:center; gap:8px;\">\n              <i data-lucide=\"user-plus\" style=\"width:16px; height:16px;\"></i>\n              <span>${user.username}</span>\n            </div>\n          </td>\n          <td>\n            <span class=\"table-date\">${dateStr}</span>\n          </td>\n          <td>\n            <div class=\"table-actions\">\n              <button class=\"btn btn-sm btn-primary btn-admin-approve\" data-username=\"${user.username}\" style=\"padding: 6px 12px; font-size: 12px; height: auto; display: inline-flex; align-items: center; gap: 4px;\">\n                <i data-lucide=\"user-check\" style=\"width:14px; height:14px;\"></i>\n                <span>승인</span>\n              </button>\n              <button class=\"btn btn-sm btn-glass-danger btn-admin-reject\" data-username=\"${user.username}\" style=\"padding: 6px 12px; font-size: 12px; height: auto; display: inline-flex; align-items: center; gap: 4px; border: 1px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.1);\">\n                <i data-l
+<truncated 2769 bytes>
