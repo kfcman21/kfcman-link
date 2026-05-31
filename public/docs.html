@@ -223,17 +223,6 @@
             <i data-lucide="monitor" class="w-4 h-4 text-white"></i>
             <span>PC 실시간 동기화 도구 다운로드</span>
           </a>
-          
-          <button onclick="triggerFilePicker()" class="btn px-4 py-3 text-xs font-black border-2 border-slate-900 dark:border-white rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 shadow-clay-flat hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer">
-            <i data-lucide="file-up" class="w-4 h-4 text-clay-sky"></i>
-            <span>HWP/HWPX 업로드</span>
-          </button>
-          <input type="file" id="hwp-uploader" accept=".hwp,.hwpx,.txt" class="hidden" onchange="handleHwpUpload(event)">
-          
-          <button onclick="openCreateDocModal()" class="btn px-5 py-3 text-xs font-black border-2 border-white rounded-2xl bg-clay-purple hover:bg-violet-600 text-white shadow-clay-flat hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer">
-            <i data-lucide="plus-circle" class="w-4 h-4 text-white"></i>
-            <span>새 문서 만들기</span>
-          </button>
         </div>
       </div>
 
@@ -262,10 +251,7 @@
           <i data-lucide="file-text" class="w-8 h-8"></i>
         </div>
         <h3 class="text-base font-black text-slate-800 dark:text-slate-200 mb-1">저장된 한글 문서가 아직 없습니다</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">새 문서를 작성하거나 드래그 앤 드롭으로 기존 HWP 문서를 업로드해 공유 공간을 채워보세요.</p>
-        <button onclick="openCreateDocModal()" class="btn px-6 py-3 border-2 border-white rounded-2xl bg-clay-purple hover:bg-violet-600 text-white shadow-clay-flat transition-all cursor-pointer">
-          첫 한글 문서 작성하기
-        </button>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">위 동기화 도구를 실행한 뒤, 생성되는 바탕화면 폴더에 관리자가 한글 파일을 올려두면 공유 탐색기에 자동으로 표시됩니다.</p>
       </div>
 
     </div>
