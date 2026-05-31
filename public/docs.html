@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>KFCMAN.Cloud - 실시간 한글 문서 공유 및 동기화 보관함</title>
+  <title>KFCMAN.CLAUD - 실시간 한글 문서 공유 및 동기화 저장소</title>
   
   <!-- Fonts & Core Utilities -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
@@ -176,13 +176,13 @@
         <a href="/docs" class="font-title text-2xl font-black tracking-tight flex items-center gap-0.5 select-none">
           <span class="text-slate-900 dark:text-white">KFCMAN</span>
           <span class="text-clay-grass font-black">.</span>
-          <span class="bg-gradient-to-r from-clay-sky via-clay-purple to-clay-mint text-transparent bg-clip-text font-black">Cloud</span>
+          <span class="bg-gradient-to-r from-clay-sky via-clay-purple to-clay-mint text-transparent bg-clip-text font-black">CLAUD</span>
         </a>
       </div>
 
       <!-- User Welcome & Settings -->
       <div class="flex items-center gap-4">
-        <span class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-bold" id="docs-user-welcome">
+        <span class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-bold" id="docs-user-welcome">
           <i data-lucide="user" class="w-4 h-4 text-clay-toy"></i>
           <span id="docs-username" class="text-clay-purple dark:text-clay-mint font-extrabold">Guest</span>
         </span>
@@ -209,11 +209,11 @@
       <div class="bg-white dark:bg-clay-cardDark border-4 border-white dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-clay-flat-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-6 text-left">
         <div>
           <h2 class="text-3xl font-black mb-2 flex items-center gap-2 select-none font-title">
-            <i data-lucide="folder-kanban" class="text-clay-purple w-8 h-8"></i>
-            <span>한글 문서</span>
-            <span class="bg-gradient-to-r from-clay-purple via-clay-sky to-clay-mint text-transparent bg-clip-text font-extrabold">공유 보관함</span>
+            <i data-lucide="cloud" class="text-clay-sky w-8 h-8"></i>
+            <span>KFCMAN</span>
+            <span class="bg-gradient-to-r from-clay-sky via-clay-purple to-clay-mint text-transparent bg-clip-text font-extrabold">CLAUD</span>
           </h2>
-          <p class="text-xs font-bold text-slate-500 dark:text-slate-400">교실, 회사, 모둠원들과 함께 HWP 파일을 클라우드에 영구 저장하고 수정합니다.</p>
+          <p class="text-xs font-bold text-slate-500 dark:text-slate-400">내 바탕화면 전용 공유 폴더와 실시간 자동 동기화되는 탐색기 저장소 공간입니다.</p>
         </div>
         
         <!-- Document Upload / Create buttons -->
@@ -225,24 +225,23 @@
         </div>
       </div>
 
-      <!-- Limit warnings -->
-      <div id="docs-limit-banner" class="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 text-left shadow-sm flex items-center justify-between flex-wrap gap-4">
-        <div class="space-y-1">
-          <div class="flex items-center gap-1.5 text-xs font-black text-slate-700 dark:text-slate-200">
-            <i data-lucide="award" class="w-4 h-4 text-clay-toy"></i>
-            <span>보관함 사용 현황: <span id="limit-current" class="text-clay-purple dark:text-clay-mint">0</span> / <span id="limit-max">10</span>개</span>
-          </div>
-          <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500">일반회원은 최대 10개까지, 우수회원(VIP) 이상은 무제한 생성이 가능합니다.</p>
-        </div>
-        <div class="w-32 bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
-          <div id="limit-progress-bar" class="bg-gradient-to-r from-clay-purple to-clay-grass h-full" style="width: 0%;"></div>
-        </div>
-      </div>
+      <!-- Limit warnings hidden -->
+      <div id="docs-limit-banner" class="hidden"></div>
 
       <!-- Documents Listing Grid -->
-      <div id="docs-list-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      <div id="docs-list-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-8 border-4 border-dashed border-slate-350 dark:border-white/10 rounded-3xl min-h-[300px] transition-all bg-white/50 dark:bg-clay-cardDark/40 flex flex-wrap items-center justify-center relative" id="drop-upload-zone">
+        <!-- Drag Drop overlay hint -->
+        <div class="absolute inset-0 bg-clay-purple/10 border-4 border-clay-purple rounded-3xl opacity-0 pointer-events-none transition-all flex items-center justify-center z-30" id="drag-drop-overlay">
+          <div class="text-center p-6 bg-white dark:bg-clay-cardDark rounded-2xl border-2 border-clay-purple shadow-lg">
+            <i data-lucide="cloud-lightning" class="w-10 h-10 text-clay-purple mx-auto animate-bounce"></i>
+            <h4 class="font-black text-sm text-slate-800 dark:text-white mt-2">이곳에 파일을 드롭하여 동기화 업로드</h4>
+          </div>
+        </div>
         <!-- Injected dynamically via docs.js -->
       </div>
+      
+      <!-- Invisible upload input -->
+      <input type="file" id="hwp-uploader" accept=".hwp,.hwpx,.txt" class="hidden" onchange="handleHwpUpload(event)">
       
       <!-- Documents Empty State -->
       <div id="docs-empty-state" class="hidden text-center py-20 bg-white dark:bg-clay-cardDark border-4 border-white dark:border-white/5 rounded-3xl p-8 max-w-lg mx-auto shadow-clay-flat-lg">

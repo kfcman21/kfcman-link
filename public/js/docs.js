@@ -24,6 +24,40 @@ window.addEventListener('load', () => {
   } else {
     document.documentElement.classList.remove('dark');
   }
+
+  // Drag and Drop folder-sharing listeners on Grid
+  const dropZone = document.getElementById('docs-list-grid');
+  const overlay = document.getElementById('drag-drop-overlay');
+
+  if (dropZone) {
+    window.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      if (overlay) {
+        overlay.classList.remove('opacity-0', 'pointer-events-none');
+        overlay.classList.add('opacity-100');
+      }
+    });
+
+    if (overlay) {
+      overlay.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        overlay.classList.add('opacity-0', 'pointer-events-none');
+        overlay.classList.remove('opacity-100');
+      });
+
+      overlay.addEventListener('drop', (e) => {
+        e.preventDefault();
+        overlay.classList.add('opacity-0', 'pointer-events-none');
+        overlay.classList.remove('opacity-100');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          const fakeEvent = { target: { files: files } };
+          handleHwpUpload(fakeEvent);
+        }
+      });
+    }
+  }
 });
 
 // --------------------------------------------------------------------------
@@ -41,7 +75,7 @@ async function loadExplorer() {
   document.getElementById('docs-limit-banner').classList.remove('hidden');
   
   // Update header and document title
-  document.title = 'KFCMAN.Cloud - 실시간 한글 문서 공유 및 동기화 보관함';
+  document.title = 'KFCMAN.CLAUD - 실시간 한글 문서 공유 및 동기화 저장소';
   
   const token = localStorage.getItem('kfcman_auth_token') || '';
   const headers = { 'Content-Type': 'application/json' };
@@ -430,7 +464,7 @@ async function fetchAndLoadDoc() {
       buildHistoryList(data.history || []);
       
       // Document title updates
-      document.title = `${data.title} | KFCMAN.Cloud`;
+      document.title = `${data.title} | KFCMAN.CLAUD`;
       
       // Setup Auto-save interval (every 5 seconds)
       if (autoSaveTimer) clearInterval(autoSaveTimer);
@@ -587,7 +621,7 @@ async function saveCurrentDoc() {
       }
       
       // Update global title
-      document.title = `${data.title} | KFCMAN.Cloud`;
+      document.title = `${data.title} | KFCMAN.CLAUD`;
     } else {
       const errData = await res.json();
       showToast('error', errData.error || '문서 저장 실패');
