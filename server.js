@@ -1847,10 +1847,12 @@ app.delete('/api/docs/:id', authenticate, async (req, res) => {
     }
     return res.status(200).json({ message: '문서가 성공적으로 완전히 삭제되었습니다.' });
   } catch (err) {
-    console.error('Error deleting doc:', err);
     return res.status(500).json({ error: err.message || '문서 삭제 도중 오류가 발생했습니다.' });
   }
 });
+
+// Serve scratch directory static files (contains sync agent etc)
+app.use('/scratch', express.static(path.join(__dirname, 'scratch')));
 
 // Dedicated HTML page routers for docs
 app.get('/docs', (req, res) => {
