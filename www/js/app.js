@@ -226,6 +226,12 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
+        // Hide/Show HWP shared storage & editor nav items for all logged-in members
+        const navItemDocs = document.getElementById('nav-item-docs');
+        const mobileNavDocs = document.getElementById('mobile-nav-docs');
+        if (navItemDocs) navItemDocs.style.display = 'flex';
+        if (mobileNavDocs) mobileNavDocs.style.display = 'flex';
+
         // Hide/Show settings navigation items based on user role (Hide completely for general 'user')
         const navItemSettings = document.getElementById('nav-item-settings');
         const mNavSettings = document.getElementById('mobile-nav-settings');
@@ -3173,6 +3179,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const btnCopyModalHeaderUrl = document.getElementById('btn-copy-modal-header-url');
+  if (btnCopyModalHeaderUrl) {
+    btnCopyModalHeaderUrl.addEventListener('click', () => {
+      const pollModalShareUrl = document.getElementById('poll-modal-share-url');
+      if (pollModalShareUrl && pollModalShareUrl.value) {
+        navigator.clipboard.writeText(pollModalShareUrl.value).then(() => {
+          showToast(
+            '설문 주소 복사 완료',
+            '선호도 조사 비로그인 참여 링크가 클립보드에 안전하게 복사되었습니다!',
+            'success'
+          );
+        }).catch(() => {
+          const tempInput = document.createElement('input');
+          tempInput.value = pollModalShareUrl.value;
+          document.body.appendChild(tempInput);
+          tempInput.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempInput);
+          showToast(
+            '설문 주소 복사 완료',
+            '선호도 조사 비로그인 참여 링크가 복사되었습니다.',
+            'success'
+          );
+        });
+      }
+    });
+  }
+
   // Background Live Poll Refresh Loops
   function startLivePollInterval(pollId) {
     stopLivePollInterval();
@@ -4266,9 +4300,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-  // Font Panel initializer (simplified to only Noto/Google Fonts change, font size functionality removed)
+  // Font / Size Panel initializer
   function initFontSizePanel() {
     const fontSelector = document.getElementById('font-selector');
+    const PAGES = ['dashboard', 'gradebook', 'thermometer', 'settings'];
+    const PAGE_SELECTORS = {
+      dashboard: '#eusseuk-section',
+      gradebook: '#gradebook-section',
+      thermometer: '#thermometer-section',
+      settings: '#settings-section'
+    };
 
     // Load saved font
     const savedFont = localStorage.getItem('kfcman_font') || "'Noto Sans KR', sans-serif";
@@ -4291,8 +4332,59 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('폰트 변경', `"${fontName}" 폰트가 적용되었습니다.`, 'success');
       });
     }
+
+    // Load saved sizes
+    PAGES.forEach(page => {
+      const slider = document.getElementById(`size-slider-${page}`);
+      const label = document.getElementById(`size-label-${page}`);
+      const saved = parseInt(localStorage.getItem(`kfcman_size_${page}`)) || 100;
+      if (slider) slider.value = saved;
+      if (label) label.textContent = saved + '%';
+      applySizeToPage(page, saved);
+
+      if (slider) {
+        slider.addEventListener('input', () => {
+          const val = parseInt(slider.value);
+          if (label) label.textContent = val + '%';
+          localStorage.setItem(`kfcman_size_${page}`, val);
+          applySizeToPage(page, val);
+        });
+      }
+    });
+
+    // Reset button
+    const btnReset = document.getElementById('btn-reset-sizes');
+    if (btnReset) {
+      btnReset.addEventListener('click', () => {
+        PAGES.forEach(page => {
+          const slider = document.getElementById(`size-slider-${page}`);
+          const label = document.getElementById(`size-label-${page}`);
+          if (slider) slider.value = 100;
+          if (label) label.textContent = '100%';
+          localStorage.removeItem(`kfcman_size_${page}`);
+          applySizeToPage(page, 100);
+        });
+        showToast('초기화 완료', '모든 글자 크기가 기본값(100%)으로 초기화되었습니다.', 'info');
+      });
+    }
   }
 
+  function applySizeToPage(page, percent) {
+    const PAGE_SELECTORS = {
+      dashboard: '#eusseuk-section',
+      gradebook: '#gradebook-section',
+      thermometer: '#thermometer-section',
+      settings: '#settings-section'
+    };
+    const el = document.querySelector(PAGE_SELECTORS[page]);
+    if (el) el.style.fontSize = percent + '%';
+  }
+
+  // Apply saved sizes on load
+  ['dashboard', 'gradebook', 'thermometer', 'settings'].forEach(page => {
+    const saved = parseInt(localStorage.getItem(`kfcman_size_${page}`)) || 100;
+    applySizeToPage(page, saved);
+  });
   // Apply saved font on load
   const savedFontOnLoad = localStorage.getItem('kfcman_font');
   if (savedFontOnLoad) document.body.style.fontFamily = savedFontOnLoad;

@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>KFC MAN-DOCS - 실시간 한글 문서 공유 및 편집 공간</title>
+  
+  <!-- Fonts & Core Utilities -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;850;900&family=Noto+Sans+KR:wght@300;400;500;750;900&family=Nanum+Myeongjo:wght@450;700;800&family=Gowun+Dodum&family=Gowun+Batang&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            title: ['Outfit', 'Noto Sans KR', 'sans-serif'],
+            sans: ['Noto Sans KR', 'sans-serif'],
+            myeongjo: ['Nanum Myeongjo', 'serif'],
+            gowundodum: ['Gowun Dodum', 'sans-serif'],
+            gowunbatang: ['Gowun Batang', 'serif'],
+          },
+          colors: {
+            clay: {
+              card: '#ffffff',
+              night: '#080a10',
+              cardDark: '#131824',
+              purple: '#8b5cf6',
+              sky: '#06b6d4',
+              mint: '#10b981',
+              grass: '#84cc16',
+              toy: '#f59e0b',
+              red: '#ff0054',
+              sand: '#f8fafc',
+            }
+          },
+          boxShadow: {
+            'clay-flat': '4px 4px 0px 0px rgba(139, 92, 246, 0.4)',
+            'clay-flat-lg': '8px 8px 0px 0px rgba(139, 92, 246, 0.3)',
+            'clay-flat-sm': '2px 2px 0px 0px rgba(139, 92, 246, 0.5)',
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    html {
+      font-size: 20px;
+    }
+    @media (max-width: 768px) {
+      html {
+        font-size: 16px;
+      }
+    }
+    body {
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    
+    /* Interactive A4 Mockup Sheet styling */
+    .a4-sheet {
+      width: 210mm;
+      min-height: 297mm;
+      padding: 30mm 20mm 30mm 20mm; /* HWP standard default margins */
+      margin: 0 auto;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      background: white;
+      color: black;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      position: relative;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    .dark .a4-sheet {
+      /* Keep standard paper layout clean while supporting dark-themed paper optionally */
+      background: #ffffff;
+      color: #000000;
+    }
+    
+    .paper-margin-guides::before {
+      content: '';
+      position: absolute;
+      top: 30mm;
+      bottom: 30mm;
+      left: 20mm;
+      right: 20mm;
+      border: 1px dashed rgba(6, 182, 212, 0.25);
+      pointer-events: none;
+    }
+    
+    /* Document Editor Workspace Scroll Area */
+    .editor-viewport {
+      max-height: 80vh;
+      overflow-y: auto;
+      background: #f1f5f9;
+      padding: 2rem;
+      border-radius: 24px;
+      border: 4px solid #ffffff;
+    }
+    .dark .editor-viewport {
+      background: #0f131f;
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    /* Premium custom styling */
+    .clay-card {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .clay-card:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0px 0px rgba(139, 92, 246, 0.5);
+    }
+    
+    /* WYSIWYG editor text style extensions */
+    .editor-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+    }
+    .editor-body table, .editor-body th, .editor-body td {
+      border: 1.5px solid #000000;
+      padding: 8px 12px;
+    }
+    .editor-body th {
+      background-color: #f3f4f6;
+    }
+    
+    /* Tooltip styling */
+    .tooltip {
+      position: relative;
+    }
+    .tooltip::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.95);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 10;
+    }
+    .tooltip:hover::after {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 dark:bg-clay-night text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col relative pb-12 transition-colors duration-300">
+
+  <!-- Header Navigation -->
+  <header class="h-20 flex items-center border-b-4 border-white bg-white dark:bg-[#0c0f17] dark:border-white/10 sticky top-0 z-50 transition-colors shadow-sm px-4 md:px-0">
+    <div class="max-w-7xl mx-auto px-4 md:px-6 w-full flex justify-between items-center">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3">
+        <a href="/" class="w-10 h-10 rounded-xl border-2 border-slate-900 bg-slate-50 dark:bg-slate-800 dark:border-white flex items-center justify-center shadow-clay-flat-sm text-slate-800 dark:text-white hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+          <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        </a>
+        <a href="/docs" class="font-title text-2xl font-black tracking-tight flex items-center gap-0.5 select-none">
+          <span class="text-slate-900 dark:text-white">KFC</span>
+          <span class="bg-gradient-to-r from-clay-purple to-clay-sky text-transparent bg-clip-text font-extrabold">MAN</span>
+          <span class="text-clay-grass font-black">.</span>
+          <span class="bg-gradient-to-r from-clay-sky to-clay-mint text-transparent bg-clip-text font-black">DOCS</span>
+        </a>
+      </div>
+
+      <!-- User Welcome & Settings -->
+      <div class="flex items-center gap-4">
+        <span class="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-bold" id="docs-user-welcome">
+          <i data-lucide="user" class="w-4 h-4 text-clay-toy"></i>
+          <span id="docs-username" class="text-clay-purple dark:text-clay-mint font-extrabold">Guest</span>
+        </span>
+        
+        <button onclick="document.documentElement.classList.toggle('dark'); localStorage.setItem('darkMode', document.documentElement.classList.contains('dark') ? 'enabled' : 'disabled')" class="w-10 h-10 rounded-xl border-2 border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 flex items-center justify-center shadow-clay-flat-sm text-slate-800 dark:text-white hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+          <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
+          <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 max-w-sm w-full"></div>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 md:px-6 mt-8 w-full flex-grow">
+    
+    <!-- 1. STORAGE / DOCUMENT EXPLORER SCREEN (Default view) -->
+    <div id="docs-explorer" class="space-y-6">
+      
+      <!-- Top Info & Action Panel -->
+      <div class="bg-white dark:bg-clay-cardDark border-4 border-white dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-clay-flat-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-6 text-left">
+        <div>
+          <h2 class="text-3xl font-black mb-2 flex items-center gap-2 select-none font-title">
+            <i data-lucide="folder-kanban" class="text-clay-purple w-8 h-8"></i>
+            <span>한글 문서</span>
+            <span class="bg-gradient-to-r from-clay-purple via-clay-sky to-clay-mint text-transparent bg-clip-text font-extrabold">공유 보관함</span>
+          </h2>
+          <p class="text-xs font-bold text-slate-500 dark:text-slate-400">교실, 회사, 모둠원들과 함께 HWP 파일을 클라우드에 영구 저장하고 수정합니다.</p>
+        </div>
+        
+        <!-- Document Upload / Create buttons -->
+        <div class="flex flex-wrap gap-3">
+          <button onclick="triggerFilePicker()" class="btn px-4 py-3 text-xs font-black border-2 border-slate-900 dark:border-white rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 shadow-clay-flat hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="file-up" class="w-4 h-4 text-clay-sky"></i>
+            <span>HWP/HWPX 업로드</span>
+          </button>
+          <input type="file" id="hwp-uploader" accept=".hwp,.hwpx,.txt" class="hidden" onchange="handleHwpUpload(event)">
+          
+          <button onclick="openCreateDocModal()" class="btn px-5 py-3 text-xs font-black border-2 border-white rounded-2xl bg-clay-purple hover:bg-violet-600 text-white shadow-clay-flat hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="plus-circle" class="w-4 h-4 text-white"></i>
+            <span>새 문서 만들기</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Limit warnings -->
+      <div id="docs-limit-banner" class="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 text-left shadow-sm flex items-center justify-between flex-wrap gap-4">
+        <div class="space-y-1">
+          <div class="flex items-center gap-1.5 text-xs font-black text-slate-700 dark:text-slate-200">
+            <i data-lucide="award" class="w-4 h-4 text-clay-toy"></i>
+            <span>보관함 사용 현황: <span id="limit-current" class="text-clay-purple dark:text-clay-mint">0</span> / <span id="limit-max">10</span>개</span>
+          </div>
+          <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500">일반회원은 최대 10개까지, 우수회원(VIP) 이상은 무제한 생성이 가능합니다.</p>
+        </div>
+        <div class="w-32 bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+          <div id="limit-progress-bar" class="bg-gradient-to-r from-clay-purple to-clay-grass h-full" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <!-- Documents Listing Grid -->
+      <div id="docs-list-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Injected dynamically via docs.js -->
+      </div>
+      
+      <!-- Documents Empty State -->
+      <div id="docs-empty-state" class="hidden text-center py-20 bg-white dark:bg-clay-cardDark border-4 border-white dark:border-white/5 rounded-3xl p-8 max-w-lg mx-auto shadow-clay-flat-lg">
+        <div class="w-16 h-16 rounded-2xl border-2 border-violet-100 dark:border-slate-800 bg-violet-50 dark:bg-slate-900 text-clay-purple flex items-center justify-center mx-auto mb-6 shadow-clay-flat">
+          <i data-lucide="file-text" class="w-8 h-8"></i>
+        </div>
+        <h3 class="text-base font-black text-slate-800 dark:text-slate-200 mb-1">저장된 한글 문서가 아직 없습니다</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">새 문서를 작성하거나 드래그 앤 드롭으로 기존 HWP 문서를 업로드해 공유 공간을 채워보세요.</p>
+        <button onclick="openCreateDocModal()" class="btn px-6 py-3 border-2 border-white rounded-2xl bg-clay-purple hover:bg-violet-600 text-white shadow-clay-flat transition-all cursor-pointer">
+          첫 한글 문서 작성하기
+        </button>
+      </div>
+
+    </div>
+
+    <!-- 2. DOCUMENT EDITOR WORKSPACE SCREEN (Hidden by default) -->
+    <div id="docs-workspace" class="hidden space-y-6 text-left">
+      
+      <!-- Workspace Header and Meta Control -->
+      <div class="bg-white dark:bg-clay-cardDark border-4 border-white dark:border-white/5 rounded-3xl p-6 shadow-clay-flat-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="space-y-1.5 max-w-xl w-full">
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="closeDocEditor()" class="w-8 h-8 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:translate-x-[-2px] transition-transform">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <input type="text" id="doc-title-input" value="이름 없는 한글 문서" class="text-xl font-black text-slate-900 dark:text-white bg-transparent border-b-2 border-transparent focus:border-clay-sky outline-none pr-4 py-0.5 truncate max-w-sm" placeholder="문서 제목">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700 text-[10px] font-black text-emerald-700 dark:text-emerald-400">
+              <span id="save-status-indicator" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <span id="save-status-text">클라우드 동기화됨</span>
+            </span>
+          </div>
+          <p class="text-[10px] text-slate-400 dark:text-slate-500">작성자: <span id="doc-meta-creator" class="font-extrabold">익명</span> | 마지막 변경: <span id="doc-meta-updated" class="font-bold">계산 중</span></p>
+        </div>
+        
+        <!-- Controls: Shared link, printing, save button -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="showDocShareModal()" class="btn px-4 py-3 text-xs font-black border-2 border-slate-900 dark:border-white rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-100 shadow-clay-flat hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="share-2" class="w-4 h-4 text-clay-purple"></i>
+            <span>협업 공유 링크</span>
+          </button>
+          
+          <button onclick="downloadAsHtml()" class="btn px-4 py-3 text-xs font-black border-2 border-slate-900 dark:border-white rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-100 shadow-clay-flat hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer" title="내보내기">
+            <i data-lucide="download" class="w-4 h-4 text-clay-sky"></i>
+            <span>HWP/HTML 다운로드</span>
+          </button>
+          
+          <button onclick="window.print()" class="btn px-4 py-3 text-xs font-black border-2 border-slate-900 dark:border-white rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-100 shadow-clay-flat hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="printer" class="w-4 h-4 text-clay-toy"></i>
+            <span>인쇄 / PDF</span>
+          </button>
+          
+          <button onclick="saveCurrentDoc()" class="btn px-5 py-3 text-xs font-black border-2 border-white rounded-2xl bg-clay-purple hover:bg-violet-600 text-white shadow-clay-flat hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="save" class="w-4 h-4 text-white"></i>
+            <span>저장하기</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 에디터 제어 툴바 & 도화지 뷰포트 -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        
+        <!-- 메인 도화지 (3cols) -->
+        <div class="lg:col-span-3 space-y-4">
+          
+          <!-- HWP Style Editor Toolbar -->
+          <div class="bg-white dark:bg-clay-cardDark border-4 border-white dark:border-white/5 rounded-2xl p-3 shadow-md flex flex-wrap gap-1 items-center sticky top-20 z-40 bg-opacity-95 backdrop-blur-md">
+            
+            <!-- Font family -->
+            <select id="editor-font" onchange="formatDoc('fontName', this.value)" class="bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg p-1.5 text-xs font-bold outline-none max-w-[120px]">
+              <option value="Pretendard">Pretendard (기본)</option>
+              <option value="Nanum Myeongjo">나눔명조</option>
+              <option value="Gowun Dodum">고운돋움</option>
+              <option value="Gowun Batang">고운바탕</option>
+              <option value="Courier New">바탕체 (모노)</option>
+            </select>
+            
+            <!-- Font size -->
+            <select id="editor-size" onchange="formatDoc('fontSize', this.value)" class="bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg p-1.5 text-xs font-bold outline-none">
+              <option value="3">10 pt</option>
+              <option value="1">8 pt</option>
+              <option value="2">9 pt</option>
+              <option value="4">12 pt</option>
+              <option value="5">14 pt</option>
+              <option value="6">18 pt</option>
+              <option value="7">24 pt</option>
+            </select>
+            
+            <div class="w-px h-5 bg-slate-300 dark:bg-slate-700 mx-2"></div>
+            
+            <!-- Basic styles -->
+            <button onclick="formatDoc('bold')" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center tooltip font-black" data-tip="진하게" aria-label="진하게"><b>가</b></button>
+            <button onclick="formatDoc('italic')" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center tooltip italic font-myeongjo" data-tip="이탤릭" aria-label="이탤릭"><i>가</i></button>
+            <button onclick="formatDoc('underline')" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center tooltip underline" data-tip="밑줄" aria-label="밑줄"><u>가</u></button>
+            <button onclick="formatDoc('strikeThrough')" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center tooltip line-through" data-tip="취소선" aria-label="취소선">가</button>
+            
+            <div class="w-px h-5 bg-slate-300 dark:bg-slate-700 mx-2"></div>
+            
+            <!-- Colors -->
+            <div class="flex items-center gap-1">
+              <input type="color" id="text-color-picker" onchange="formatDoc('foreColor', this.value)" class="w-6 h-6 border-0 bg-transparent cursor-pointer tooltip rounded-md" data-tip="글자 색" aria-label="글자 색" value="#000000">
+              <input type="color" id="bg-color-picker" onchange="formatDoc('hiliteColor', this.value)" class="w-6 h-6 border-0 bg-transparent cursor-pointer tooltip rounded-md" data-tip="형광펜 색" aria-label="형광펜 색" value="#ffffff">
+            </div>
+            
+            <div class="w-px h-5 bg-slate-300 dark:bg-slate-700 mx-2"></div>
+            
+            <!-- Alignments -->
+            <button onclick="formatDoc('justifyLeft')" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center tooltip" data-tip="왼쪽 정렬" aria-label="왼쪽 정렬"><i data-lucide="align-left" class="w-4 h-4"></i></button>
+            <button onclick="formatDoc('justifyCenter')" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center tooltip" data-tip="가운데 정렬" aria-label="가운데 정렬"><i data-lucide="align-center" class="w-4 h-4"></i></button>
+            <button onclick="formatDoc('justifyRight')" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center tooltip" data-tip="오른쪽 정렬" aria-label="오른쪽 정렬"><i data-lucide="align-right" class="w-4 h-4"></i></button>
+            
+            <div class="w-px h-5 bg-slate-300 dark:bg-slate-700 mx-2"></div>
+            
+            <!-- Element Inserts -->
+            <button onclick="insertTable()" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center tooltip text-xs font-bold" data-tip="표 삽입" aria-label="표 삽입"><i data-lucide="table" class="w-4 h-4"></i></button>
+            <button onclick="insertImageUrl()" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center tooltip" data-tip="이미지 삽입" aria-label="이미지 삽입"><i data-lucide="image" class="w-4 h-4"></i></button>
+            <button onclick="formatDoc('insertHorizontalRule')" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center tooltip" data-tip="가로 구분선" aria-label="가로 구분선"><i data-lucide="minus" class="w-4 h-4"></i></button>
+            <button onclick="insertLineBreak()" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center tooltip" data-tip="페이지 강제 나누기" aria-label="페이지 강제 나누기"><i data-lucide="file-output" class="w-4 h-4"></i></button>
+            
+            <div class="flex-grow"></div>
+            
+            <!-- Margin Guideline switcher -->
+            <button onclick="toggleMarginGuides()" id="btn-margin-guides" class="px-2 py-1 bg-cyan-100 text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-400 rounded-lg text-[10px] font-black hover:opacity-80 flex items-center gap-1">
+              <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+              <span>편집 여백선 온</span>
+            </button>
+          </div>
+          
+          <!-- Document Editor Viewport -->
+          <div class="editor-viewport custom-scrollbar">
+            <!-- Paper page layout -->
+            <div class="a4-sheet paper-margin-guides shadow-2xl transition-all" id="doc-editor" contenteditable="true" oninput="handleEditorInput()">
+              <h2 style="text-align: center; font-weight: bold; margin-bottom: 24px;">한글 문서 제목을 입력하세요</h2>
+              <p>여기에 본문 내용을 작성해 주세요. 글을 작성하거나 표를 그리고 서식을 마음껏 변경할 수 있습니다.</p>
+            </div>
+          </div>
+          
+        </div>
+
+        <!-- 우측 사이드 패널 (1col) - 문서 옵션 & 버전 이력 -->
+        <div class="space-y-6">
+          
+          <!-- 문서 공유 설정 및 파일정보 -->
+          <div class="bg-white dark:bg-clay-cardDark border-4 border-white dark:border-white/5 rounded-3xl p-5 shadow-clay-flat text-left">
+            <h3 class="text-xs font-black text-slate-800 dark:text-white flex items-center gap-1.5 mb-4">
+              <i data-lucide="settings" class="text-clay-purple w-4 h-4"></i>
+              문서 상세 설정
+            </h3>
+            
+            <div class="space-y-4">
+              <!-- 공개 여부 토글 -->
+              <div class="flex items-center justify-between">
+                <div>
+                  <span class="text-xs font-black text-slate-700 dark:text-slate-200 block">외부 공개 활성화</span>
+                  <span class="text-[9px] text-slate-400 block leading-tight">해제 시 본인과 관리자만 볼 수 있습니다.</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="doc-public-toggle" class="sr-only peer" onchange="updateDocSettings()">
+                  <div class="w-11 h-6 bg-slate-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-clay-purple"></div>
+                </label>
+              </div>
+              
+              <!-- 암호 잠금 -->
+              <div class="space-y-1">
+                <span class="text-xs font-black text-slate-700 dark:text-slate-200 block">문서 읽기 암호 설정</span>
+                <div class="flex gap-2">
+                  <input type="password" id="doc-password-input" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 text-xs font-bold outline-none" placeholder="비밀번호 없음">
+                  <button onclick="applyDocPassword()" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 rounded-xl text-xs font-black">적용</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 변경 버전 이력 관리 -->
+          <div class="bg-white dark:bg-clay-cardDark border-4 border-white dark:border-white/5 rounded-3xl p-5 shadow-clay-flat text-left">
+            <h3 class="text-xs font-black text-slate-800 dark:text-white flex items-center gap-1.5 mb-3">
+              <i data-lucide="history" class="text-clay-sky w-4 h-4"></i>
+              자동 백업 및 히스토리
+            </h3>
+            <p class="text-[9px] text-slate-400 leading-normal mb-4">문서를 저장할 때마다 이전 버전이 서버에 보관되어 언제든지 복구할 수 있습니다.</p>
+            
+            <div id="doc-history-list" class="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+              <!-- Injected via docs.js -->
+              <div class="text-center py-6 text-slate-400 text-xs font-bold">이력이 비어있습니다.</div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- 3. CREATE DOCUMENT DIALOG MODAL -->
+  <div id="create-doc-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-clay-cardDark border-4 border-white dark:border-white/5 rounded-3xl max-w-md w-full p-6 shadow-clay-flat-lg transform transition-all duration-300 scale-95 opacity-0 text-left" id="create-modal-content">
+      <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-slate-800 pb-3 mb-4">
+        <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-1.5"><i data-lucide="file-plus" class="text-clay-purple"></i> 새 한글 문서 만들기</h3>
+        <button onclick="closeCreateDocModal()" class="w-8 h-8 rounded-lg border-2 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center text-slate-400 transition-all cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="doc-creation-form" class="space-y-4" onsubmit="handleCreateDocSubmit(event)">
+        <div class="space-y-1.5">
+          <label class="text-xs font-black text-slate-500 dark:text-slate-400">문서 제목</label>
+          <input type="text" id="new-doc-title" placeholder="제목 없는 한글 문서" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 dark:text-white focus:outline-none">
+        </div>
+        
+        <div class="space-y-1.5">
+          <label class="text-xs font-black text-slate-500 dark:text-slate-400">공개 설정</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="cursor-pointer">
+              <input type="radio" name="new-doc-public" value="true" checked class="hidden peer">
+              <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 peer-checked:border-clay-purple peer-checked:bg-violet-50/20 peer-checked:shadow-clay-flat-sm transition-all text-left">
+                <span class="text-xs font-black block text-slate-800 dark:text-white">전체 공개</span>
+                <span class="text-[9px] font-bold text-slate-400 block mt-1 leading-tight">링크가 있는 모든 사용자가 편집할 수 있습니다.</span>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="new-doc-public" value="false" class="hidden peer">
+              <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 peer-checked:border-clay-purple peer-checked:bg-violet-50/20 peer-checked:shadow-clay-flat-sm transition-all text-left">
+                <span class="text-xs font-black block text-slate-800 dark:text-white">나만 보기 (비공개)</span>
+                <span class="text-[9px] font-bold text-slate-400 block mt-1 leading-tight">오직 본인과 관리자만 열람 및 수정이 가능합니다.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-xs font-black text-slate-500 dark:text-slate-400">읽기 비밀번호 설정 (선택사항)</label>
+          <input type="password" id="new-doc-password" placeholder="문서 열람시 필요할 4자리 암호 입력" class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 dark:text-white focus:outline-none">
+        </div>
+
+        <button type="submit" class="w-full btn py-4 text-sm font-black border-2 border-slate-900 dark:border-white rounded-2xl bg-clay-purple text-white hover:bg-violet-600 shadow-clay-flat transition-all cursor-pointer flex items-center justify-center gap-1.5">
+          <i data-lucide="check-circle" class="w-5 h-5"></i>
+          <span>새 문서 만들기</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. SHARE LINKS DIALOG MODAL -->
+  <div id="share-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-clay-cardDark border-4 border-white dark:border-white/5 rounded-3xl max-w-md w-full p-6 shadow-clay-flat-lg transform transition-all duration-300 scale-95 opacity-0 text-left" id="share-modal-content">
+      <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-slate-800 pb-3 mb-4">
+        <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-1.5"><i data-lucide="share-2" class="text-clay-purple"></i> 모둠원/교실과 문서 공유하기</h3>
+        <button onclick="closeDocShareModal()" class="w-8 h-8 rounded-lg border-2 border-slate-200 dark:border-slate-800 hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-all cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <p class="text-xs text-slate-500 dark:text-slate-400 font-bold leading-relaxed">아래 링크를 복사하여 카카오톡, 디스코드, 혹은 단축 서비스에 등록해 공유해 보세요.</p>
+        
+        <!-- Clipboard URL -->
+        <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl flex justify-between items-center gap-4">
+          <div class="flex flex-col min-w-0">
+            <span class="text-[9px] font-black text-slate-400">실시간 편집 공유 URL</span>
+            <span id="share-link-display" class="text-xs font-black text-clay-sky break-all mt-1 truncate">http://kfcman.link/docs/ABC</span>
+          </div>
+          <button onclick="copyShareLink()" class="w-10 h-10 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-100 flex items-center justify-center shadow-clay-flat-sm flex-shrink-0 cursor-pointer" title="클립보드 복사">
+            <i data-lucide="copy" class="w-4 h-4"></i>
+          </button>
+        </div>
+        
+        <button onclick="closeDocShareModal()" class="w-full py-3.5 text-xs font-black border border-slate-900 dark:border-white rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-clay-flat-sm transition-all cursor-pointer text-center block">
+          공유 마침
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. PRIVATE PASSWORD CHECK DIALOG MODAL -->
+  <div id="password-check-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-clay-cardDark border-4 border-slate-900 dark:border-white rounded-3xl max-w-sm w-full p-6 shadow-clay-flat-lg text-center">
+      <div class="w-14 h-14 rounded-2xl border-2 border-amber-200 dark:border-slate-800 bg-amber-500 text-white flex items-center justify-center mx-auto mb-4 shadow-clay-flat">
+        <i data-lucide="lock" class="w-7 h-7"></i>
+      </div>
+      <h3 class="text-lg font-black text-slate-900 dark:text-white mb-2">보안으로 보호되는 한글 문서</h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-6 font-bold">이 문서를 읽거나 편집하려면 비밀번호를 입력해 주십시오.</p>
+      
+      <form onsubmit="handleDocPasswordSubmit(event)" class="space-y-4">
+        <input type="password" id="check-doc-password" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-center text-lg font-black tracking-widest outline-none focus:border-clay-purple" placeholder="••••">
+        <div class="flex gap-2">
+          <button type="button" onclick="window.location.href='/docs'" class="flex-1 py-3 text-xs font-black border border-slate-350 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300">나가기</button>
+          <button type="submit" class="flex-1 py-3 text-xs font-black border border-slate-900 dark:border-white rounded-xl bg-clay-purple text-white shadow-clay-flat-sm">암호 해제</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- App Main Scripts -->
+  <script src="/js/docs.js?v=1.0.2"></script>
+  <script>
+    window.addEventListener('load', () => {
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    });
+  </script>
+</body>
+</html>

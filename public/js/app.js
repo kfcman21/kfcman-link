@@ -226,6 +226,12 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
+        // Hide/Show HWP shared storage & editor nav items for all logged-in members
+        const navItemDocs = document.getElementById('nav-item-docs');
+        const mobileNavDocs = document.getElementById('mobile-nav-docs');
+        if (navItemDocs) navItemDocs.style.display = 'flex';
+        if (mobileNavDocs) mobileNavDocs.style.display = 'flex';
+
         // Hide/Show settings navigation items based on user role (Hide completely for general 'user')
         const navItemSettings = document.getElementById('nav-item-settings');
         const mNavSettings = document.getElementById('mobile-nav-settings');

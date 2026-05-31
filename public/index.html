@@ -463,6 +463,9 @@
           <a href="/wall" class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center justify-center cursor-pointer" id="nav-item-wall" title="실시간 협업 게시판 kfcman-wall" style="display: none;">
             <i data-lucide="layout-grid" class="w-5 h-5"></i>
           </a>
+          <a href="/docs" class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center justify-center cursor-pointer animate-pulse" id="nav-item-docs" title="실시간 한글 문서 공유 및 편집 KFC MAN-DOCS" style="display: none;">
+            <i data-lucide="file-text" class="w-5 h-5 text-clay-purple"></i>
+          </a>
           <a href="#settings-section" class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center justify-center cursor-pointer" id="nav-item-settings" title="통합 설정 및 관리 패널">
             <i data-lucide="settings" class="w-5 h-5"></i>
           </a>
@@ -470,6 +473,11 @@
         
         <!-- Theme & Buttons Group -->
         <div class="flex items-center gap-3">
+          
+          <!-- HWP Docs Global Icon (Visible for all visitors) -->
+          <a href="/docs" class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand dark:bg-[#131824] hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center justify-center shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-slate-800 dark:text-white" title="KFC MAN-DOCS - 한글 문서 보관함 바로가기">
+            <i data-lucide="file-text" class="w-5 h-5 text-clay-purple animate-pulse"></i>
+          </a>
           
           <!-- Theme switch button -->
           <button class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand dark:bg-white/5 flex items-center justify-center shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-slate-800 dark:text-white" id="theme-toggle-btn" title="테마 변경 (화이트/블랙)" class="max-lg:!hidden" aria-label="테마 변경">
@@ -531,7 +539,10 @@
       <div class="mt-10 flex gap-4 justify-center flex-wrap">
         <button class="btn px-6 py-4 text-sm font-black border-4 border-white rounded-2xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat-lg hover:shadow-clay-flat hover:translate-x-1 hover:translate-y-1 transition-all cursor-pointer" id="btn-hero-start">무료로 가입하고 시작하기</button>
         <button class="btn px-6 py-4 text-sm font-black border-4 border-white rounded-2xl bg-clay-sand dark:bg-[#131824] hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 transition-all cursor-pointer shadow-clay-flat-lg hover:shadow-clay-flat hover:translate-x-1 hover:translate-y-1" id="btn-hero-login">기존 회원 로그인</button>
-        <button class="btn px-6 py-4 text-sm font-black border-4 border-white rounded-2xl bg-white hover:bg-slate-100 text-black shadow-clay-flat-lg hover:shadow-clay-flat hover:translate-x-1 hover:translate-y-1 transition-all cursor-pointer" onclick="document.getElementById('link-service-intro').click()">기능 둘러보기</button>
+        <a href="/docs" class="btn px-6 py-4 text-sm font-black border-4 border-white rounded-2xl bg-gradient-to-r from-clay-purple to-clay-sky hover:opacity-90 text-white shadow-clay-flat-lg hover:shadow-clay-flat hover:translate-x-1 hover:translate-y-1 transition-all cursor-pointer flex items-center gap-2">
+          <i data-lucide="file-text" class="w-5 h-5 text-white animate-pulse"></i>
+          <span>한글 공유/편집 공간 바로가기</span>
+        </a>
       </div>
       
       <div class="mt-4 text-slate-500 font-bold text-xs">kfcman.link SAAS VERSION 3.0</div>
@@ -2337,6 +2348,10 @@
       <a href="#classroom-section" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-classroom">
         <i data-lucide="award" class="w-5 h-5"></i>
         <span class="text-[9px] font-black">으쓱점수</span>
+      </a>
+      <a href="/docs" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-docs" style="display: none;">
+        <i data-lucide="file-text" class="w-5 h-5 text-clay-purple"></i>
+        <span class="text-[9px] font-black">한글공유</span>
       </a>
       <a href="#settings-section" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-settings">
         <i data-lucide="settings" class="w-5 h-5"></i>

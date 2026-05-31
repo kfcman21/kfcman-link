@@ -37,6 +37,7 @@ class Database {
       if (!this.cache.polls) this.cache.polls = {};
       if (!this.cache.classrooms) this.cache.classrooms = {};
       if (!this.cache.walls) this.cache.walls = {};
+      if (!this.cache.docs) this.cache.docs = {};
       
       // Initialize default notification settings if missing
       if (!this.cache.notificationSettings) {
@@ -62,6 +63,7 @@ class Database {
         polls: {},
         classrooms: {},
         walls: {},
+        docs: {},
         notificationSettings: {
           email: { enabled: false, host: 'smtp.gmail.com', port: 465, secure: true, user: '', pass: '', receiver: '' },
           webhook: { enabled: false, url: '' },
@@ -1100,6 +1102,116 @@ class Database {
       return true;
     }
     throw new Error('이 게시판을 삭제할 권한이 없습니다.');
+  }
+
+  // --- KFC MAN-DOCS MODULE (한글 문서 공유 및 편집) ---
+
+  async createDoc(title, content, creator, password = '', isPublic = true) {
+    if (!this.cache.docs) {
+      this.cache.docs = {};
+    }
+    const docId = crypto.randomBytes(8).toString('hex').toUpperCase(); // 16-character unique hex id
+
+    const newDoc = {
+      id: docId,
+      title: (title || '').trim() || '이름 없는 한글 문서',
+      content: content || '',
+      creator: creator ? creator.trim().toLowerCase() : 'system',
+      password: password ? password.trim() : '',
+      isPublic: !!isPublic,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      updatedBy: creator ? creator.trim().toLowerCase() : 'system',
+      history: [] // Simple history array
+    };
+
+    this.cache.docs[docId] = newDoc;
+    await this.save();
+    return newDoc;
+  }
+
+  async getDoc(docId) {
+    if (!this.cache.docs) {
+      this.cache.docs = {};
+    }
+    const cleanId = docId.trim().toUpperCase();
+    return this.cache.docs[cleanId] || null;
+  }
+
+  async updateDoc(docId, title, content, updatedBy) {
+    const doc = await this.getDoc(docId);
+    if (!doc) throw new Error('존재하지 않는 문서입니다.');
+
+    // Save current state to history before update
+    if (!doc.history) doc.history = [];
+    doc.history.push({
+      title: doc.title,
+      content: doc.content,
+      updatedBy: doc.updatedBy,
+      updatedAt: doc.updatedAt
+    });
+
+    // Keep history length reasonable
+    if (doc.history.length > 20) {
+      doc.history.shift();
+    }
+
+    doc.title = (title || '').trim() || '이름 없는 한글 문서';
+    doc.content = content || '';
+    doc.updatedAt = new Date().toISOString();
+    doc.updatedBy = updatedBy ? updatedBy.trim().toLowerCase() : 'system';
+
+    await this.save();
+    return doc;
+  }
+
+  async deleteDoc(docId, username) {
+    if (!this.cache.docs) {
+      this.cache.docs = {};
+    }
+    const cleanId = docId.trim().toUpperCase();
+    const doc = this.cache.docs[cleanId];
+    if (!doc) return false;
+
+    const cleanUser = String(username || '').toLowerCase();
+    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin';
+    const isCreator = doc.creator === cleanUser;
+
+    if (isCreator || isAdmin) {
+      delete this.cache.docs[cleanId];
+      await this.save();
+      return true;
+    }
+    throw new Error('이 문서를 삭제할 권한이 없습니다.');
+  }
+
+  getUserDocs(username) {
+    if (!this.cache.docs) {
+      this.cache.docs = {};
+    }
+    const cleanUser = String(username || '').toLowerCase();
+    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin';
+    const docsList = [];
+
+    for (const docId in this.cache.docs) {
+      const doc = this.cache.docs[docId];
+      if (isAdmin || doc.creator === cleanUser || doc.isPublic) {
+        // Return without password for listing safety
+        docsList.push({
+          id: doc.id,
+          title: doc.title,
+          creator: doc.creator,
+          isPublic: doc.isPublic,
+          hasPassword: !!doc.password,
+          createdAt: doc.createdAt,
+          updatedAt: doc.updatedAt,
+          updatedBy: doc.updatedBy
+        });
+      }
+    }
+
+    // Sort by updatedAt descending
+    return docsList.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
   }
 }
 

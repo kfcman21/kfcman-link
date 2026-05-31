@@ -1681,6 +1681,136 @@ app.get('/wall/:id', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'wall.html'));
 });
 
+// KFC MAN-DOCS APIs
+app.get('/api/docs', optionalAuthenticate, async (req, res) => {
+  try {
+    const list = db.getUserDocs(req.username);
+    return res.status(200).json({ docs: list });
+  } catch (err) {
+    console.error('Error fetching docs:', err);
+    return res.status(500).json({ error: '문서 목록 조회에 실패했습니다.' });
+  }
+});
+
+app.post('/api/docs', authenticate, async (req, res) => {
+  const { title, content, password, isPublic } = req.body;
+  try {
+    const userDocs = db.getUserDocs(req.username);
+    const userRole = req.role || 'user';
+    if (userRole === 'user' && userDocs.filter(d => d.creator === req.username.toLowerCase()).length >= 10) {
+      return res.status(403).json({ error: '일반회원은 문서를 최대 10개까지만 생성할 수 있습니다. 무제한 생성을 원하시면 우수회원으로 등급업해 주세요.' });
+    }
+
+    const doc = await db.createDoc(title, content, req.username, password, isPublic);
+    return res.status(201).json(doc);
+  } catch (err) {
+    console.error('Error creating doc:', err);
+    return res.status(500).json({ error: '문서 생성 도중 오류가 발생했습니다.' });
+  }
+});
+
+app.get('/api/docs/:id', optionalAuthenticate, async (req, res) => {
+  const docId = req.params.id.trim().toUpperCase();
+  try {
+    const doc = await db.getDoc(docId);
+    if (!doc) {
+      return res.status(404).json({ error: '존재하지 않는 문서입니다.' });
+    }
+
+    const cleanUser = req.username ? req.username.trim().toLowerCase() : '';
+    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin';
+    const isCreator = doc.creator === cleanUser;
+
+    // Check password protection for private documents
+    if (doc.password && !isCreator && !isAdmin) {
+      const authHeader = req.headers['x-kfcman-doc-password'];
+      if (authHeader !== doc.password) {
+        return res.status(403).json({ error: 'PASSWORD_REQUIRED', hasPassword: true });
+      }
+    }
+
+    return res.status(200).json({
+      id: doc.id,
+      title: doc.title,
+      content: doc.content,
+      creator: doc.creator,
+      isPublic: doc.isPublic,
+      hasPassword: !!doc.password,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+      updatedBy: doc.updatedBy
+    });
+  } catch (err) {
+    console.error('Error fetching doc:', err);
+    return res.status(500).json({ error: '문서 조회 도중 오류가 발생했습니다.' });
+  }
+});
+
+app.post('/api/docs/:id/verify-password', async (req, res) => {
+  const docId = req.params.id.trim().toUpperCase();
+  const { password } = req.body;
+  try {
+    const doc = await db.getDoc(docId);
+    if (!doc) {
+      return res.status(404).json({ error: '존재하지 않는 문서입니다.' });
+    }
+    if (doc.password === password) {
+      return res.status(200).json({ success: true });
+    }
+    return res.status(401).json({ error: '비밀번호가 일치하지 않습니다.' });
+  } catch (err) {
+    return res.status(500).json({ error: '서버 오류' });
+  }
+});
+
+app.put('/api/docs/:id', optionalAuthenticate, async (req, res) => {
+  const docId = req.params.id.trim().toUpperCase();
+  const { title, content } = req.body;
+  try {
+    const doc = await db.getDoc(docId);
+    if (!doc) {
+      return res.status(404).json({ error: '존재하지 않는 문서입니다.' });
+    }
+
+    const cleanUser = req.username ? req.username.trim().toLowerCase() : '';
+    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin';
+    const isCreator = doc.creator === cleanUser;
+
+    if (!doc.isPublic && !isCreator && !isAdmin) {
+      return res.status(403).json({ error: '비공개 문서이며 편집 권한이 없습니다.' });
+    }
+
+    const updated = await db.updateDoc(docId, title, content, req.username || '익명 편집자');
+    return res.status(200).json(updated);
+  } catch (err) {
+    console.error('Error updating doc:', err);
+    return res.status(500).json({ error: err.message || '문서 저장 도중 오류가 발생했습니다.' });
+  }
+});
+
+app.delete('/api/docs/:id', authenticate, async (req, res) => {
+  const docId = req.params.id.trim().toUpperCase();
+  try {
+    const success = await db.deleteDoc(docId, req.username);
+    if (!success) {
+      return res.status(404).json({ error: '존재하지 않는 문서입니다.' });
+    }
+    return res.status(200).json({ message: '문서가 성공적으로 완전히 삭제되었습니다.' });
+  } catch (err) {
+    console.error('Error deleting doc:', err);
+    return res.status(500).json({ error: err.message || '문서 삭제 도중 오류가 발생했습니다.' });
+  }
+});
+
+// Dedicated HTML page routers for docs
+app.get('/docs', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'docs.html'));
+});
+
+app.get('/docs/:id', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'docs.html'));
+});
+
 // SPA fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
