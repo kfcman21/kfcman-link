@@ -134,6 +134,7 @@ function renderDocsGrid(docs) {
       <div class="absolute top-2 left-2 flex gap-1 z-10">
         ${doc.hasPassword ? '<span class="text-[8px] font-black px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-850 border border-amber-300 dark:bg-amber-950/50 dark:text-amber-400">🔒</span>' : ''}
         ${doc.isPublic ? '<span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400">공개</span>' : '<span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-400">비공개</span>'}
+        <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-400 flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span> 실시간 저장됨</span>
       </div>
 
       <!-- File Folder Main click wrapper -->
