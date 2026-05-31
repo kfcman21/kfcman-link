@@ -128,6 +128,7 @@ function renderDocsGrid(docs) {
       `;
     }
 
+    // File Folder Main click wrapper
     card.innerHTML = `
       <!-- Top Badges -->
       <div class="absolute top-2 left-2 flex gap-1 z-10">
@@ -136,7 +137,7 @@ function renderDocsGrid(docs) {
       </div>
 
       <!-- File Folder Main click wrapper -->
-      <div class="w-full flex-1 flex flex-col items-center justify-center cursor-pointer mt-4" onclick="${isHwp ? `handleRhwpLaunchClick('${doc.id}', event)` : `openDocEditor('${doc.id}')`}">
+      <div class="w-full flex-1 flex flex-col items-center justify-center cursor-pointer mt-4" onclick="${isHwp ? `triggerHwpDownloadDirect('${doc.id}', event)` : `openDocEditor('${doc.id}')`}">
         ${iconHtml}
         
         <h4 class="font-extrabold text-xs text-slate-800 dark:text-slate-200 line-clamp-2 w-full px-1 text-center mt-3 select-none leading-snug break-all" title="${escapeHtml(doc.title)}">
@@ -248,8 +249,7 @@ function handleHwpUpload(e) {
   const token = getTokenHelper();
   // Allow guest uploads with anonymous session fallback
   const cleanTitle = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
-  const isHwpx = /\.hwpx$/i.test(file.name);
-  const isHwp = /\.hwp$/i.test(file.name);
+  const isHwpOrHwpx = /\.hwpx$/i.test(file.name) || /\.hwp$/i.test(file.name);
   
   const reader = new FileReader();
   
@@ -260,65 +260,19 @@ function handleHwpUpload(e) {
     if (token) headers['x-kfcman-auth'] = token;
     
     let payload = {
-      title: cleanTitle,
+      title: file.name,
       isPublic: true
     };
     
-    if (isHwpx) {
-      showToast('info', 'HWPX 압축 구조를 클라이언트 사이드에서 즉시 해석 및 분석합니다...');
-      try {
-        const zip = await JSZip.loadAsync(evt.target.result); // Read as array buffer
-        const xmlFile = zip.file("Contents/section0.xml");
-        
-        let htmlContent = `<h2 style="text-align: center; font-weight: bold; margin-bottom: 24px;">${cleanTitle}</h2>`;
-        
-        if (xmlFile) {
-          const xmlText = await xmlFile.async("text");
-          const parser = new DOMParser();
-          const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-          
-          // Get all paragraphs
-          const paragraphs = xmlDoc.getElementsByTagName("hp:p");
-          if (paragraphs.length > 0) {
-            for (let i = 0; i < paragraphs.length; i++) {
-              const p = paragraphs[i];
-              let pText = "";
-              const texts = p.getElementsByTagName("hp:t");
-              for (let j = 0; j < texts.length; j++) {
-                pText += texts[j].textContent;
-              }
-              if (pText.trim()) {
-                htmlContent += `<p style="margin: 12px 0; line-height: 1.7; font-size: 15px; text-align: justify;">${escapeHtml(pText.trim())}</p>`;
-              }
-            }
-          } else {
-            // Fallback tags
-            const tags = xmlDoc.getElementsByTagName("p");
-            for (let i = 0; i < tags.length; i++) {
-              htmlContent += `<p style="margin: 12px 0; line-height: 1.7; font-size: 15px; text-align: justify;">${escapeHtml(tags[i].textContent.trim())}</p>`;
-            }
-          }
-        } else {
-          htmlContent += `<p style="color: red; font-weight: bold;">HWPX 파일 분석 오류: Contents/section0.xml을 찾을 수 없습니다.</p>`;
-        }
-        
-        payload.content = htmlContent;
-        payload.hasHwpData = false; 
-        
-      } catch (err) {
-        console.error("HWPX Parser error:", err);
-        showToast('error', 'HWPX 파서 기동 실패. 표준 업로드로 대체합니다.');
-        return;
-      }
-    } else if (isHwp) {
+    if (isHwpOrHwpx) {
       payload.title = file.name;
       payload.content = `<div class="p-6 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl text-center space-y-4 my-8">
         <div class="w-12 h-12 rounded-xl border border-violet-200 dark:border-violet-900 bg-violet-100 dark:bg-violet-950 text-clay-purple flex items-center justify-center mx-auto shadow-sm">
           <i data-lucide="file-text" class="w-6 h-6"></i>
         </div>
-        <h4 class="font-black text-sm text-slate-800 dark:text-white">한글 HWP 바이너리 문서 보관중</h4>
+        <h4 class="font-black text-sm text-slate-800 dark:text-white">실시간 동기화용 한글 HWP 문서</h4>
         <p class="text-[10px] text-slate-500 leading-normal max-w-xs mx-auto">
-          본 파일은 구형 바이너리 HWP 규격입니다. 온라인에서 공동 편집을 원하시면 현대식 <b>HWPX 규격</b>으로 저장하여 올려주시거나, 아래 <b>[새 HWP 버전 덮어쓰기 업로드]</b>로 텍스트/HTML 형식을 입혀 실시간 협업에 참여하세요!
+          본 문서는 내 PC 한글 프로그램과 웹 클라우드 보관함 간 실시간 파일 동기화를 진행하는 바이너리 한글 파일입니다.
         </p>
       </div>`;
       
@@ -326,6 +280,7 @@ function handleHwpUpload(e) {
       base64Reader.onload = async function(bEvt) {
         payload.hwpData = bEvt.target.result;
         payload.hwpName = file.name;
+        payload.hasHwpData = true;
         
         try {
           const res = await fetch('/api/docs', {
@@ -334,19 +289,18 @@ function handleHwpUpload(e) {
             body: JSON.stringify(payload)
           });
           if (res.ok) {
-            showToast('success', `${file.name} 구형 문서를 클라우드 보관함에 성공적으로 백업 완료했습니다!`);
+            showToast('success', `${file.name} 한글 문서를 클라우드 보관함에 성공적으로 동기화 업로드했습니다!`);
             loadExplorer();
+          } else {
+            const errData = await res.json();
+            showToast('error', errData.error || '업로드 실패');
           }
         } catch (err) {
           showToast('error', '업로드 실패');
         }
       };
       
-      const fileReaderForHwp = new FileReader();
-      fileReaderForHwp.onload = function(hEvt) {
-        base64Reader.readAsDataURL(file);
-      };
-      fileReaderForHwp.readAsArrayBuffer(file);
+      base64Reader.readAsDataURL(file);
       return;
     } else {
       const contentText = evt.target.result;
@@ -368,7 +322,7 @@ function handleHwpUpload(e) {
       });
       const data = await res.json();
       if (res.ok) {
-        showToast('success', `${file.name} 파일을 해석하여 실시간 공유 협업 한글 문서로 완벽하게 변환 및 로드했습니다!`);
+        showToast('success', `${file.name} 텍스트 파일을 변환 및 로드했습니다!`);
         openDocEditor(data.id);
       } else {
         showToast('error', data.error || '문서 생성 실패');
@@ -378,9 +332,7 @@ function handleHwpUpload(e) {
     }
   };
   
-  if (isHwpx) {
-    reader.readAsArrayBuffer(file);
-  } else if (isHwp) {
+  if (isHwpOrHwpx) {
     reader.readAsArrayBuffer(file);
   } else {
     reader.readAsText(file);
@@ -936,15 +888,17 @@ function triggerHwpDownload(docId, event) {
   showToast('success', '온라인 한글 웹에디터로 문서를 즉시 엽니다. (저장 팝업 없음)');
 }
 
+function triggerHwpDownloadDirect(docId, event) {
+  if (event) event.stopPropagation();
+  const token = getTokenHelper();
+  window.location.href = `/api/docs/${docId}/download?token=${token}`;
+  showToast('success', '클라우드 한글 바이너리 파일을 즉시 로컬로 내려받습니다.');
+}
+
 async function triggerHwpOverwrite(docId, event) {
   if (event) event.stopPropagation();
   
   const token = getTokenHelper();
-  if (!token) {
-    showToast('error', '로그인 후 문서를 업데이트할 수 있습니다.');
-    return;
-  }
-  
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = '.hwp,.hwpx';
@@ -958,14 +912,15 @@ async function triggerHwpOverwrite(docId, event) {
     const reader = new FileReader();
     reader.onload = async (evt) => {
       const base64Data = evt.target.result;
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) headers['x-kfcman-auth'] = token;
       
       try {
         const res = await fetch(`/api/docs/${docId}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-kfcman-auth': token
-          },
+          headers,
           body: JSON.stringify({
             title: file.name,
             hwpData: base64Data,
@@ -1001,6 +956,7 @@ async function triggerHwpOverwrite(docId, event) {
 }
 
 // Bind to window context
+window.triggerHwpDownloadDirect = triggerHwpDownloadDirect;
 window.triggerHwpDownload = triggerHwpDownload;
 window.triggerHwpOverwrite = triggerHwpOverwrite;
 window.handleRhwpLaunchClick = handleRhwpLaunchClick;
