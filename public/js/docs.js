@@ -136,7 +136,7 @@ function renderDocsGrid(docs) {
       </div>
 
       <!-- File Folder Main click wrapper -->
-      <div class="w-full flex-1 flex flex-col items-center justify-center cursor-pointer mt-4" onclick="${isHwp ? `handleRhwpLaunchClick('${doc.id}', event)` : `openDocEditor('${doc.id}')`}">
+      <div class="w-full flex-1 flex flex-col items-center justify-center cursor-pointer mt-4" onclick="${isHwp ? `triggerHwpDownload('${doc.id}', event)` : `openDocEditor('${doc.id}')`}">
         ${iconHtml}
         
         <h4 class="font-extrabold text-xs text-slate-800 dark:text-slate-200 line-clamp-2 w-full px-1 text-center mt-3 select-none leading-snug break-all" title="${escapeHtml(doc.title)}">
@@ -366,8 +366,9 @@ async function fetchAndLoadDoc() {
       
       // Bypass the WYSIWYG editor entirely for HWP documents
       if (data.hasHwpData) {
+        showToast('success', '오리지널 한글 HWP 문서를 다운로드/웹에디터로 엽니다.');
+        window.location.href = `/api/docs/${currentDocId}/download`;
         closeDocEditor();
-        handleRhwpLaunchClick(currentDocId);
         return;
       }
       
@@ -857,7 +858,8 @@ function closeRhwpGuidanceModal() {
   }, 300);
 }
 
-function triggerHwpDownload(docId) {
+function triggerHwpDownload(docId, event) {
+  if (event) event.stopPropagation();
   window.location.href = `/api/docs/${docId}/download`;
   showToast('success', '오리지널 한글 HWP 문서를 다운로드/웹에디터로 엽니다.');
 }
