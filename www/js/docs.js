@@ -105,15 +105,16 @@ function renderDocsGrid(docs) {
   docs.forEach(doc => {
     const dateStr = new Date(doc.updatedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', dateStyle: 'short', timeStyle: 'short' });
     const isOwner = doc.creator === (document.getElementById('docs-username').textContent.replace(' 👑', '').trim().toLowerCase());
+    const isHwp = doc.hasHwpData;
     
     const card = document.createElement('div');
     card.className = 'bg-white dark:bg-clay-cardDark border-4 border-white dark:border-white/5 rounded-3xl p-5 shadow-clay-flat hover:shadow-clay-flat-lg clay-card text-left flex flex-col justify-between h-56 relative overflow-hidden';
     
     card.innerHTML = `
-      <div class="space-y-2 cursor-pointer" onclick="openDocEditor('${doc.id}')">
+      <div class="space-y-2 cursor-pointer" onclick="${isHwp ? `triggerHwpDownload('${doc.id}')` : `openDocEditor('${doc.id}')`}">
         <div class="flex justify-between items-start">
           <div class="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-950 text-clay-purple border border-violet-200 dark:border-violet-900 flex items-center justify-center">
-            <i data-lucide="file-text" class="w-5 h-5"></i>
+            <i data-lucide="${isHwp ? 'file-text' : 'file-edit'}" class="w-5 h-5"></i>
           </div>
           <div class="flex gap-1">
             ${doc.hasPassword ? '<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-950/50 dark:text-amber-400">🔒 비밀</span>' : ''}
@@ -122,10 +123,10 @@ function renderDocsGrid(docs) {
         </div>
         <h4 class="font-black text-sm text-slate-900 dark:text-white line-clamp-1 truncate mt-2">${escapeHtml(doc.title)}</h4>
         <p class="text-[10px] text-slate-400 dark:text-slate-500">작성: @${doc.creator} | 변경: ${dateStr}</p>
-        ${doc.hasHwpData ? `
-          <button onclick="handleRhwpLaunchClick('${doc.id}', event)" class="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white border-2 border-emerald-450 dark:border-emerald-900 rounded-lg font-black text-[10px] shadow-sm flex items-center justify-center gap-1 mt-2.5 transition-all w-full cursor-pointer">
-            <i data-lucide="external-link" class="w-3.5 h-3.5 text-white"></i><span class="text-white font-bold">rhwp 웹에디터로 편집</span>
-          </button>
+        ${isHwp ? `
+          <span class="inline-flex items-center gap-1.5 text-[9px] font-black text-emerald-600 dark:text-emerald-400 mt-2 bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-1 rounded-lg">
+            <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i><span>원본 HWP 보관중 (클릭 시 열기)</span>
+          </span>
         ` : ''}
       </div>
       
@@ -286,8 +287,12 @@ function handleHwpUpload(e) {
       });
       const data = await res.json();
       if (res.ok) {
-        showToast('success', `${file.name} 파일을 파싱/업로드하여 실시간 협업 클라우드 문서로 성공적으로 로드했습니다!`);
-        openDocEditor(data.id);
+        showToast('success', `${file.name} 원본 파일이 안전하게 보관 및 저장되었습니다!`);
+        if (isBinaryHwp) {
+          loadExplorer();
+        } else {
+          openDocEditor(data.id);
+        }
       } else {
         showToast('error', data.error || '업로드 문서 처리 실패');
       }
@@ -335,6 +340,14 @@ async function fetchAndLoadDoc() {
     if (res.ok) {
       currentDocData = data;
       hidePasswordModal();
+      
+      // Bypass the WYSIWYG editor entirely for HWP documents
+      if (data.hasHwpData) {
+        showToast('success', '오리지널 한글 HWP 문서를 다운로드/웹에디터로 엽니다.');
+        window.location.href = `/api/docs/${currentDocId}/download`;
+        closeDocEditor();
+        return;
+      }
       
       // Load title and content
       document.getElementById('doc-title-input').value = data.title;
@@ -822,7 +835,13 @@ function closeRhwpGuidanceModal() {
   }, 300);
 }
 
+function triggerHwpDownload(docId) {
+  window.location.href = `/api/docs/${docId}/download`;
+  showToast('success', '오리지널 한글 HWP 문서를 다운로드/웹에디터로 엽니다.');
+}
+
 // Bind to window context
+window.triggerHwpDownload = triggerHwpDownload;
 window.handleRhwpLaunchClick = handleRhwpLaunchClick;
 window.showRhwpGuidanceModal = showRhwpGuidanceModal;
 window.closeRhwpGuidanceModal = closeRhwpGuidanceModal;
