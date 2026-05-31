@@ -379,7 +379,7 @@ async function fetchAndLoadDoc() {
         if (hwpIframe) {
           hwpIframe.classList.remove('hidden');
           const token = getTokenHelper();
-          hwpIframe.src = `https://edwardkim.github.io/rhwp/?file=${encodeURIComponent(window.location.origin + '/api/docs/' + currentDocId + '/download?token=' + token)}`;
+          hwpIframe.src = `chrome-extension://pgakpjflombjmehnebnbpnalhegaanag/viewer.html?file=${encodeURIComponent(window.location.origin + '/api/docs/' + currentDocId + '/download?token=' + token)}`;
         }
       } else {
         // Standard Text Editor layout
