@@ -1701,16 +1701,17 @@ app.get('/api/docs', optionalAuthenticate, async (req, res) => {
   }
 });
 
-app.post('/api/docs', authenticate, async (req, res) => {
+app.post('/api/docs', optionalAuthenticate, async (req, res) => {
   const { title, content, password, isPublic, hwpData, hwpName } = req.body;
   try {
-    const userDocs = db.getUserDocs(req.username);
-    const userRole = req.role || 'user';
-    if (userRole === 'user' && userDocs.filter(d => d.creator === req.username.toLowerCase()).length >= 10) {
+    const creatorName = req.username || 'guest';
+    const userDocs = db.getUserDocs(creatorName);
+    const userRole = req.role || 'guest';
+    if (userRole === 'user' && userDocs.filter(d => d.creator === creatorName.toLowerCase()).length >= 10) {
       return res.status(403).json({ error: '일반회원은 문서를 최대 10개까지만 생성할 수 있습니다. 무제한 생성을 원하시면 우수회원으로 등급업해 주세요.' });
     }
 
-    const doc = await db.createDoc(title, content, req.username, password, isPublic, hwpData, hwpName);
+    const doc = await db.createDoc(title, content, creatorName, password, isPublic, hwpData, hwpName);
     return res.status(201).json(doc);
   } catch (err) {
     console.error('Error creating doc:', err);

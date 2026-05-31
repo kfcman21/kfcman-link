@@ -204,20 +204,15 @@ function closeCreateDocModal() {
 async function handleCreateDocSubmit(e) {
   e.preventDefault();
   const token = getTokenHelper();
-  if (!token) {
-    showToast('error', '로그인 후 문서를 생성할 수 있습니다. 메인 화면에서 로그인해 주세요.');
-    closeCreateDocModal();
-    return;
-  }
   
   const title = document.getElementById('new-doc-title').value.trim();
   const isPublic = document.querySelector('input[name="new-doc-public"]:checked').value === 'true';
   const password = document.getElementById('new-doc-password').value.trim();
   
   const headers = {
-    'Content-Type': 'application/json',
-    'x-kfcman-auth': token
+    'Content-Type': 'application/json'
   };
+  if (token) headers['x-kfcman-auth'] = token;
   
   try {
     const res = await fetch('/api/docs', {
@@ -251,11 +246,7 @@ function handleHwpUpload(e) {
   if (!file) return;
   
   const token = getTokenHelper();
-  if (!token) {
-    showToast('error', '로그인 후 한글 파일을 업로드할 수 있습니다.');
-    return;
-  }
-  
+  // Allow guest uploads with anonymous session fallback
   const cleanTitle = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
   const isHwpx = /\.hwpx$/i.test(file.name);
   const isHwp = /\.hwp$/i.test(file.name);
@@ -264,9 +255,9 @@ function handleHwpUpload(e) {
   
   reader.onload = async function(evt) {
     const headers = {
-      'Content-Type': 'application/json',
-      'x-kfcman-auth': token
+      'Content-Type': 'application/json'
     };
+    if (token) headers['x-kfcman-auth'] = token;
     
     let payload = {
       title: cleanTitle,
