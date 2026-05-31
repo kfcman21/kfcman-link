@@ -256,37 +256,108 @@ function handleHwpUpload(e) {
     return;
   }
   
-  const isBinaryHwp = /\.(hwp|hwpx)$/i.test(file.name);
+  const cleanTitle = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+  const isHwpx = /\.hwpx$/i.test(file.name);
+  const isHwp = /\.hwp$/i.test(file.name);
+  
   const reader = new FileReader();
   
   reader.onload = async function(evt) {
-    const cleanTitle = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
     const headers = {
       'Content-Type': 'application/json',
       'x-kfcman-auth': token
     };
     
-    let payload = {};
+    let payload = {
+      title: cleanTitle,
+      isPublic: true
+    };
     
-    if (isBinaryHwp) {
-      // HWP/HWPX Binary payload
-      payload = {
-        title: file.name,
-        content: `<div class="p-6 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl text-center space-y-4 my-8">
-          <div class="w-12 h-12 rounded-xl border border-violet-200 dark:border-violet-900 bg-violet-100 dark:bg-violet-950 text-clay-purple flex items-center justify-center mx-auto shadow-sm">
-            <i data-lucide="file-text" class="w-6 h-6"></i>
-          </div>
-          <h4 class="font-black text-sm text-slate-800 dark:text-white">원본 한글 HWP 바이너리 문서</h4>
-          <p class="text-[10px] text-slate-500 leading-normal max-w-xs mx-auto">
-            본 문서는 원본 한글 HWP/HWPX 규격 파일입니다. 상단의 <b>[rhwp 웹에디터로 편집]</b> 단추를 누르면 브라우저의 rhwp 확장 프로그램을 통해 깨짐 없이 즉시 열람 및 수정이 가능합니다!
-          </p>
-        </div>`,
-        hwpData: evt.target.result, // Base64 data URL
-        hwpName: file.name,
-        isPublic: true
+    if (isHwpx) {
+      showToast('info', 'HWPX 압축 구조를 클라이언트 사이드에서 즉시 해석 및 분석합니다...');
+      try {
+        const zip = await JSZip.loadAsync(evt.target.result); // Read as array buffer
+        const xmlFile = zip.file("Contents/section0.xml");
+        
+        let htmlContent = `<h2 style="text-align: center; font-weight: bold; margin-bottom: 24px;">${cleanTitle}</h2>`;
+        
+        if (xmlFile) {
+          const xmlText = await xmlFile.async("text");
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+          
+          // Get all paragraphs
+          const paragraphs = xmlDoc.getElementsByTagName("hp:p");
+          if (paragraphs.length > 0) {
+            for (let i = 0; i < paragraphs.length; i++) {
+              const p = paragraphs[i];
+              let pText = "";
+              const texts = p.getElementsByTagName("hp:t");
+              for (let j = 0; j < texts.length; j++) {
+                pText += texts[j].textContent;
+              }
+              if (pText.trim()) {
+                htmlContent += `<p style="margin: 12px 0; line-height: 1.7; font-size: 15px; text-align: justify;">${escapeHtml(pText.trim())}</p>`;
+              }
+            }
+          } else {
+            // Fallback tags
+            const tags = xmlDoc.getElementsByTagName("p");
+            for (let i = 0; i < tags.length; i++) {
+              htmlContent += `<p style="margin: 12px 0; line-height: 1.7; font-size: 15px; text-align: justify;">${escapeHtml(tags[i].textContent.trim())}</p>`;
+            }
+          }
+        } else {
+          htmlContent += `<p style="color: red; font-weight: bold;">HWPX 파일 분석 오류: Contents/section0.xml을 찾을 수 없습니다.</p>`;
+        }
+        
+        payload.content = htmlContent;
+        payload.hasHwpData = false; 
+        
+      } catch (err) {
+        console.error("HWPX Parser error:", err);
+        showToast('error', 'HWPX 파서 기동 실패. 표준 업로드로 대체합니다.');
+        return;
+      }
+    } else if (isHwp) {
+      payload.title = file.name;
+      payload.content = `<div class="p-6 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl text-center space-y-4 my-8">
+        <div class="w-12 h-12 rounded-xl border border-violet-200 dark:border-violet-900 bg-violet-100 dark:bg-violet-950 text-clay-purple flex items-center justify-center mx-auto shadow-sm">
+          <i data-lucide="file-text" class="w-6 h-6"></i>
+        </div>
+        <h4 class="font-black text-sm text-slate-800 dark:text-white">한글 HWP 바이너리 문서 보관중</h4>
+        <p class="text-[10px] text-slate-500 leading-normal max-w-xs mx-auto">
+          본 파일은 구형 바이너리 HWP 규격입니다. 온라인에서 공동 편집을 원하시면 현대식 <b>HWPX 규격</b>으로 저장하여 올려주시거나, 아래 <b>[새 HWP 버전 덮어쓰기 업로드]</b>로 텍스트/HTML 형식을 입혀 실시간 협업에 참여하세요!
+        </p>
+      </div>`;
+      
+      const base64Reader = new FileReader();
+      base64Reader.onload = async function(bEvt) {
+        payload.hwpData = bEvt.target.result;
+        payload.hwpName = file.name;
+        
+        try {
+          const res = await fetch('/api/docs', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload)
+          });
+          if (res.ok) {
+            showToast('success', `${file.name} 구형 문서를 클라우드 보관함에 성공적으로 백업 완료했습니다!`);
+            loadExplorer();
+          }
+        } catch (err) {
+          showToast('error', '업로드 실패');
+        }
       };
+      
+      const fileReaderForHwp = new FileReader();
+      fileReaderForHwp.onload = function(hEvt) {
+        base64Reader.readAsDataURL(file);
+      };
+      fileReaderForHwp.readAsArrayBuffer(file);
+      return;
     } else {
-      // Plain TXT parser
       const contentText = evt.target.result;
       let htmlContent = `<h2 style="text-align: center; font-weight: bold; margin-bottom: 24px;">${cleanTitle}</h2>`;
       const paragraphs = contentText.split(/\r?\n/);
@@ -295,11 +366,7 @@ function handleHwpUpload(e) {
           htmlContent += `<p>${escapeHtml(p.trim())}</p>`;
         }
       });
-      payload = {
-        title: cleanTitle,
-        content: htmlContent,
-        isPublic: true
-      };
+      payload.content = htmlContent;
     }
     
     try {
@@ -310,22 +377,20 @@ function handleHwpUpload(e) {
       });
       const data = await res.json();
       if (res.ok) {
-        showToast('success', `${file.name} 원본 파일이 안전하게 보관 및 저장되었습니다!`);
-        if (isBinaryHwp) {
-          loadExplorer();
-        } else {
-          openDocEditor(data.id);
-        }
+        showToast('success', `${file.name} 파일을 해석하여 실시간 공유 협업 한글 문서로 완벽하게 변환 및 로드했습니다!`);
+        openDocEditor(data.id);
       } else {
-        showToast('error', data.error || '업로드 문서 처리 실패');
+        showToast('error', data.error || '문서 생성 실패');
       }
     } catch (err) {
-      showToast('error', '파일 업로드 처리 도중 오류가 발생했습니다.');
+      showToast('error', '문서 등록 도중 오류가 발생했습니다.');
     }
   };
   
-  if (isBinaryHwp) {
-    reader.readAsDataURL(file);
+  if (isHwpx) {
+    reader.readAsArrayBuffer(file);
+  } else if (isHwp) {
+    reader.readAsArrayBuffer(file);
   } else {
     reader.readAsText(file);
   }
