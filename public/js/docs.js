@@ -136,7 +136,7 @@ function renderDocsGrid(docs) {
       </div>
 
       <!-- File Folder Main click wrapper -->
-      <div class="w-full flex-1 flex flex-col items-center justify-center cursor-pointer mt-4" onclick="${isHwp ? `triggerHwpDownload('${doc.id}', event)` : `openDocEditor('${doc.id}')`}">
+      <div class="w-full flex-1 flex flex-col items-center justify-center cursor-pointer mt-4" onclick="${isHwp ? `handleRhwpLaunchClick('${doc.id}', event)` : `openDocEditor('${doc.id}')`}">
         ${iconHtml}
         
         <h4 class="font-extrabold text-xs text-slate-800 dark:text-slate-200 line-clamp-2 w-full px-1 text-center mt-3 select-none leading-snug break-all" title="${escapeHtml(doc.title)}">
@@ -366,9 +366,8 @@ async function fetchAndLoadDoc() {
       
       // Bypass the WYSIWYG editor entirely for HWP documents
       if (data.hasHwpData) {
-        const onlineEditorUrl = `https://edwardkim.github.io/rhwp/?file=${encodeURIComponent(window.location.origin + '/api/docs/' + currentDocId + '/download')}`;
-        window.open(onlineEditorUrl, '_blank');
         closeDocEditor();
+        handleRhwpLaunchClick(currentDocId);
         return;
       }
       
