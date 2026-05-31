@@ -206,6 +206,37 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         
+        // Hide/Show Eusseuk settings tab based on role (Restricted to VIP, Manager, Admin)
+        const btnSettingsSubtabClassroom = document.getElementById('btn-settings-subtab-classroom');
+        if (btnSettingsSubtabClassroom) {
+          if (data.role === 'vip' || data.role === 'manager' || data.role === 'admin') {
+            btnSettingsSubtabClassroom.classList.remove('hidden');
+          } else {
+            btnSettingsSubtabClassroom.classList.add('hidden');
+          }
+        }
+        
+        // Hide/Show Wall board nav item based on user role (Restricted to VIP, Manager, Admin)
+        const navItemWall = document.getElementById('nav-item-wall');
+        if (navItemWall) {
+          if (data.role === 'vip' || data.role === 'manager' || data.role === 'admin') {
+            navItemWall.style.display = 'flex';
+          } else {
+            navItemWall.style.display = 'none';
+          }
+        }
+
+        // Hide/Show settings navigation items based on user role (Hide completely for general 'user')
+        const navItemSettings = document.getElementById('nav-item-settings');
+        const mNavSettings = document.getElementById('mobile-nav-settings');
+        if (data.role === 'user') {
+          if (navItemSettings) navItemSettings.style.display = 'none';
+          if (mNavSettings) mNavSettings.style.display = 'none';
+        } else {
+          if (navItemSettings) navItemSettings.style.display = 'flex';
+          if (mNavSettings) mNavSettings.style.display = 'flex';
+        }
+
         renderDashboard();
 
         // 쏙점수 학급 데이터 조회
@@ -389,6 +420,29 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await response.json();
 
       if (!response.ok) {
+        // Special case: Suspended account for inactivity
+        if (response.status === 403 && data.status === 'suspended') {
+          if (confirm('장기 미사용(30일 이상)으로 계정이 정지되었습니다.\n관리자에게 계정 활성화(정지 해제) 요청 메시지를 보내시겠습니까?')) {
+            try {
+              const reqActRes = await fetch('/api/request-reactivate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: data.username })
+              });
+              const actData = await reqActRes.json();
+              if (reqActRes.ok) {
+                showToast('요청 전송 완료', actData.message, 'success');
+              } else {
+                showToast('요청 전송 실패', actData.error, 'error');
+              }
+            } catch (err) {
+              showToast('서버 네트워크 오류', '계정 정지 해제 요청 발송 중 문제가 발생했습니다.', 'error');
+            }
+          }
+          loginSubmitBtn.disabled = false;
+          btnSpan.textContent = '로그인';
+          return;
+        }
         throw new Error(data.error || '로그인에 실패했습니다.');
       }
 
@@ -1669,6 +1723,11 @@ document.addEventListener('DOMContentLoaded', () => {
       tabId = 'shortener';
       return;
     }
+    if (tabId === 'settings' && currentUserRole === 'user') {
+      showToast('접근 제한 🔒', '통합 설정 제어판 기능은 \'우수회원👑\' 등급 이상만 접근할 수 있습니다.', 'warning');
+      tabId = 'shortener';
+      return;
+    }
 
     const shortenerSec = document.getElementById('shortener-section');
     const dashSec = document.getElementById('dashboard-section');
@@ -1759,20 +1818,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const subviewAdmin = document.getElementById('settings-subview-admin');
     const subviewShortcut = document.getElementById('settings-subview-shortcut');
     const subviewClassroom = document.getElementById('settings-subview-classroom');
-    const subviewFontsize = document.getElementById('settings-subview-fontsize');
 
     const btnSubtabAdmin = document.getElementById('btn-settings-subtab-admin');
     const btnSubtabShortcut = document.getElementById('btn-settings-subtab-shortcut');
     const btnSubtabClassroom = document.getElementById('btn-settings-subtab-classroom');
-    const btnSubtabFontsizeTop = document.getElementById('btn-settings-subtab-fontsize');
 
     // Hide all
-    [subviewAdmin, subviewShortcut, subviewClassroom, subviewFontsize].forEach(el => {
+    [subviewAdmin, subviewShortcut, subviewClassroom].forEach(el => {
       if (el) el.classList.add('hidden');
     });
 
     // Remove active styles
-    [btnSubtabAdmin, btnSubtabShortcut, btnSubtabClassroom, btnSubtabFontsizeTop].forEach(btn => {
+    [btnSubtabAdmin, btnSubtabShortcut, btnSubtabClassroom].forEach(btn => {
       if (btn) {
         btn.classList.remove('active', 'bg-clay-purple', 'text-white');
         btn.classList.add('bg-clay-sand', 'text-slate-800');
@@ -1794,7 +1851,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSubtabShortcut.classList.add('active', 'bg-clay-purple', 'text-white');
         btnSubtabShortcut.classList.remove('bg-clay-sand', 'text-slate-800');
       }
-    } else if (subTabId === 'classroom') {
+    } else if (subTabId === 'classroom' || subTabId === 'fontsize') {
       if (subviewClassroom) subviewClassroom.classList.remove('hidden');
       const classroomSettingsSection = document.getElementById('classroom-settings-section');
       if (classroomSettingsSection) classroomSettingsSection.classList.remove('hidden');
@@ -1803,15 +1860,8 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSubtabClassroom.classList.remove('bg-clay-sand', 'text-slate-800');
       }
       if (window.switchSettingsSubtab) {
-        window.switchSettingsSubtab('privacy');
+        window.switchSettingsSubtab(subTabId === 'fontsize' ? 'fontsize' : 'privacy');
       }
-    } else if (subTabId === 'fontsize') {
-      if (subviewFontsize) subviewFontsize.classList.remove('hidden');
-      if (btnSubtabFontsizeTop) {
-        btnSubtabFontsizeTop.classList.add('active', 'bg-clay-purple', 'text-white');
-        btnSubtabFontsizeTop.classList.remove('bg-clay-sand', 'text-slate-800');
-      }
-      initFontSizePanel();
     }
 
     lucide.createIcons();
@@ -3347,8 +3397,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const btnSubtabPrivacy = document.getElementById('btn-subtab-privacy');
   const btnSubtabRules = document.getElementById('btn-subtab-rules');
+  const btnSubtabFontsize = document.getElementById('btn-subtab-fontsize');
   const settingsPrivacyCard = document.getElementById('settings-privacy-card');
   const settingsRulesCard = document.getElementById('settings-rules-card');
+  const settingsFontsizeCard = document.getElementById('settings-fontsize-card');
 
   const chkNamePrivacy = document.getElementById('chk-name-privacy');
   const privacyStatusLabel = document.getElementById('privacy-status-label');
@@ -4040,17 +4092,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Bind Settings Subtabs switcher (privacy & rules only - fontsize moved to top-level)
+  // Bind Settings Subtabs switcher (privacy, rules, and fontsize inside eusseuk settings)
   window.switchSettingsSubtab = function(subtab) {
     currentSettingsSubtab = subtab;
-    [btnSubtabPrivacy, btnSubtabRules].forEach(btn => {
+    [btnSubtabPrivacy, btnSubtabRules, btnSubtabFontsize].forEach(btn => {
       if (btn) {
         btn.classList.remove('active', 'bg-clay-purple', 'text-white');
         btn.classList.add('bg-clay-sand', 'text-slate-800');
       }
     });
 
-    [settingsPrivacyCard, settingsRulesCard].forEach(card => {
+    [settingsPrivacyCard, settingsRulesCard, settingsFontsizeCard].forEach(card => {
       if (card) card.classList.add('hidden');
     });
 
@@ -4066,11 +4118,19 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSubtabRules.classList.remove('bg-clay-sand', 'text-slate-800');
       }
       if (settingsRulesCard) settingsRulesCard.classList.remove('hidden');
+    } else if (subtab === 'fontsize') {
+      if (btnSubtabFontsize) {
+        btnSubtabFontsize.classList.add('active', 'bg-clay-purple', 'text-white');
+        btnSubtabFontsize.classList.remove('bg-clay-sand', 'text-slate-800');
+      }
+      if (settingsFontsizeCard) settingsFontsizeCard.classList.remove('hidden');
+      initFontSizePanel();
     }
   };
 
   if (btnSubtabPrivacy) btnSubtabPrivacy.addEventListener('click', () => switchSettingsSubtab('privacy'));
   if (btnSubtabRules) btnSubtabRules.addEventListener('click', () => switchSettingsSubtab('rules'));
+  if (btnSubtabFontsize) btnSubtabFontsize.addEventListener('click', () => switchSettingsSubtab('fontsize'));
 
   // Reset Classroom Scores
   const btnResetClassroomScores = document.getElementById('btn-reset-classroom-scores');
@@ -4232,9 +4292,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Top-level fontsize tab
-  const btnSettingsTabFontsize = document.getElementById('btn-settings-subtab-fontsize');
-  if (btnSettingsTabFontsize) btnSettingsTabFontsize.addEventListener('click', () => switchSettingsSubTab('fontsize'));
+
 
   // Font / Size Panel initializer
   function initFontSizePanel() {

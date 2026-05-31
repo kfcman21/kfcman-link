@@ -982,7 +982,7 @@ class Database {
     return true;
   }
 
-  async addWallCard(wallId, author, title, content, bgColor, image, previewUrl, previewTitle, previewDesc, previewImage, isNotice, sectionId) {
+  async addWallCard(wallId, author, title, content, bgColor, image, previewUrl, previewTitle, previewDesc, previewImage, isNotice, sectionId, attachmentName, attachmentData) {
     const wall = await this.getWall(wallId);
     if (!wall) throw new Error('존재하지 않는 게시판입니다.');
 
@@ -1002,6 +1002,8 @@ class Database {
       comments: [],
       isNotice: !!isNotice,
       sectionId: sectionId || '',
+      attachmentName: attachmentName || '',
+      attachmentData: attachmentData || '',
       createdAt: new Date().toISOString()
     };
 

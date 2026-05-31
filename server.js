@@ -1400,7 +1400,7 @@ app.get('/api/wall/:id', async (req, res) => {
 app.post('/api/wall/:id/cards', optionalAuthenticate, async (req, res) => {
   try {
     const wallId = req.params.id.trim().toUpperCase();
-    const { author, title, content, bgColor, image, previewUrl, previewTitle, previewDesc, previewImage, isNotice, sectionId } = req.body;
+    const { author, title, content, bgColor, image, previewUrl, previewTitle, previewDesc, previewImage, isNotice, sectionId, attachmentName, attachmentData } = req.body;
 
     if (containsProfanity(author) || containsProfanity(title) || containsProfanity(content)) {
       return res.status(400).json({ error: '부적절한 표현(욕설, 비하, 성적 표현 등)이 감지되어 등록할 수 없습니다. 서로 배려하는 예쁜 언어를 사용해 주세요! 🌸' });
@@ -1421,7 +1421,7 @@ app.post('/api/wall/:id/cards', optionalAuthenticate, async (req, res) => {
       }
     }
 
-    const card = await db.addWallCard(wallId, author, title, content, bgColor, image, previewUrl, previewTitle, previewDesc, previewImage, isNotice, sectionId);
+    const card = await db.addWallCard(wallId, author, title, content, bgColor, image, previewUrl, previewTitle, previewDesc, previewImage, isNotice, sectionId, attachmentName, attachmentData);
     
     // Broadcast change to all clients
     broadcastWallUpdate(wallId);

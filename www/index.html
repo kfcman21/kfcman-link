@@ -460,6 +460,9 @@
           <a href="#classroom-section" class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center justify-center cursor-pointer" id="nav-item-classroom" title="으쓱점수 학급 대시보드">
             <i data-lucide="award" class="w-5 h-5"></i>
           </a>
+          <a href="/wall" class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center justify-center cursor-pointer" id="nav-item-wall" title="실시간 협업 게시판 kfcman-wall" style="display: none;">
+            <i data-lucide="layout-grid" class="w-5 h-5"></i>
+          </a>
           <a href="#settings-section" class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center justify-center cursor-pointer" id="nav-item-settings" title="통합 설정 및 관리 패널">
             <i data-lucide="settings" class="w-5 h-5"></i>
           </a>
@@ -1306,9 +1309,6 @@
           <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat active" id="btn-settings-subtab-classroom">
             <i data-lucide="award" class="w-4 h-4 inline-block mr-1"></i> 으쓱점수 설정
           </button>
-          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-settings-subtab-fontsize">
-            <i data-lucide="type" class="w-4 h-4 inline-block mr-1"></i> 폰트 / 글자크기
-          </button>
         </div>
 
         <!-- Settings Cards Container -->
@@ -1629,7 +1629,7 @@
               <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-purple text-white flex items-center justify-center shadow-clay-flat"><i data-lucide="settings" class="w-5 h-5"></i></span>
               <span class="bg-gradient-to-r from-clay-purple via-clay-sky to-clay-mint text-transparent bg-clip-text">학급 설정 제어판</span>
             </h2>
-            <p class="text-xs font-bold text-slate-500 mt-2">학급 운영 규칙, 개인정보 보호 및 폰트 크기를 설정합니다.</p>
+            <p class="text-xs font-bold text-slate-500 mt-2">학급 운영 규칙, 개인정보 보호 및 폰트 종류를 설정합니다.</p>
           </div>
 
           <!-- Settings Subtabs -->
@@ -1639,6 +1639,9 @@
             </button>
             <button type="button" class="px-3.5 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-subtab-rules">
               <i data-lucide="sliders" class="w-4 h-4 inline-block mr-1"></i> 점수 환산 규칙
+            </button>
+            <button type="button" class="px-3.5 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-subtab-fontsize">
+              <i data-lucide="type" class="w-4 h-4 inline-block mr-1"></i> T 폰트 변경
             </button>
           </div>
 
@@ -1783,74 +1786,31 @@
         </div>
       </div>
 
-          <!-- SUB-TAB VIEW 4: Font & Size Settings (Top-level) -->
-          <div class="space-y-6 hidden" id="settings-subview-fontsize">
-            <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat clay-card space-y-5 text-left">
-              <div class="flex items-center gap-2 mb-1">
-                <span class="w-8 h-8 rounded-xl bg-clay-sky/10 border border-clay-sky/20 flex items-center justify-center"><i data-lucide="type" class="w-4 h-4 text-clay-sky"></i></span>
-                <div>
-                  <h4 class="text-sm font-black text-slate-900 dark:text-white">전체 폰트</h4>
-                  <p class="text-[10px] text-slate-400">앱 전체에 적용할 무료 한글 웹폰트를 선택하세요.</p>
+            <!-- 3. settings-fontsize-card (Moved inside eusseuk settings container - only Noto/Google Fonts change) -->
+            <div id="settings-fontsize-card" class="space-y-6 hidden">
+              <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat clay-card space-y-5 text-left">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="w-8 h-8 rounded-xl bg-clay-sky/10 border border-clay-sky/20 flex items-center justify-center"><i data-lucide="type" class="w-4 h-4 text-clay-sky"></i></span>
+                  <div>
+                    <h4 class="text-sm font-black text-slate-900 dark:text-white">학급 전용 웹 폰트 변경</h4>
+                    <p class="text-[10px] text-slate-400">앱 및 게시판 전체에 적용할 실시간 웹 폰트를 아래 목록에서 선택하세요.</p>
+                  </div>
                 </div>
+                <select id="font-selector" class="w-full max-w-xs bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 dark:text-white shadow-clay-flat cursor-pointer">
+                  <option value="'Noto Sans KR', sans-serif">노토 산스 (기본) · 가나다 ABC</option>
+                  <option value="'Nanum Gothic', sans-serif">나눔고딕 · 가나다 ABC</option>
+                  <option value="'Nanum Myeongjo', serif">나눔명조 · 가나다 ABC</option>
+                  <option value="'Gowun Dodum', sans-serif">고운 돋움 · 가나다 ABC</option>
+                  <option value="'Gowun Batang', serif">고운 바탕 · 가나다 ABC</option>
+                  <option value="'Jua', sans-serif">주아 · 가나다 ABC</option>
+                  <option value="'Single Day', cursive">싱글데이 · 가나다 ABC</option>
+                </select>
               </div>
-              <select id="font-selector" class="w-full max-w-xs bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 dark:text-white shadow-clay-flat cursor-pointer">
-                <option value="'Noto Sans KR', sans-serif">노토 산스 (기본) · 가나다 ABC</option>
-                <option value="'Nanum Gothic', sans-serif">나눔고딕 · 가나다 ABC</option>
-                <option value="'Nanum Myeongjo', serif">나눔명조 · 가나다 ABC</option>
-                <option value="'Gowun Dodum', sans-serif">고운 돋움 · 가나다 ABC</option>
-                <option value="'Gowun Batang', serif">고운 바탕 · 가나다 ABC</option>
-                <option value="'Jua', sans-serif">주아 · 가나다 ABC</option>
-                <option value="'Single Day', cursive">싱글데이 · 가나다 ABC</option>
-              </select>
             </div>
 
-            <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat clay-card space-y-5 text-left">
-              <div class="flex items-center gap-2 mb-1">
-                <span class="w-8 h-8 rounded-xl bg-clay-purple/10 border border-clay-purple/20 flex items-center justify-center"><i data-lucide="sliders" class="w-4 h-4 text-clay-purple"></i></span>
-                <div>
-                  <h4 class="text-sm font-black text-slate-900 dark:text-white">게시판별 글자 크기</h4>
-                  <p class="text-[10px] text-slate-400">각 페이지의 본문 글자 크기를 80% – 160% 사이에서 조정합니다.</p>
-                </div>
-              </div>
-              <div class="space-y-4">
-                <div class="space-y-2">
-                  <div class="flex justify-between items-center">
-                    <label class="text-xs font-black text-slate-700 dark:text-slate-300">대시보드</label>
-                    <span class="text-xs font-black text-clay-sky" id="size-label-dashboard">100%</span>
-                  </div>
-                  <input type="range" id="size-slider-dashboard" min="80" max="160" value="100" step="5"
-                    class="w-full h-2 rounded-full appearance-none cursor-pointer" style="accent-color: var(--color-sky)">
-                </div>
-                <div class="space-y-2">
-                  <div class="flex justify-between items-center">
-                    <label class="text-xs font-black text-slate-700 dark:text-slate-300">학생 명렬표</label>
-                    <span class="text-xs font-black text-clay-sky" id="size-label-gradebook">100%</span>
-                  </div>
-                  <input type="range" id="size-slider-gradebook" min="80" max="160" value="100" step="5"
-                    class="w-full h-2 rounded-full appearance-none cursor-pointer" style="accent-color: var(--color-sky)">
-                </div>
-                <div class="space-y-2">
-                  <div class="flex justify-between items-center">
-                    <label class="text-xs font-black text-slate-700 dark:text-slate-300">학급 온도계</label>
-                    <span class="text-xs font-black text-clay-sky" id="size-label-thermometer">100%</span>
-                  </div>
-                  <input type="range" id="size-slider-thermometer" min="80" max="160" value="100" step="5"
-                    class="w-full h-2 rounded-full appearance-none cursor-pointer" style="accent-color: var(--color-sky)">
-                </div>
-                <div class="space-y-2">
-                  <div class="flex justify-between items-center">
-                    <label class="text-xs font-black text-slate-700 dark:text-slate-300">설정 페이지</label>
-                    <span class="text-xs font-black text-clay-sky" id="size-label-settings">100%</span>
-                  </div>
-                  <input type="range" id="size-slider-settings" min="80" max="160" value="100" step="5"
-                    class="w-full h-2 rounded-full appearance-none cursor-pointer" style="accent-color: var(--color-sky)">
-                </div>
-              </div>
-              <button type="button" id="btn-reset-sizes" class="mt-2 px-4 py-2 text-xs font-black border-2 border-white rounded-xl bg-clay-sand text-slate-800 shadow-clay-flat cursor-pointer hover:bg-slate-200 transition-all">
-                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 inline-block mr-1"></i> 기본값으로 초기화
-              </button>
-            </div>
           </div>
+        </div>
+      </div>
       </section>
 
     </div>

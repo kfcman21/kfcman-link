@@ -407,6 +407,23 @@
           <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-1">💡 캡처한 이미지를 모달 창에서 <b>Ctrl + V</b>로 붙여넣거나 <b>[사진 올리기]</b> 버튼을 사용해 직접 업로드할 수 있습니다. (초경량 자동 압축 저장)</p>
         </div>
 
+        <div class="space-y-1.5">
+          <label class="text-base font-black text-slate-500 dark:text-slate-400">문서 첨부 (한글 HWP, PDF 등 - 선택사항)</label>
+          <div class="flex gap-2">
+            <input type="file" id="card-attachment-file" class="hidden">
+            <button type="button" onclick="document.getElementById('card-attachment-file').click()" class="btn px-4 py-2.5 text-xs font-black border-2 border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="file-text" class="w-4 h-4 text-clay-purple"></i>
+              <span>파일 선택...</span>
+            </button>
+            <div id="attachment-status" class="text-xs font-bold text-slate-400 self-center truncate max-w-[200px]">선택된 파일 없음</div>
+            <button type="button" id="btn-remove-attachment" onclick="removeAttachmentFile()" class="hidden w-7 h-7 rounded-full bg-rose-500 text-white flex items-center justify-center hover:bg-rose-600 transition-colors cursor-pointer self-center">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+          <input type="hidden" id="card-attachment-name">
+          <input type="hidden" id="card-attachment-data">
+        </div>
+
         <!-- Admin Notice Pinning Checkbox -->
         <div id="admin-notice-checkbox-container" class="hidden pb-2">
           <label class="inline-flex items-center gap-2 cursor-pointer p-1">

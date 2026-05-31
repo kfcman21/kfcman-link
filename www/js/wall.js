@@ -696,6 +696,27 @@ function initWall() {
       `;
     }
 
+    let attachmentHTML = '';
+    if (card.attachmentData && card.attachmentName) {
+      attachmentHTML = `
+        <div class="mt-3 border-2 border-slate-900/10 dark:border-white/10 rounded-2xl p-3.5 bg-white/40 dark:bg-black/25 flex justify-between items-center hover:bg-white/60 dark:hover:bg-black/40 transition-colors duration-150" onclick="event.stopPropagation()">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-950 flex items-center justify-center text-rose-500 flex-shrink-0">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <h4 class="text-[11px] font-black text-slate-800 dark:text-slate-100 truncate" title="${escapeHTML(card.attachmentName)}">${escapeHTML(card.attachmentName)}</h4>
+              <p class="text-[8px] text-slate-400 dark:text-slate-500 font-bold leading-none mt-0.5">한글 뷰어 연동 지원</p>
+            </div>
+          </div>
+          <a href="${card.attachmentData}" download="${escapeHTML(card.attachmentName)}" class="px-2.5 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-[9px] font-black shadow-sm flex items-center gap-1 transition-all cursor-pointer flex-shrink-0" title="클릭 시 다운로드 및 한글 웹 뷰어 자동 실행">
+            <i data-lucide="download" class="w-3 h-3"></i>
+            <span>열기/받기</span>
+          </a>
+        </div>
+      `;
+    }
+
     let crownHTML = '';
     if (isTopPreference) {
       crownHTML = `
@@ -729,6 +750,7 @@ function initWall() {
         <!-- Card Content -->
         <p class="text-xs font-bold leading-relaxed whitespace-pre-wrap break-words mb-4">${renderContentWithLinks(card.content)}</p>
         ${previewHTML}
+        ${attachmentHTML}
       </div>
       
       <!-- Footer actions (Like, Comment Toggle, Delete) -->
@@ -1001,6 +1023,10 @@ function initWall() {
       activeCardSectionId = '';
       if (linkPreviewBox) {
         linkPreviewBox.classList.add('hidden');
+      }
+      // Reset document attachments when closing modal
+      if (typeof removeAttachmentFile === 'function') {
+        removeAttachmentFile();
       }
     }, 200);
   }
@@ -1309,6 +1335,52 @@ function initWall() {
       reader.readAsDataURL(file);
     };
   }
+
+  // Document File Selector Upload Event (Support HWP, PDF, Docx, etc.)
+  const cardAttachmentFileInput = document.getElementById('card-attachment-file');
+  const attachmentStatusEl = document.getElementById('attachment-status');
+  const btnRemoveAttachmentEl = document.getElementById('btn-remove-attachment');
+  const cardAttachmentNameInput = document.getElementById('card-attachment-name');
+  const cardAttachmentDataInput = document.getElementById('card-attachment-data');
+
+  if (cardAttachmentFileInput) {
+    cardAttachmentFileInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      // File Size limit check (max 3MB for database light footprint)
+      const maxSize = 3 * 1024 * 1024; // 3MB
+      if (file.size > maxSize) {
+        alert('📂 학습지 등 문서 파일의 용량은 최대 3MB 이하로만 업로드하실 수 있습니다. 🌸');
+        cardAttachmentFileInput.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        if (cardAttachmentNameInput) cardAttachmentNameInput.value = file.name;
+        if (cardAttachmentDataInput) cardAttachmentDataInput.value = event.target.result;
+        
+        if (attachmentStatusEl) {
+          attachmentStatusEl.textContent = file.name;
+          attachmentStatusEl.className = "text-xs font-black text-rose-500 self-center truncate max-w-[200px]";
+        }
+        if (btnRemoveAttachmentEl) btnRemoveAttachmentEl.classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    };
+  }
+
+  window.removeAttachmentFile = () => {
+    if (cardAttachmentFileInput) cardAttachmentFileInput.value = '';
+    if (cardAttachmentNameInput) cardAttachmentNameInput.value = '';
+    if (cardAttachmentDataInput) cardAttachmentDataInput.value = '';
+    if (attachmentStatusEl) {
+      attachmentStatusEl.textContent = '선택된 파일 없음';
+      attachmentStatusEl.className = "text-xs font-bold text-slate-400 self-center truncate max-w-[200px]";
+    }
+    if (btnRemoveAttachmentEl) btnRemoveAttachmentEl.classList.add('hidden');
+  };
   if (cardCreationForm) {
     cardCreationForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1326,13 +1398,16 @@ function initWall() {
         return;
       }
       
-      // Read pastel bg selection
+       // Read pastel bg selection
       const bgColor = document.querySelector('input[name="color-picker"]:checked').value;
+
+      const attachmentName = document.getElementById('card-attachment-name').value;
+      const attachmentData = document.getElementById('card-attachment-data').value;
 
       // Optimistic Close: Close modal instantly so the UX feels 100% immediate
       closeModal();
 
-      const payload = { author, title, content, bgColor, image, isNotice, sectionId: activeCardSectionId };
+      const payload = { author, title, content, bgColor, image, isNotice, sectionId: activeCardSectionId, attachmentName, attachmentData };
       if (activePreview) {
         payload.previewUrl = activePreview.previewUrl;
         payload.previewTitle = activePreview.previewTitle;
