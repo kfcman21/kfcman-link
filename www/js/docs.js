@@ -43,7 +43,7 @@ async function loadExplorer() {
   // Update header and document title
   document.title = 'KFC MAN-DOCS - 실시간 한글 문서 공유 및 편집 공간';
   
-  const token = localStorage.getItem('token') || '';
+  const token = localStorage.getItem('kfcman_auth_token') || '';
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['x-kfcman-auth'] = token;
   
@@ -58,6 +58,9 @@ async function loadExplorer() {
       if (meData.username) {
         document.getElementById('docs-username').textContent = meData.username + (meData.role === 'vip' || meData.role === 'admin' ? ' 👑' : '');
         document.getElementById('docs-user-welcome').classList.remove('hidden');
+        
+        // Ensure local storage role is synchronized
+        localStorage.setItem('kfcman_user_role', meData.role || 'user');
       }
     } else {
       document.getElementById('docs-user-welcome').classList.add('hidden');
@@ -76,7 +79,7 @@ async function loadExplorer() {
 }
 
 function updateLimitProgress(docs) {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('kfcman_auth_token');
   const myDocsCount = docs.filter(d => d.creator === (document.getElementById('docs-username').textContent.replace(' 👑', '').trim().toLowerCase())).length;
   
   document.getElementById('limit-current').textContent = myDocsCount;
@@ -114,7 +117,7 @@ function renderDocsGrid(docs) {
           </div>
           <div class="flex gap-1">
             ${doc.hasPassword ? '<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-950/50 dark:text-amber-400">🔒 비밀</span>' : ''}
-            ${doc.isPublic ? '<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-400">공개</span>' : '<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-350 dark:bg-slate-900 dark:text-slate-400">비공개</span>'}
+            ${doc.isPublic ? '<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/50 dark:text-amber-400">공개</span>' : '<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-350 dark:bg-slate-900 dark:text-slate-400">비공개</span>'}
           </div>
         </div>
         <h4 class="font-black text-sm text-slate-900 dark:text-white line-clamp-1 truncate mt-2">${escapeHtml(doc.title)}</h4>
@@ -127,7 +130,7 @@ function renderDocsGrid(docs) {
           <button onclick="shareDocLink('${doc.id}')" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 flex items-center justify-center text-slate-500 hover:text-clay-purple transition-all" title="공유">
             <i data-lucide="share-2" class="w-4 h-4"></i>
           </button>
-          ${isOwner || (localStorage.getItem('token') && ['admin','manager'].includes(localStorage.getItem('role'))) ? `
+          ${isOwner || (localStorage.getItem('kfcman_auth_token') && ['admin','manager'].includes(localStorage.getItem('kfcman_user_role'))) ? `
             <button onclick="deleteDocConfirm('${doc.id}', event)" class="w-8 h-8 rounded-lg border border-rose-200 dark:border-rose-950/60 hover:bg-rose-50 dark:hover:bg-rose-950/20 flex items-center justify-center text-rose-500 transition-all" title="삭제">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
             </button>
@@ -145,6 +148,11 @@ function renderDocsGrid(docs) {
 // --------------------------------------------------------------------------
 // 📝 2. DOCUMENT CREATION & FILE LOADER MODULE
 // --------------------------------------------------------------------------
+
+// Fetch token
+function getTokenHelper() {
+  return localStorage.getItem('kfcman_auth_token') || '';
+}
 
 function openCreateDocModal() {
   const modal = document.getElementById('create-doc-modal');
@@ -166,7 +174,7 @@ function closeCreateDocModal() {
 
 async function handleCreateDocSubmit(e) {
   e.preventDefault();
-  const token = localStorage.getItem('token');
+  const token = getTokenHelper();
   if (!token) {
     showToast('error', '로그인 후 문서를 생성할 수 있습니다. 메인 화면에서 로그인해 주세요.');
     closeCreateDocModal();
@@ -213,7 +221,7 @@ function handleHwpUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
   
-  const token = localStorage.getItem('token');
+  const token = getTokenHelper();
   if (!token) {
     showToast('error', '로그인 후 한글 파일을 업로드할 수 있습니다.');
     return;
@@ -285,7 +293,7 @@ async function openDocEditor(docId) {
 async function fetchAndLoadDoc() {
   if (!currentDocId) return;
   
-  const token = localStorage.getItem('token') || '';
+  const token = getTokenHelper();
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['x-kfcman-auth'] = token;
   if (localDocPassword) headers['x-kfcman-doc-password'] = localDocPassword;
@@ -439,7 +447,7 @@ function handleEditorInput() {
 async function saveCurrentDoc() {
   if (!currentDocId) return;
   
-  const token = localStorage.getItem('token') || '';
+  const token = getTokenHelper();
   const title = document.getElementById('doc-title-input').value.trim();
   const content = document.getElementById('doc-editor').innerHTML;
   
@@ -490,7 +498,7 @@ async function updateDocSettings() {
   if (!currentDocId) return;
   
   const isPublic = document.getElementById('doc-public-toggle').checked;
-  const token = localStorage.getItem('token');
+  const token = getTokenHelper();
   
   try {
     const res = await fetch(`/api/docs/${currentDocId}`, {
@@ -518,7 +526,7 @@ async function applyDocPassword() {
   if (!currentDocId) return;
   
   const password = document.getElementById('doc-password-input').value.trim();
-  const token = localStorage.getItem('token');
+  const token = getTokenHelper();
   
   try {
     // Modify database doc password directly via a silent request or simple put holding password
@@ -540,7 +548,7 @@ async function deleteDocConfirm(docId, event) {
     return;
   }
   
-  const token = localStorage.getItem('token') || '';
+  const token = getTokenHelper();
   try {
     const res = await fetch(`/api/docs/${docId}`, {
       method: 'DELETE',

@@ -146,6 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function removeAuthToken() {
     localStorage.removeItem('kfcman_auth_token');
+    localStorage.removeItem('kfcman_user_role');
   }
 
   async function checkLoginState() {
@@ -160,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Authenticated successfully
         userWelcomeName.textContent = data.username;
+        localStorage.setItem('kfcman_user_role', data.role || 'user');
         
         userWelcomeTag.classList.remove('hidden');
         headerNav.style.display = 'flex';
