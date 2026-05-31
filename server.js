@@ -32,8 +32,16 @@ function containsProfanity(text) {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
+// Enable dynamic CORS for all origins (including chrome-extension:// schemes) and allow credentials
+app.use(cors({
+  origin: function (origin, callback) {
+    // If there is no origin (e.g. server-to-server or local file), allow it
+    if (!origin) return callback(null, true);
+    // Allow any origin dynamically to bypass CORS blocks in extensions
+    callback(null, true);
+  },
+  credentials: true
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
