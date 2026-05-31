@@ -152,6 +152,11 @@ function renderDocsGrid(docs) {
       <div class="w-full flex justify-between items-center border-t border-slate-100 dark:border-slate-800/80 pt-2 mt-2">
         <span class="text-[8px] font-bold text-slate-350 dark:text-slate-600 select-none">ID: ${doc.id}</span>
         <div class="flex gap-1">
+          <!-- Overwrite / Sync new HWP version button -->
+          <button onclick="triggerHwpOverwrite('${doc.id}', event)" class="w-6 h-6 rounded-md border border-sky-200 dark:border-sky-900/60 hover:bg-sky-50 dark:hover:bg-sky-950/20 flex items-center justify-center text-sky-600 dark:text-sky-400 transition-all" title="새 HWP 버전 덮어쓰기 업로드">
+            <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+          </button>
+          
           <button onclick="shareDocLink('${doc.id}')" class="w-6 h-6 rounded-md border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 flex items-center justify-center text-slate-500 hover:text-clay-purple transition-all" title="공유">
             <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
           </button>
@@ -857,8 +862,73 @@ function triggerHwpDownload(docId) {
   showToast('success', '오리지널 한글 HWP 문서를 다운로드/웹에디터로 엽니다.');
 }
 
+async function triggerHwpOverwrite(docId, event) {
+  if (event) event.stopPropagation();
+  
+  const token = getTokenHelper();
+  if (!token) {
+    showToast('error', '로그인 후 문서를 업데이트할 수 있습니다.');
+    return;
+  }
+  
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.hwp,.hwpx';
+  
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    showToast('info', '새 버전을 업로드하여 클라우드 문서 동기화를 진행합니다...');
+    
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      const base64Data = evt.target.result;
+      
+      try {
+        const res = await fetch(`/api/docs/${docId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-kfcman-auth': token
+          },
+          body: JSON.stringify({
+            title: file.name,
+            hwpData: base64Data,
+            hwpName: file.name,
+            content: `<div class="p-6 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl text-center space-y-4 my-8">
+              <div class="w-12 h-12 rounded-xl border border-violet-200 dark:border-violet-900 bg-violet-100 dark:bg-violet-950 text-clay-purple flex items-center justify-center mx-auto shadow-sm">
+                <i data-lucide="file-text" class="w-6 h-6"></i>
+              </div>
+              <h4 class="font-black text-sm text-slate-800 dark:text-white">원본 한글 HWP 바이너리 문서 (수정본)</h4>
+              <p class="text-[10px] text-slate-500 leading-normal max-w-xs mx-auto">
+                본 문서는 에디터를 통해 실시간 수정 및 동기화 완료된 한글 HWP/HWPX 규격 파일입니다.
+              </p>
+            </div>`
+          })
+        });
+        
+        if (res.ok) {
+          showToast('success', `${file.name} 새 버전이 클라우드 공간에 안전하게 덮어쓰기 저장되었습니다!`);
+          loadExplorer();
+        } else {
+          const data = await res.json();
+          showToast('error', data.error || '문서 덮어쓰기 업데이트 실패');
+        }
+      } catch (err) {
+        showToast('error', '서버와의 통신 도중 에러가 발생했습니다.');
+      }
+    };
+    
+    reader.readAsDataURL(file);
+  };
+  
+  input.click();
+}
+
 // Bind to window context
 window.triggerHwpDownload = triggerHwpDownload;
+window.triggerHwpOverwrite = triggerHwpOverwrite;
 window.handleRhwpLaunchClick = handleRhwpLaunchClick;
 window.showRhwpGuidanceModal = showRhwpGuidanceModal;
 window.closeRhwpGuidanceModal = closeRhwpGuidanceModal;
