@@ -1106,7 +1106,7 @@ class Database {
 
   // --- KFC MAN-DOCS MODULE (한글 문서 공유 및 편집) ---
 
-  async createDoc(title, content, creator, password = '', isPublic = true) {
+  async createDoc(title, content, creator, password = '', isPublic = true, hwpData = null, hwpName = null) {
     if (!this.cache.docs) {
       this.cache.docs = {};
     }
@@ -1119,6 +1119,8 @@ class Database {
       creator: creator ? creator.trim().toLowerCase() : 'system',
       password: password ? password.trim() : '',
       isPublic: !!isPublic,
+      hwpData: hwpData || null, // Base64 raw HWP/HWPX binary data
+      hwpName: hwpName || null, // Original uploaded file name
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       updatedBy: creator ? creator.trim().toLowerCase() : 'system',
@@ -1138,7 +1140,7 @@ class Database {
     return this.cache.docs[cleanId] || null;
   }
 
-  async updateDoc(docId, title, content, updatedBy) {
+  async updateDoc(docId, title, content, updatedBy, hwpData = undefined, hwpName = undefined) {
     const doc = await this.getDoc(docId);
     if (!doc) throw new Error('존재하지 않는 문서입니다.');
 
@@ -1147,6 +1149,8 @@ class Database {
     doc.history.push({
       title: doc.title,
       content: doc.content,
+      hwpData: doc.hwpData,
+      hwpName: doc.hwpName,
       updatedBy: doc.updatedBy,
       updatedAt: doc.updatedAt
     });
@@ -1158,6 +1162,8 @@ class Database {
 
     doc.title = (title || '').trim() || '이름 없는 한글 문서';
     doc.content = content || '';
+    if (hwpData !== undefined) doc.hwpData = hwpData;
+    if (hwpName !== undefined) doc.hwpName = hwpName;
     doc.updatedAt = new Date().toISOString();
     doc.updatedBy = updatedBy ? updatedBy.trim().toLowerCase() : 'system';
 
@@ -1203,6 +1209,8 @@ class Database {
           creator: doc.creator,
           isPublic: doc.isPublic,
           hasPassword: !!doc.password,
+          hasHwpData: !!doc.hwpData,
+          hwpName: doc.hwpName,
           createdAt: doc.createdAt,
           updatedAt: doc.updatedAt,
           updatedBy: doc.updatedBy

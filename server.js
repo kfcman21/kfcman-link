@@ -1694,7 +1694,7 @@ app.get('/api/docs', optionalAuthenticate, async (req, res) => {
 });
 
 app.post('/api/docs', authenticate, async (req, res) => {
-  const { title, content, password, isPublic } = req.body;
+  const { title, content, password, isPublic, hwpData, hwpName } = req.body;
   try {
     const userDocs = db.getUserDocs(req.username);
     const userRole = req.role || 'user';
@@ -1702,7 +1702,7 @@ app.post('/api/docs', authenticate, async (req, res) => {
       return res.status(403).json({ error: '일반회원은 문서를 최대 10개까지만 생성할 수 있습니다. 무제한 생성을 원하시면 우수회원으로 등급업해 주세요.' });
     }
 
-    const doc = await db.createDoc(title, content, req.username, password, isPublic);
+    const doc = await db.createDoc(title, content, req.username, password, isPublic, hwpData, hwpName);
     return res.status(201).json(doc);
   } catch (err) {
     console.error('Error creating doc:', err);
@@ -1737,6 +1737,8 @@ app.get('/api/docs/:id', optionalAuthenticate, async (req, res) => {
       creator: doc.creator,
       isPublic: doc.isPublic,
       hasPassword: !!doc.password,
+      hasHwpData: !!doc.hwpData,
+      hwpName: doc.hwpName,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
       updatedBy: doc.updatedBy
@@ -1744,6 +1746,44 @@ app.get('/api/docs/:id', optionalAuthenticate, async (req, res) => {
   } catch (err) {
     console.error('Error fetching doc:', err);
     return res.status(500).json({ error: '문서 조회 도중 오류가 발생했습니다.' });
+  }
+});
+
+app.get('/api/docs/:id/download', optionalAuthenticate, async (req, res) => {
+  const docId = req.params.id.trim().toUpperCase();
+  try {
+    const doc = await db.getDoc(docId);
+    if (!doc || !doc.hwpData) {
+      return res.status(404).send('HWP 문서 바이너리가 존재하지 않습니다.');
+    }
+
+    const cleanUser = req.username ? req.username.trim().toLowerCase() : '';
+    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin';
+    const isCreator = doc.creator === cleanUser;
+
+    if (doc.password && !isCreator && !isAdmin) {
+      const authHeader = req.headers['x-kfcman-doc-password'] || req.query.password;
+      if (authHeader !== doc.password) {
+        return res.status(403).send('인증 암호가 올바르지 않습니다.');
+      }
+    }
+
+    const match = doc.hwpData.match(/^data:(.+);base64,(.+)$/);
+    let mimeType = 'application/x-hwp';
+    let base64Data = doc.hwpData;
+    if (match) {
+      mimeType = match[1];
+      base64Data = match[2];
+    }
+    const binaryBuffer = Buffer.from(base64Data, 'base64');
+    const filename = encodeURIComponent(doc.hwpName || doc.title + '.hwp');
+
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
+    return res.send(binaryBuffer);
+  } catch (err) {
+    console.error('Download error:', err);
+    return res.status(500).send('다운로드 실패');
   }
 });
 
@@ -1766,7 +1806,7 @@ app.post('/api/docs/:id/verify-password', async (req, res) => {
 
 app.put('/api/docs/:id', optionalAuthenticate, async (req, res) => {
   const docId = req.params.id.trim().toUpperCase();
-  const { title, content } = req.body;
+  const { title, content, hwpData, hwpName } = req.body;
   try {
     const doc = await db.getDoc(docId);
     if (!doc) {
@@ -1781,7 +1821,7 @@ app.put('/api/docs/:id', optionalAuthenticate, async (req, res) => {
       return res.status(403).json({ error: '비공개 문서이며 편집 권한이 없습니다.' });
     }
 
-    const updated = await db.updateDoc(docId, title, content, req.username || '익명 편집자');
+    const updated = await db.updateDoc(docId, title, content, req.username || '익명 편집자', hwpData, hwpName);
     return res.status(200).json(updated);
   } catch (err) {
     console.error('Error updating doc:', err);

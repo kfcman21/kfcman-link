@@ -122,6 +122,11 @@ function renderDocsGrid(docs) {
         </div>
         <h4 class="font-black text-sm text-slate-900 dark:text-white line-clamp-1 truncate mt-2">${escapeHtml(doc.title)}</h4>
         <p class="text-[10px] text-slate-400 dark:text-slate-500">작성: @${doc.creator} | 변경: ${dateStr}</p>
+        ${doc.hasHwpData ? `
+          <a href="chrome-extension://pgakpjflombjmehnebnbpnalhegaanag/viewer.html?file=${encodeURIComponent(window.location.origin + '/api/docs/' + doc.id + '/download')}" target="_blank" onclick="event.stopPropagation()" class="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-black text-[10px] shadow-sm flex items-center justify-center gap-1 mt-2.5 transition-all w-full">
+            <i data-lucide="external-link" class="w-3.5 h-3.5 text-white"></i><span class="text-white font-bold">rhwp 웹에디터로 편집</span>
+          </a>
+        ` : ''}
       </div>
       
       <div class="flex justify-between items-center border-t border-slate-100 dark:border-slate-800 pt-3 mt-4">
@@ -227,50 +232,75 @@ function handleHwpUpload(e) {
     return;
   }
   
-  // Extract simple contents from text / basic doc formats
+  const isBinaryHwp = /\.(hwp|hwpx)$/i.test(file.name);
   const reader = new FileReader();
+  
   reader.onload = async function(evt) {
-    const contentText = evt.target.result;
     const cleanTitle = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
-    
-    // Auto-create document from HWP upload contents
     const headers = {
       'Content-Type': 'application/json',
       'x-kfcman-auth': token
     };
     
-    let htmlContent = `<h2 style="text-align: center; font-weight: bold; margin-bottom: 24px;">${cleanTitle}</h2>`;
-    // Clean text lines to paragraph tags
-    const paragraphs = contentText.split(/\r?\n/);
-    paragraphs.forEach(p => {
-      if (p.trim()) {
-        htmlContent += `<p>${escapeHtml(p.trim())}</p>`;
-      }
-    });
+    let payload = {};
+    
+    if (isBinaryHwp) {
+      // HWP/HWPX Binary payload
+      payload = {
+        title: file.name,
+        content: `<div class="p-6 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl text-center space-y-4 my-8">
+          <div class="w-12 h-12 rounded-xl border border-violet-200 dark:border-violet-900 bg-violet-100 dark:bg-violet-950 text-clay-purple flex items-center justify-center mx-auto shadow-sm">
+            <i data-lucide="file-text" class="w-6 h-6"></i>
+          </div>
+          <h4 class="font-black text-sm text-slate-800 dark:text-white">원본 한글 HWP 바이너리 문서</h4>
+          <p class="text-[10px] text-slate-500 leading-normal max-w-xs mx-auto">
+            본 문서는 원본 한글 HWP/HWPX 규격 파일입니다. 상단의 <b>[rhwp 웹에디터로 편집]</b> 단추를 누르면 브라우저의 rhwp 확장 프로그램을 통해 깨짐 없이 즉시 열람 및 수정이 가능합니다!
+          </p>
+        </div>`,
+        hwpData: evt.target.result, // Base64 data URL
+        hwpName: file.name,
+        isPublic: true
+      };
+    } else {
+      // Plain TXT parser
+      const contentText = evt.target.result;
+      let htmlContent = `<h2 style="text-align: center; font-weight: bold; margin-bottom: 24px;">${cleanTitle}</h2>`;
+      const paragraphs = contentText.split(/\r?\n/);
+      paragraphs.forEach(p => {
+        if (p.trim()) {
+          htmlContent += `<p>${escapeHtml(p.trim())}</p>`;
+        }
+      });
+      payload = {
+        title: cleanTitle,
+        content: htmlContent,
+        isPublic: true
+      };
+    }
     
     try {
       const res = await fetch('/api/docs', {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          title: cleanTitle,
-          content: htmlContent,
-          isPublic: true
-        })
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (res.ok) {
-        showToast('success', `${file.name} 파일을 파싱하여 실시간 협업 클라우드 문서로 성공적으로 로드했습니다!`);
+        showToast('success', `${file.name} 파일을 파싱/업로드하여 실시간 협업 클라우드 문서로 성공적으로 로드했습니다!`);
         openDocEditor(data.id);
       } else {
-        showToast('error', data.error || '업로드 문서 파싱 실패');
+        showToast('error', data.error || '업로드 문서 처리 실패');
       }
     } catch (err) {
-      showToast('error', '파일 처리 도중 오류가 발생했습니다.');
+      showToast('error', '파일 업로드 처리 도중 오류가 발생했습니다.');
     }
   };
   
-  reader.readAsText(file);
+  if (isBinaryHwp) {
+    reader.readAsDataURL(file);
+  } else {
+    reader.readAsText(file);
+  }
 }
 
 // --------------------------------------------------------------------------
@@ -316,6 +346,17 @@ async function fetchAndLoadDoc() {
       
       // Load toggles and sidebar settings
       document.getElementById('doc-public-toggle').checked = data.isPublic;
+      
+      // Configure rhwp launcher if document represents a native HWP binary file
+      const rhwpLauncher = document.getElementById('btn-rhwp-launcher');
+      if (rhwpLauncher) {
+        if (data.hasHwpData) {
+          rhwpLauncher.classList.remove('hidden');
+          rhwpLauncher.setAttribute('href', `chrome-extension://pgakpjflombjmehnebnbpnalhegaanag/viewer.html?file=${encodeURIComponent(window.location.origin + '/api/docs/' + currentDocId + '/download')}`);
+        } else {
+          rhwpLauncher.classList.add('hidden');
+        }
+      }
       
       // Build version history
       buildHistoryList(data.history || []);
@@ -631,6 +672,13 @@ function shareDocLink(docId) {
 
 function downloadAsHtml() {
   if (!currentDocData) return;
+  
+  if (currentDocData.hasHwpData) {
+    // Natively trigger raw HWP binary download
+    window.location.href = `/api/docs/${currentDocId}/download`;
+    showToast('success', '오리지널 한글 HWP 바이너리 다운로드가 완료되었습니다.');
+    return;
+  }
   
   const title = document.getElementById('doc-title-input').value;
   const content = document.getElementById('doc-editor').innerHTML;
