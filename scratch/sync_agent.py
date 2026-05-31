@@ -32,10 +32,10 @@ class SyncAgentApp:
         self.log_box = tk.Text(root, height=12, width=55, bg="#1e293b", fg="#e2e8f0", font=("Consolas", 9), bd=0)
         self.log_box.pack(pady=10)
         
-        self.btn_open = tk.Button(root, text="공유 폴더 열기", command=self.open_folder, bg="#3b82f6", fg="white", font=("Pretendard", 9, "bold"), px=10, py=5)
+        self.btn_open = tk.Button(root, text="공유 폴더 열기", command=self.open_folder, bg="#3b82f6", fg="white", font=("Pretendard", 9, "bold"), padx=10, pady=5)
         self.btn_open.pack(side=tk.LEFT, padx=30, pady=10)
         
-        self.btn_sync = tk.Button(root, text="즉시 클라우드 동기화", command=self.force_sync, bg="#10b981", fg="white", font=("Pretendard", 9, "bold"), px=10, py=5)
+        self.btn_sync = tk.Button(root, text="즉시 클라우드 동기화", command=self.force_sync, bg="#10b981", fg="white", font=("Pretendard", 9, "bold"), padx=10, pady=5)
         self.btn_sync.pack(side=tk.RIGHT, padx=30, pady=10)
         
         # Start Threads
