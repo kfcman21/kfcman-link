@@ -108,43 +108,61 @@ function renderDocsGrid(docs) {
     const isHwp = doc.hasHwpData;
     
     const card = document.createElement('div');
-    card.className = 'bg-white dark:bg-clay-cardDark border-4 border-white dark:border-white/5 rounded-3xl p-5 shadow-clay-flat hover:shadow-clay-flat-lg clay-card text-left flex flex-col justify-between h-56 relative overflow-hidden';
+    card.className = 'bg-white dark:bg-clay-cardDark border border-slate-250 dark:border-white/5 rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-slate-350 dark:hover:border-white/20 transition-all flex flex-col justify-between items-center text-center relative group min-h-[190px]';
     
-    card.innerHTML = `
-      <div class="space-y-2 cursor-pointer" onclick="${isHwp ? `triggerHwpDownload('${doc.id}')` : `openDocEditor('${doc.id}')`}">
-        <div class="flex justify-between items-start">
-          <div class="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-950 text-clay-purple border border-violet-200 dark:border-violet-900 flex items-center justify-center">
-            <i data-lucide="${isHwp ? 'file-text' : 'file-edit'}" class="w-5 h-5"></i>
-          </div>
-          <div class="flex gap-1">
-            ${doc.hasPassword ? '<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-950/50 dark:text-amber-400">🔒 비밀</span>' : ''}
-            ${doc.isPublic ? '<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/50 dark:text-amber-400">공개</span>' : '<span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-350 dark:bg-slate-900 dark:text-slate-400">비공개</span>'}
-          </div>
+    // File / Folder Icon representation
+    let iconHtml = '';
+    if (isHwp) {
+      iconHtml = `
+        <div class="w-14 h-14 rounded-2xl bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-900/60 flex items-center justify-center shadow-sm relative group-hover:scale-105 transition-all">
+          <i data-lucide="file-text" class="w-7 h-7"></i>
+          <span class="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded text-[8px] font-black bg-sky-600 text-white border border-sky-100 shadow-sm">HWP</span>
         </div>
-        <h4 class="font-black text-sm text-slate-900 dark:text-white line-clamp-1 truncate mt-2">${escapeHtml(doc.title)}</h4>
-        <p class="text-[10px] text-slate-400 dark:text-slate-500">작성: @${doc.creator} | 변경: ${dateStr}</p>
-        ${isHwp ? `
-          <span class="inline-flex items-center gap-1.5 text-[9px] font-black text-emerald-600 dark:text-emerald-400 mt-2 bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-1 rounded-lg">
-            <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i><span>원본 HWP 보관중 (클릭 시 열기)</span>
-          </span>
-        ` : ''}
+      `;
+    } else {
+      iconHtml = `
+        <div class="w-14 h-14 rounded-2xl bg-violet-50 dark:bg-violet-950/40 text-clay-purple dark:text-violet-400 border border-violet-200 dark:border-violet-900/60 flex items-center justify-center shadow-sm relative group-hover:scale-105 transition-all">
+          <i data-lucide="file-edit" class="w-7 h-7"></i>
+          <span class="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded text-[8px] font-black bg-violet-600 text-white border border-violet-100 shadow-sm">DOC</span>
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <!-- Top Badges -->
+      <div class="absolute top-2 left-2 flex gap-1 z-10">
+        ${doc.hasPassword ? '<span class="text-[8px] font-black px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-850 border border-amber-300 dark:bg-amber-950/50 dark:text-amber-400">🔒</span>' : ''}
+        ${doc.isPublic ? '<span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400">공개</span>' : '<span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-400">비공개</span>'}
       </div>
-      
-      <div class="flex justify-between items-center border-t border-slate-100 dark:border-slate-800 pt-3 mt-4">
-        <span class="text-[9px] font-bold text-slate-400">ID: ${doc.id}</span>
+
+      <!-- File Folder Main click wrapper -->
+      <div class="w-full flex-1 flex flex-col items-center justify-center cursor-pointer mt-4" onclick="${isHwp ? `triggerHwpDownload('${doc.id}')` : `openDocEditor('${doc.id}')`}">
+        ${iconHtml}
+        
+        <h4 class="font-extrabold text-xs text-slate-800 dark:text-slate-200 line-clamp-2 w-full px-1 text-center mt-3 select-none leading-snug break-all" title="${escapeHtml(doc.title)}">
+          ${escapeHtml(doc.title)}
+        </h4>
+        
+        <p class="text-[8px] text-slate-400 dark:text-slate-500 mt-1 select-none font-bold">
+          @${doc.creator} | ${dateStr}
+        </p>
+      </div>
+
+      <!-- Floating Desktop Action Hover Overlay -->
+      <div class="w-full flex justify-between items-center border-t border-slate-100 dark:border-slate-800/80 pt-2 mt-2">
+        <span class="text-[8px] font-bold text-slate-350 dark:text-slate-600 select-none">ID: ${doc.id}</span>
         <div class="flex gap-1">
-          <button onclick="shareDocLink('${doc.id}')" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 flex items-center justify-center text-slate-500 hover:text-clay-purple transition-all" title="공유">
-            <i data-lucide="share-2" class="w-4 h-4"></i>
+          <button onclick="shareDocLink('${doc.id}')" class="w-6 h-6 rounded-md border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 flex items-center justify-center text-slate-500 hover:text-clay-purple transition-all" title="공유">
+            <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
           </button>
           ${isOwner || (localStorage.getItem('kfcman_auth_token') && ['admin','manager'].includes(localStorage.getItem('kfcman_user_role'))) ? `
-            <button onclick="deleteDocConfirm('${doc.id}', event)" class="w-8 h-8 rounded-lg border border-rose-200 dark:border-rose-950/60 hover:bg-rose-50 dark:hover:bg-rose-950/20 flex items-center justify-center text-rose-500 transition-all" title="삭제">
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            <button onclick="deleteDocConfirm('${doc.id}', event)" class="w-6 h-6 rounded-md border border-rose-200 dark:border-rose-950/60 hover:bg-rose-50 dark:hover:bg-rose-950/20 flex items-center justify-center text-rose-500 transition-all" title="삭제">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
             </button>
           ` : ''}
         </div>
       </div>
     `;
-    
     grid.appendChild(card);
   });
   
