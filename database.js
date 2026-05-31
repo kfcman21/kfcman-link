@@ -36,6 +36,7 @@ class Database {
       if (!this.cache.sessions) this.cache.sessions = {};
       if (!this.cache.polls) this.cache.polls = {};
       if (!this.cache.classrooms) this.cache.classrooms = {};
+      if (!this.cache.walls) this.cache.walls = {};
       
       // Initialize default notification settings if missing
       if (!this.cache.notificationSettings) {
@@ -60,6 +61,7 @@ class Database {
         sessions: {},
         polls: {},
         classrooms: {},
+        walls: {},
         notificationSettings: {
           email: { enabled: false, host: 'smtp.gmail.com', port: 465, secure: true, user: '', pass: '', receiver: '' },
           webhook: { enabled: false, url: '' },
@@ -69,24 +71,44 @@ class Database {
     }
   }
 
-  // Atomically save cache to db.json
+  // Atomically save cache to db.json with a non-blocking queue
   async save() {
-    return new Promise((resolve, reject) => {
-      const dataStr = JSON.stringify(this.cache, null, 2);
-      fs.writeFile(TMP_FILE, dataStr, 'utf8', (err) => {
-        if (err) {
-          console.error('Failed to write temp database file', err);
-          return reject(err);
-        }
+    if (this._saving) {
+      this._pendingSave = true;
+      return Promise.resolve();
+    }
+    this._saving = true;
+    
+    return new Promise((resolve) => {
+      // Resolve immediately to keep APIs ultra fast (In-memory is already updated)
+      resolve();
 
-        fs.rename(TMP_FILE, DB_FILE, (renameErr) => {
-          if (renameErr) {
-            console.error('Failed to rename temp file to database file', renameErr);
-            return reject(renameErr);
+      const doSave = () => {
+        const dataStr = JSON.stringify(this.cache, null, 2);
+        fs.writeFile(TMP_FILE, dataStr, 'utf8', (err) => {
+          if (err) {
+            console.error('Failed to write temp database file', err);
+            this._saving = false;
+            return;
           }
-          resolve();
+
+          fs.rename(TMP_FILE, DB_FILE, (renameErr) => {
+            if (renameErr) {
+              console.error('Failed to rename temp file to database file', renameErr);
+            }
+            this._saving = false;
+            
+            if (this._pendingSave) {
+              this._pendingSave = false;
+              this._saving = true;
+              // Throttle next save by 100ms to avoid disk thrashing
+              setTimeout(doSave, 100);
+            }
+          });
         });
-      });
+      };
+
+      doSave();
     });
   }
 
@@ -137,6 +159,9 @@ class Database {
     if (user.approved === false) {
       throw new Error('회원가입 승인 대기 중입니다. 관리자의 승인이 필요합니다.');
     }
+
+    // Update user activity timestamp
+    user.lastUsed = new Date().toISOString();
 
     // Generate a secure random session token
     const sessionToken = crypto.randomBytes(32).toString('hex');
@@ -214,13 +239,20 @@ class Database {
 
   // Create a new shortened link associated with owner
   async createLink(code, originalUrl, owner) {
+    // Update user activity timestamp
+    const cleanOwner = owner.toLowerCase();
+    const user = this.cache.users[cleanOwner];
+    if (user) {
+      user.lastUsed = new Date().toISOString();
+    }
+
     const link = {
       code,
       originalUrl,
       createdAt: new Date().toISOString(),
       clicks: 0,
       clicksData: [],
-      owner: owner.toLowerCase()
+      owner: cleanOwner
     };
     this.cache.links[code] = link;
     await this.save();
@@ -369,6 +401,7 @@ class Database {
         approved: u.approved !== false,
         warning: u.warning || '',
         createdAt: u.createdAt,
+        lastUsed: u.lastUsed || u.createdAt,
         totalLinks,
         totalClicks
       });
@@ -386,6 +419,14 @@ class Database {
         throw new Error('기본 관리자 계정은 비활성화할 수 없습니다.');
       }
       user.approved = !user.approved;
+      
+      // If administrator is activating the user, clear suspension and request flags
+      if (user.approved === true) {
+        user.suspended = false;
+        user.reactivateRequest = false;
+        user.lastUsed = new Date().toISOString(); // Reset inactivity threshold timer
+      }
+      
       await this.save();
       return user;
     }
@@ -811,6 +852,252 @@ class Database {
     this.cache.classrooms[cleanUser] = data;
     await this.save();
     return data;
+  }
+
+  // --- COLLABORATIVE WALL MODULE (kfcman-wall) ---
+
+  async createWall(title, description, creator, maxUsers, layout) {
+    if (!this.cache.walls) {
+      this.cache.walls = {};
+    }
+    // Clean and normalize title for URL ID usage (remove spaces, preserve Korean/alphanumeric)
+    const cleanTitle = (title || '').trim().replace(/[\s\t\n]+/g, '').replace(/[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣-_]/g, '');
+    let wallId = cleanTitle;
+
+    if (!wallId) {
+      // Fallback to random 6-digit hex if title has no valid characters
+      do {
+        wallId = crypto.randomBytes(3).toString('hex').toUpperCase();
+      } while (this.cache.walls[wallId]);
+    } else {
+      wallId = wallId.toUpperCase();
+      // If same board title already exists, append a short random token to ensure uniqueness
+      let attempt = 0;
+      const baseId = wallId;
+      while (this.cache.walls[wallId]) {
+        attempt++;
+        const token = crypto.randomBytes(2).toString('hex').toUpperCase(); // e.g. "9F4E"
+        wallId = `${baseId}-${token}`;
+      }
+    }
+
+    const maxUsersVal = typeof maxUsers === 'number' ? maxUsers : parseInt(maxUsers) || 0;
+    const sections = [];
+    if (layout === 'columns') {
+      if (maxUsersVal > 0) {
+        for (let i = 1; i <= maxUsersVal; i++) {
+          sections.push({
+            id: crypto.randomUUID(),
+            name: `${i}번`,
+            createdAt: new Date().toISOString()
+          });
+        }
+      } else {
+        sections.push({
+          id: crypto.randomUUID(),
+          name: '섹션 1',
+          createdAt: new Date().toISOString()
+        });
+      }
+    }
+
+    const newWall = {
+      id: wallId,
+      title: title || '우리들의 실시간 알림 보드',
+      description: description || '자유롭게 생각과 피드백을 나눠주세요!',
+      creator: creator ? creator.trim().toLowerCase() : 'system',
+      maxUsers: maxUsersVal,
+      layout: ['columns', 'rows', 'timeline'].includes(layout) ? layout : 'grid',
+      sections: sections,
+      createdAt: new Date().toISOString(),
+      cards: {}
+    };
+
+    this.cache.walls[wallId] = newWall;
+    await this.save();
+    return newWall;
+  }
+
+  async getWall(wallId) {
+    if (!this.cache.walls) {
+      this.cache.walls = {};
+    }
+    const cleanId = wallId.trim().toUpperCase();
+    return this.cache.walls[cleanId] || null;
+  }
+
+  // --- SECTION CRUD METHODS FOR COLUMNS LAYOUT ---
+  async addWallSection(wallId, name) {
+    const wall = await this.getWall(wallId);
+    if (!wall) throw new Error('존재하지 않는 게시판입니다.');
+
+    if (!wall.sections) {
+      wall.sections = [];
+    }
+
+    const sectionId = crypto.randomUUID();
+    const newSection = {
+      id: sectionId,
+      name: (name && name.trim()) ? name.trim() : '이름 없는 섹션',
+      createdAt: new Date().toISOString()
+    };
+
+    wall.sections.push(newSection);
+    await this.save();
+    return newSection;
+  }
+
+  async renameWallSection(wallId, sectionId, newName) {
+    const wall = await this.getWall(wallId);
+    if (!wall) throw new Error('존재하지 않는 게시판입니다.');
+
+    if (!wall.sections) wall.sections = [];
+    const section = wall.sections.find(s => s.id === sectionId);
+    if (!section) throw new Error('존재하지 않는 섹션입니다.');
+
+    section.name = (newName && newName.trim()) ? newName.trim() : '이름 없는 섹션';
+    await this.save();
+    return section;
+  }
+
+  async deleteWallSection(wallId, sectionId) {
+    const wall = await this.getWall(wallId);
+    if (!wall) throw new Error('존재하지 않는 게시판입니다.');
+
+    if (!wall.sections) wall.sections = [];
+    
+    // Remove the section
+    wall.sections = wall.sections.filter(s => s.id !== sectionId);
+
+    // Cascade delete: remove all cards belonging to this section
+    if (wall.cards) {
+      for (const cardId in wall.cards) {
+        if (wall.cards[cardId].sectionId === sectionId) {
+          delete wall.cards[cardId];
+        }
+      }
+    }
+
+    await this.save();
+    return true;
+  }
+
+  async addWallCard(wallId, author, title, content, bgColor, image, previewUrl, previewTitle, previewDesc, previewImage, isNotice, sectionId) {
+    const wall = await this.getWall(wallId);
+    if (!wall) throw new Error('존재하지 않는 게시판입니다.');
+
+    const cardId = crypto.randomUUID();
+    const newCard = {
+      id: cardId,
+      author: (author && author.trim()) ? author.trim() : '익명',
+      title: (title && title.trim()) ? title.trim() : '',
+      content: (content && content.trim()) ? content.trim() : '',
+      bgColor: bgColor || 'bg-pastel-pink', // Default pastel pink
+      image: image || '',
+      previewUrl: previewUrl || '',
+      previewTitle: previewTitle || '',
+      previewDesc: previewDesc || '',
+      previewImage: previewImage || '',
+      likes: 0,
+      comments: [],
+      isNotice: !!isNotice,
+      sectionId: sectionId || '',
+      createdAt: new Date().toISOString()
+    };
+
+    wall.cards[cardId] = newCard;
+    await this.save();
+    return newCard;
+  }
+
+  async likeWallCard(wallId, cardId) {
+    const wall = await this.getWall(wallId);
+    if (!wall) throw new Error('존재하지 않는 게시판입니다.');
+
+    const card = wall.cards[cardId];
+    if (!card) throw new Error('존재하지 않는 카드입니다.');
+
+    card.likes = (card.likes || 0) + 1;
+    await this.save();
+    return card;
+  }
+
+  async commentWallCard(wallId, cardId, author, text) {
+    const wall = await this.getWall(wallId);
+    if (!wall) throw new Error('존재하지 않는 게시판입니다.');
+
+    const card = wall.cards[cardId];
+    if (!card) throw new Error('존재하지 않는 카드입니다.');
+
+    if (!card.comments) {
+      card.comments = [];
+    }
+
+    const comment = {
+      id: crypto.randomUUID(),
+      author: (author && author.trim()) ? author.trim() : '익명',
+      text: (text && text.trim()) ? text.trim() : '',
+      likes: 0,
+      createdAt: new Date().toISOString()
+    };
+
+    card.comments.push(comment);
+    await this.save();
+    return card;
+  }
+
+  async likeWallCardComment(wallId, cardId, commentId) {
+    const wall = await this.getWall(wallId);
+    if (!wall) throw new Error('존재하지 않는 게시판입니다.');
+
+    const card = wall.cards[cardId];
+    if (!card) throw new Error('존재하지 않는 카드입니다.');
+
+    const comment = (card.comments || []).find(c => c.id === commentId);
+    if (!comment) throw new Error('존재하지 않는 댓글입니다.');
+
+    comment.likes = (comment.likes || 0) + 1;
+    await this.save();
+    return card;
+  }
+
+  async deleteWallCard(wallId, cardId) {
+    const wall = await this.getWall(wallId);
+    if (!wall) throw new Error('존재하지 않는 게시판입니다.');
+
+    if (!wall.cards[cardId]) throw new Error('존재하지 않는 카드입니다.');
+
+    delete wall.cards[cardId];
+    await this.save();
+    return true;
+  }
+
+  async clearWall(wallId) {
+    const wall = await this.getWall(wallId);
+    if (!wall) throw new Error('존재하지 않는 게시판입니다.');
+    wall.cards = {};
+    await this.save();
+    return wall;
+  }
+
+  async deleteWall(wallId, creatorOrAdmin) {
+    if (!this.cache.walls) {
+      this.cache.walls = {};
+    }
+    const cleanId = wallId.trim().toUpperCase();
+    const wall = this.cache.walls[cleanId];
+    if (!wall) return false;
+
+    const cleanUser = String(creatorOrAdmin || '').toLowerCase();
+    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin';
+    const isCreator = wall.creator === cleanUser;
+
+    if (isCreator || isAdmin) {
+      delete this.cache.walls[cleanId];
+      await this.save();
+      return true;
+    }
+    throw new Error('이 게시판을 삭제할 권한이 없습니다.');
   }
 }
 
