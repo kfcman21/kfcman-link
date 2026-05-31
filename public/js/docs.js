@@ -366,8 +366,8 @@ async function fetchAndLoadDoc() {
       
       // Bypass the WYSIWYG editor entirely for HWP documents
       if (data.hasHwpData) {
-        showToast('success', '오리지널 한글 HWP 문서를 다운로드/웹에디터로 엽니다.');
-        window.location.href = `/api/docs/${currentDocId}/download`;
+        const onlineEditorUrl = `https://edwardkim.github.io/rhwp/?file=${encodeURIComponent(window.location.origin + '/api/docs/' + currentDocId + '/download')}`;
+        window.open(onlineEditorUrl, '_blank');
         closeDocEditor();
         return;
       }
@@ -860,8 +860,9 @@ function closeRhwpGuidanceModal() {
 
 function triggerHwpDownload(docId, event) {
   if (event) event.stopPropagation();
-  window.location.href = `/api/docs/${docId}/download`;
-  showToast('success', '오리지널 한글 HWP 문서를 다운로드/웹에디터로 엽니다.');
+  const onlineEditorUrl = `https://edwardkim.github.io/rhwp/?file=${encodeURIComponent(window.location.origin + '/api/docs/' + docId + '/download')}`;
+  window.open(onlineEditorUrl, '_blank');
+  showToast('success', '온라인 한글 웹에디터로 문서를 즉시 엽니다. (저장 팝업 없음)');
 }
 
 async function triggerHwpOverwrite(docId, event) {
