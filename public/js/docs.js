@@ -41,7 +41,7 @@ async function loadExplorer() {
   document.getElementById('docs-limit-banner').classList.remove('hidden');
   
   // Update header and document title
-  document.title = 'KFC MAN-DOCS - 실시간 한글 문서 공유 및 편집 공간';
+  document.title = 'KFCMAN.Cloud - 실시간 한글 문서 공유 및 동기화 보관함';
   
   const token = localStorage.getItem('kfcman_auth_token') || '';
   const headers = { 'Content-Type': 'application/json' };
@@ -430,7 +430,7 @@ async function fetchAndLoadDoc() {
       buildHistoryList(data.history || []);
       
       // Document title updates
-      document.title = `${data.title} | KFC MAN-DOCS`;
+      document.title = `${data.title} | KFCMAN.Cloud`;
       
       // Setup Auto-save interval (every 5 seconds)
       if (autoSaveTimer) clearInterval(autoSaveTimer);
@@ -587,7 +587,7 @@ async function saveCurrentDoc() {
       }
       
       // Update global title
-      document.title = `${data.title} | KFC MAN-DOCS`;
+      document.title = `${data.title} | KFCMAN.Cloud`;
     } else {
       const errData = await res.json();
       showToast('error', errData.error || '문서 저장 실패');
