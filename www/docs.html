@@ -289,10 +289,10 @@
             <span>협업 공유 링크</span>
           </button>
           
-          <a id="btn-rhwp-launcher" href="#" target="_blank" class="hidden btn px-4 py-3 text-xs font-black border-2 border-emerald-500 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white shadow-clay-flat hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer">
+          <button id="btn-rhwp-launcher" onclick="handleRhwpLaunchClick(currentDocId, event)" class="hidden btn px-4 py-3 text-xs font-black border-2 border-emerald-500 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white shadow-clay-flat hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer">
             <i data-lucide="external-link" class="w-4 h-4 text-white"></i>
             <span>rhwp 웹에디터로 편집</span>
-          </a>
+          </button>
           
           <button onclick="downloadAsHtml()" class="btn px-4 py-3 text-xs font-black border-2 border-slate-900 dark:border-white rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-100 shadow-clay-flat hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer" title="내보내기">
             <i data-lucide="download" class="w-4 h-4 text-clay-sky"></i>
@@ -543,6 +543,40 @@
           <button type="submit" class="flex-1 py-3 text-xs font-black border border-slate-900 dark:border-white rounded-xl bg-clay-purple text-white shadow-clay-flat-sm">암호 해제</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- 6. RHWP LAUNCH GUIDANCE DIALOG MODAL -->
+  <div id="rhwp-guidance-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-clay-cardDark border-4 border-slate-900 dark:border-white rounded-3xl max-w-md w-full p-6 shadow-clay-flat-lg text-center transform transition-all duration-300 scale-95 opacity-0" id="rhwp-guidance-content">
+      <div class="w-14 h-14 rounded-2xl border-2 border-emerald-200 dark:border-slate-800 bg-emerald-500 text-white flex items-center justify-center mx-auto mb-4 shadow-clay-flat">
+        <i data-lucide="help-circle" class="w-7 h-7"></i>
+      </div>
+      <h3 class="text-lg font-black text-slate-900 dark:text-white mb-2 font-title">크롬 보안 정책 안내 (Copy & Paste)</h3>
+      <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-4 font-bold leading-relaxed text-left">
+        크롬 브라우저의 보안 수칙으로 인해 일반 웹 페이지에서 확장 프로그램 주소(<code class="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-[10px] text-clay-purple">chrome-extension://</code>)로의 다이렉트 자동 이동은 차단됩니다.
+      </p>
+      
+      <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl mb-4 text-left">
+        <span class="text-[9px] font-black text-slate-400 block">복사된 HWP 에디터 주소</span>
+        <div id="rhwp-copy-url-text" class="text-[10px] font-mono break-all text-slate-800 dark:text-slate-300 mt-1 select-all bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-800 max-h-20 overflow-y-auto">
+          chrome-extension://pgakpjflombjmehnebnbpnalhegaanag/viewer.html?file=...
+        </div>
+      </div>
+      
+      <div class="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900 p-4 rounded-2xl text-left mb-6">
+        <h4 class="text-xs font-black text-emerald-800 dark:text-emerald-400 flex items-center gap-1"><i data-lucide="check-circle" class="w-4 h-4"></i> 복사 완료! 실행 가이드</h4>
+        <ol class="list-decimal list-inside text-[10px] font-bold text-slate-650 dark:text-slate-300 mt-2 space-y-1.5 leading-relaxed">
+          <li>에디터 주소가 클립보드에 **복사**되었습니다.</li>
+          <li>브라우저 새 탭을 엽니다. (<kbd class="bg-slate-200 dark:bg-slate-850 px-1 py-0.5 rounded shadow text-[9px] font-black">Ctrl + T</kbd>)</li>
+          <li>맨 위 주소창을 클릭 후 **붙여넣기**합니다. (<kbd class="bg-slate-200 dark:bg-slate-850 px-1 py-0.5 rounded shadow text-[9px] font-black">Ctrl + V</kbd>)</li>
+          <li>**엔터(Enter)**를 치면 한글 웹에디터가 무결하게 실행됩니다! 🚀</li>
+        </ol>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="closeRhwpGuidanceModal()" class="flex-1 py-3.5 text-xs font-black border border-slate-900 dark:border-white rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-clay-flat-sm">가이드 닫기</button>
+      </div>
     </div>
   </div>
 

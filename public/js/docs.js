@@ -123,9 +123,9 @@ function renderDocsGrid(docs) {
         <h4 class="font-black text-sm text-slate-900 dark:text-white line-clamp-1 truncate mt-2">${escapeHtml(doc.title)}</h4>
         <p class="text-[10px] text-slate-400 dark:text-slate-500">작성: @${doc.creator} | 변경: ${dateStr}</p>
         ${doc.hasHwpData ? `
-          <a href="chrome-extension://pgakpjflombjmehnebnbpnalhegaanag/viewer.html?file=${encodeURIComponent(window.location.origin + '/api/docs/' + doc.id + '/download')}" target="_blank" onclick="event.stopPropagation()" class="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-black text-[10px] shadow-sm flex items-center justify-center gap-1 mt-2.5 transition-all w-full">
+          <button onclick="handleRhwpLaunchClick('${doc.id}', event)" class="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white border-2 border-emerald-450 dark:border-emerald-900 rounded-lg font-black text-[10px] shadow-sm flex items-center justify-center gap-1 mt-2.5 transition-all w-full cursor-pointer">
             <i data-lucide="external-link" class="w-3.5 h-3.5 text-white"></i><span class="text-white font-bold">rhwp 웹에디터로 편집</span>
-          </a>
+          </button>
         ` : ''}
       </div>
       
@@ -781,3 +781,48 @@ function escapeHtml(text) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+
+// --------------------------------------------------------------------------
+// 🚀 8. RHWP WEB EDITOR LAUNCH HELPER (Chrome Security Bypass)
+// --------------------------------------------------------------------------
+
+function handleRhwpLaunchClick(docId, event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  
+  const targetUrl = `chrome-extension://pgakpjflombjmehnebnbpnalhegaanag/viewer.html?file=${encodeURIComponent(window.location.origin + '/api/docs/' + docId + '/download')}`;
+  
+  // Try to write to clipboard
+  navigator.clipboard.writeText(targetUrl).then(() => {
+    showRhwpGuidanceModal(targetUrl);
+  }).catch(() => {
+    showRhwpGuidanceModal(targetUrl);
+  });
+}
+
+function showRhwpGuidanceModal(url) {
+  document.getElementById('rhwp-copy-url-text').textContent = url;
+  const modal = document.getElementById('rhwp-guidance-modal');
+  const content = document.getElementById('rhwp-guidance-content');
+  modal.classList.remove('hidden');
+  setTimeout(() => {
+    content.classList.remove('scale-95', 'opacity-0');
+  }, 10);
+  showToast('success', '에디터 실행 주소가 클립보드에 자동으로 복사되었습니다!');
+}
+
+function closeRhwpGuidanceModal() {
+  const modal = document.getElementById('rhwp-guidance-modal');
+  const content = document.getElementById('rhwp-guidance-content');
+  content.classList.add('scale-95', 'opacity-0');
+  setTimeout(() => {
+    modal.classList.add('hidden');
+  }, 300);
+}
+
+// Bind to window context
+window.handleRhwpLaunchClick = handleRhwpLaunchClick;
+window.showRhwpGuidanceModal = showRhwpGuidanceModal;
+window.closeRhwpGuidanceModal = closeRhwpGuidanceModal;
