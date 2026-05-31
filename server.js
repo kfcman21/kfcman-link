@@ -71,7 +71,7 @@ const BLACKLIST = new Set([
 // SECURITY MIDDLEWARE: Authenticate User Session Token & Role
 // --------------------------------------------------------------------------
 function authenticate(req, res, next) {
-  const token = req.headers['x-kfcman-auth'];
+  const token = req.headers['x-kfcman-auth'] || req.query.token;
   if (!token) {
     return res.status(401).json({ error: '인증 토큰이 누락되었습니다. 로그인이 필요합니다.' });
   }
@@ -101,7 +101,7 @@ function authenticate(req, res, next) {
 }
 
 function optionalAuthenticate(req, res, next) {
-  const token = req.headers['x-kfcman-auth'];
+  const token = req.headers['x-kfcman-auth'] || req.query.token;
   if (!token) {
     req.username = '';
     req.role = 'guest';

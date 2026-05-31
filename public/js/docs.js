@@ -136,7 +136,7 @@ function renderDocsGrid(docs) {
       </div>
 
       <!-- File Folder Main click wrapper -->
-      <div class="w-full flex-1 flex flex-col items-center justify-center cursor-pointer mt-4" onclick="${isHwp ? `handleRhwpLaunchClick('${doc.id}', event)` : `openDocEditor('${doc.id}')`}">
+      <div class="w-full flex-1 flex flex-col items-center justify-center cursor-pointer mt-4" onclick="openDocEditor('${doc.id}')">
         ${iconHtml}
         
         <h4 class="font-extrabold text-xs text-slate-800 dark:text-slate-200 line-clamp-2 w-full px-1 text-center mt-3 select-none leading-snug break-all" title="${escapeHtml(doc.title)}">
@@ -364,11 +364,32 @@ async function fetchAndLoadDoc() {
       currentDocData = data;
       hidePasswordModal();
       
-      // Bypass the WYSIWYG editor entirely for HWP documents
+      const docEditor = document.getElementById('doc-editor');
+      const hwpIframe = document.getElementById('doc-hwp-iframe');
+      const editorToolbar = document.getElementById('docs-toolbar');
+      const marginBtn = document.getElementById('btn-margin-guides');
+      
       if (data.hasHwpData) {
-        closeDocEditor();
-        handleRhwpLaunchClick(currentDocId);
-        return;
+        // Hide standard WYSIWYG editor & margin lines
+        if (docEditor) docEditor.classList.add('hidden');
+        if (marginBtn) marginBtn.classList.add('hidden');
+        if (editorToolbar) editorToolbar.classList.add('hidden');
+        
+        // Show interactive embedded HWP Web editor
+        if (hwpIframe) {
+          hwpIframe.classList.remove('hidden');
+          const token = getTokenHelper();
+          hwpIframe.src = `https://edwardkim.github.io/rhwp/?file=${encodeURIComponent(window.location.origin + '/api/docs/' + currentDocId + '/download?token=' + token)}`;
+        }
+      } else {
+        // Standard Text Editor layout
+        if (docEditor) docEditor.classList.remove('hidden');
+        if (marginBtn) marginBtn.classList.remove('hidden');
+        if (editorToolbar) editorToolbar.classList.remove('hidden');
+        if (hwpIframe) {
+          hwpIframe.classList.add('hidden');
+          hwpIframe.src = '';
+        }
       }
       
       // Load title and content

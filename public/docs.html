@@ -318,7 +318,7 @@
         <div class="lg:col-span-3 space-y-4">
           
           <!-- HWP Style Editor Toolbar -->
-          <div class="bg-white dark:bg-clay-cardDark border-4 border-white dark:border-white/5 rounded-2xl p-3 shadow-md flex flex-wrap gap-1 items-center sticky top-20 z-40 bg-opacity-95 backdrop-blur-md">
+          <div id="docs-toolbar" class="bg-white dark:bg-clay-cardDark border-4 border-white dark:border-white/5 rounded-2xl p-3 shadow-md flex flex-wrap gap-1 items-center sticky top-20 z-40 bg-opacity-95 backdrop-blur-md">
             
             <!-- Font family -->
             <select id="editor-font" onchange="formatDoc('fontName', this.value)" class="bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg p-1.5 text-xs font-bold outline-none max-w-[120px]">
@@ -387,6 +387,9 @@
               <h2 style="text-align: center; font-weight: bold; margin-bottom: 24px;">한글 문서 제목을 입력하세요</h2>
               <p>여기에 본문 내용을 작성해 주세요. 글을 작성하거나 표를 그리고 서식을 마음껏 변경할 수 있습니다.</p>
             </div>
+            
+            <!-- Interactive HWP Web WASM iframe (hidden by default) -->
+            <iframe id="doc-hwp-iframe" class="hidden w-full h-[750px] border-4 border-slate-900 dark:border-white rounded-3xl shadow-clay-flat-lg" src="" allow="clipboard-read; clipboard-write"></iframe>
           </div>
           
         </div>
