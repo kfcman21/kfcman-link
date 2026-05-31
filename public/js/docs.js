@@ -136,7 +136,7 @@ function renderDocsGrid(docs) {
       </div>
 
       <!-- File Folder Main click wrapper -->
-      <div class="w-full flex-1 flex flex-col items-center justify-center cursor-pointer mt-4" onclick="openDocEditor('${doc.id}')">
+      <div class="w-full flex-1 flex flex-col items-center justify-center cursor-pointer mt-4" onclick="${isHwp ? `handleRhwpLaunchClick('${doc.id}', event)` : `openDocEditor('${doc.id}')`}">
         ${iconHtml}
         
         <h4 class="font-extrabold text-xs text-slate-800 dark:text-slate-200 line-clamp-2 w-full px-1 text-center mt-3 select-none leading-snug break-all" title="${escapeHtml(doc.title)}">
@@ -364,32 +364,25 @@ async function fetchAndLoadDoc() {
       currentDocData = data;
       hidePasswordModal();
       
+      if (data.hasHwpData) {
+        closeDocEditor();
+        handleRhwpLaunchClick(currentDocId);
+        return;
+      }
+      
       const docEditor = document.getElementById('doc-editor');
       const hwpIframe = document.getElementById('doc-hwp-iframe');
       const editorToolbar = document.getElementById('docs-toolbar');
       const marginBtn = document.getElementById('btn-margin-guides');
       
-      if (data.hasHwpData) {
-        // Hide standard WYSIWYG editor & margin lines
-        if (docEditor) docEditor.classList.add('hidden');
-        if (marginBtn) marginBtn.classList.add('hidden');
-        if (editorToolbar) editorToolbar.classList.add('hidden');
-        
-        // Show interactive embedded HWP Web editor
-        if (hwpIframe) {
-          hwpIframe.classList.remove('hidden');
-          const token = getTokenHelper();
-          hwpIframe.src = `chrome-extension://pgakpjflombjmehnebnbpnalhegaanag/viewer.html?file=${encodeURIComponent(window.location.origin + '/api/docs/' + currentDocId + '/download?token=' + token)}`;
-        }
-      } else {
-        // Standard Text Editor layout
-        if (docEditor) docEditor.classList.remove('hidden');
-        if (marginBtn) marginBtn.classList.remove('hidden');
-        if (editorToolbar) editorToolbar.classList.remove('hidden');
-        if (hwpIframe) {
-          hwpIframe.classList.add('hidden');
-          hwpIframe.src = '';
-        }
+      // Standard Text Editor layout
+      if (docEditor) docEditor.classList.remove('hidden');
+      if (marginBtn) marginBtn.classList.remove('hidden');
+      if (editorToolbar) editorToolbar.classList.remove('hidden');
+      if (hwpIframe) {
+        hwpIframe.classList.add('hidden');
+        hwpIframe.src = '';
+      }
       }
       
       // Load title and content
@@ -408,7 +401,8 @@ async function fetchAndLoadDoc() {
       if (rhwpLauncher) {
         if (data.hasHwpData) {
           rhwpLauncher.classList.remove('hidden');
-          rhwpLauncher.setAttribute('href', `chrome-extension://pgakpjflombjmehnebnbpnalhegaanag/viewer.html?file=${encodeURIComponent(window.location.origin + '/api/docs/' + currentDocId + '/download')}`);
+          const token = getTokenHelper();
+          rhwpLauncher.setAttribute('href', `chrome-extension://pgakpjflombjmehnebnbpnalhegaanag/viewer.html?file=${encodeURIComponent(window.location.origin + '/api/docs/' + currentDocId + '/download?token=' + token)}`);
         } else {
           rhwpLauncher.classList.add('hidden');
         }
@@ -848,7 +842,8 @@ function handleRhwpLaunchClick(docId, event) {
     event.stopPropagation();
   }
   
-  const targetUrl = `chrome-extension://pgakpjflombjmehnebnbpnalhegaanag/viewer.html?file=${encodeURIComponent(window.location.origin + '/api/docs/' + docId + '/download')}`;
+  const token = getTokenHelper();
+  const targetUrl = `chrome-extension://pgakpjflombjmehnebnbpnalhegaanag/viewer.html?file=${encodeURIComponent(window.location.origin + '/api/docs/' + docId + '/download?token=' + token)}`;
   
   // Try to write to clipboard
   navigator.clipboard.writeText(targetUrl).then(() => {
