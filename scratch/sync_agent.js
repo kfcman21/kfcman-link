@@ -25,14 +25,24 @@ function log(msg) {
 // REST helper to fetch json
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
-    http.get(url, (res) => {
+    const parsedUrl = new URL(url);
+    const options = {
+      hostname: parsedUrl.hostname,
+      port: parsedUrl.port || 80,
+      path: parsedUrl.pathname + parsedUrl.search,
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    };
+    http.get(options, (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
         try {
           resolve(JSON.parse(data));
         } catch (e) {
-          reject(e);
+          reject(new Error(`JSON Parse Error: ${e.message}. Received data length: ${data.length}. Data starts with: ${data.substring(0, 50)}`));
         }
       });
     }).on('error', reject);
