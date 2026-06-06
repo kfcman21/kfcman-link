@@ -1,4 +1,11 @@
 function initWall() {
+  // Generate client UUID for slot mapping
+  let clientUuid = localStorage.getItem('kfcman_wall_client_uuid');
+  if (!clientUuid) {
+    clientUuid = 'uuid-' + Math.random().toString(36).substring(2, 15) + '-' + Date.now();
+    localStorage.setItem('kfcman_wall_client_uuid', clientUuid);
+  }
+
   // 1. Core State and Route Parsing
   const pathSegments = window.location.pathname.split('/');
   let boardId = '';
@@ -13,12 +20,44 @@ function initWall() {
   let currentUser = null;
   let currentWall = null;
   let activeCardSectionId = '';
+  window.editingCardId = null;
 
   function isBoardAdmin() {
     if (!currentUser || !currentWall) return false;
     const cleanUser = currentUser.username.toLowerCase();
     const boardCreator = (currentWall.creator || '').toLowerCase();
-    return boardCreator === cleanUser;
+    return boardCreator === cleanUser || cleanUser === 'kfcman' || cleanUser === 'admin';
+  }
+
+  function getMyJoinedMember(wall) {
+    if (!wall || !wall.members) return null;
+    for (const number in wall.members) {
+      if (wall.members[number].clientUuid === clientUuid) {
+        return { number: parseInt(number), ...wall.members[number] };
+      }
+    }
+    return null;
+  }
+
+  function updateSidebarProfile(username, role) {
+    const sidebarProfileGroup = document.getElementById('sidebar-profile-group');
+    const sidebarGuestGroup = document.getElementById('sidebar-guest-group');
+    const sidebarProfileName = document.getElementById('sidebar-profile-name');
+    const sidebarProfileCircle = document.getElementById('sidebar-profile-circle');
+    
+    if (username) {
+      if (sidebarProfileGroup) sidebarProfileGroup.classList.remove('hidden');
+      if (sidebarGuestGroup) sidebarGuestGroup.classList.add('hidden');
+      if (sidebarProfileName) {
+        sidebarProfileName.textContent = username;
+      }
+      if (sidebarProfileCircle) {
+        sidebarProfileCircle.textContent = username.substring(0, 1).toUpperCase();
+      }
+    } else {
+      if (sidebarProfileGroup) sidebarProfileGroup.classList.add('hidden');
+      if (sidebarGuestGroup) sidebarGuestGroup.classList.remove('hidden');
+    }
   }
 
   // Load logged-in user profile if auth token is present
@@ -34,9 +73,17 @@ function initWall() {
         if (currentWall) {
           renderBoard(currentWall);
         }
+        updateSidebarProfile(data.username, data.role);
+      } else {
+        updateSidebarProfile(null);
       }
     })
-    .catch(err => console.error('Failed to load user context:', err));
+    .catch(err => {
+      console.error('Failed to load user context:', err);
+      updateSidebarProfile(null);
+    });
+  } else {
+    updateSidebarProfile(null);
   }
 
   // DOM Elements
@@ -190,12 +237,12 @@ function initWall() {
       container.classList.add('hidden');
       createdSection.classList.add('hidden');
       visitedSection.classList.add('hidden');
-      landingScreen.className = "max-w-md mx-auto space-y-6 mt-12";
+      landingScreen.className = "max-w-3xl mx-auto space-y-6 mt-12";
       return;
     }
 
     container.classList.remove('hidden');
-    landingScreen.className = "max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-start mt-12 space-y-0";
+    landingScreen.className = "max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mt-12 space-y-0";
 
     // 1. Render Created Walls
     if (createdWalls.length > 0) {
@@ -296,6 +343,8 @@ function initWall() {
     createWallForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const title = document.getElementById('wall-title-input').value.trim();
+      const topicEl = document.getElementById('wall-topic-input');
+      const topic = topicEl ? topicEl.value.trim() : '';
       const description = document.getElementById('wall-desc-input').value.trim();
       const maxUsersInput = document.getElementById('wall-max-users-input');
       const maxUsers = maxUsersInput ? parseInt(maxUsersInput.value) || 0 : 0;
@@ -312,7 +361,7 @@ function initWall() {
         const res = await fetch('/api/wall', {
           method: 'POST',
           headers: headers,
-          body: JSON.stringify({ title, description, maxUsers, layout })
+          body: JSON.stringify({ title, topic, description, maxUsers, layout })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '게시판 생성에 실패했습니다.');
@@ -380,6 +429,28 @@ function initWall() {
   function renderBoard(wall) {
     currentWall = wall;
     
+    // Check if slot selection is required
+    const myJoined = getMyJoinedMember(wall);
+    const needSlotSelect = wall.maxUsers > 0 && !isBoardAdmin() && !myJoined;
+
+    const numberSelectScreen = document.getElementById('number-select-screen');
+    if (needSlotSelect) {
+      // Hide board screen, show number select screen
+      boardScreen.classList.add('hidden');
+      btnFloatingAdd.classList.add('hidden');
+      if (numberSelectScreen) {
+        numberSelectScreen.classList.remove('hidden');
+        renderNumberSelectGrid(wall);
+      }
+      return; // Block card rendering
+    } else {
+      // Show board screen, hide number select screen
+      boardScreen.classList.remove('hidden');
+      if (numberSelectScreen) {
+        numberSelectScreen.classList.add('hidden');
+      }
+    }
+    
     // Refresh number login display states
     if (typeof updateNumberLoginUI === 'function') {
       updateNumberLoginUI();
@@ -396,6 +467,15 @@ function initWall() {
     }
 
     document.getElementById('board-title').textContent = wall.title;
+    const boardTopicEl = document.getElementById('board-topic');
+    if (boardTopicEl) {
+      boardTopicEl.textContent = wall.topic || '';
+      if (wall.topic) {
+        boardTopicEl.classList.remove('hidden');
+      } else {
+        boardTopicEl.classList.add('hidden');
+      }
+    }
     document.getElementById('board-desc').textContent = wall.description;
     
     const boardCodeBadge = document.getElementById('board-code-badge');
@@ -455,7 +535,6 @@ function initWall() {
     }
 
     // Toggle FAB visibility and update cardsGrid wrapper classes based on layout
-    const btnFloatingAdd = document.getElementById('btn-floating-add');
     if (btnFloatingAdd) {
       if (wall.layout === 'columns') {
         btnFloatingAdd.classList.add('hidden');
@@ -465,7 +544,7 @@ function initWall() {
     }
 
     if (wall.layout === 'columns') {
-      cardsGrid.className = "flex gap-6 overflow-x-auto pb-4 custom-scrollbar items-start w-full min-h-[50vh]";
+      cardsGrid.className = "flex gap-3 overflow-x-auto pb-4 custom-scrollbar items-start w-full min-h-[50vh]";
     } else if (wall.layout === 'rows') {
       cardsGrid.className = "max-w-3xl mx-auto flex flex-col gap-6 w-full";
     } else if (wall.layout === 'timeline') {
@@ -496,54 +575,103 @@ function initWall() {
 
     // ---------------- COLUMNS LAYOUT RENDERING ----------------
     if (wall.layout === 'columns') {
-      const sections = wall.sections || [];
+      const sections = [{ id: 'notice-section', name: '📢 공지사항' }].concat(wall.sections || []);
       
       sections.forEach(sec => {
         const secCards = cards.filter(c => c.sectionId === sec.id);
 
         const colDiv = document.createElement('div');
-        colDiv.className = "flex-shrink-0 w-80 bg-slate-100/70 dark:bg-slate-900/40 border-4 border-white dark:border-slate-800 rounded-3xl p-4 flex flex-col max-h-[75vh] shadow-sm";
+        colDiv.className = "flex-shrink-0 w-48 bg-white/95 dark:bg-slate-900/90 border-2 border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 flex flex-col max-h-[75vh] shadow-[0_8px_30px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-300 hover:border-slate-350 dark:hover:border-slate-750";
 
         // Admin section edit controls
         let adminHeaderControls = '';
-        if (isBoardAdmin()) {
+        if (isBoardAdmin() && sec.id !== 'notice-section') {
           adminHeaderControls = `
             <div class="flex items-center gap-0.5">
-              <button onclick="renameSection(event, '${sec.id}', '${escapeHTML(sec.name)}')" class="w-6.5 h-6.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center text-slate-500 hover:text-slate-850 dark:hover:text-white transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-800" title="섹션명 변경">
+              <button onclick="renameSection(event, '${sec.id}', '${escapeHTML(sec.name)}')" class="w-7 h-7 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 flex items-center justify-center text-slate-500 hover:text-slate-850 dark:hover:text-white transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-800" title="섹션명 변경">
                 <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
               </button>
-              <button onclick="deleteSection(event, '${sec.id}')" class="w-6.5 h-6.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center text-slate-500 hover:text-rose-500 dark:hover:text-rose-450 transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-800" title="섹션 삭제">
+              <button onclick="deleteSection(event, '${sec.id}')" class="w-7 h-7 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 flex items-center justify-center text-slate-500 hover:text-rose-500 dark:hover:text-rose-450 transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-800" title="섹션 삭제">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
               </button>
             </div>
           `;
         }
 
+        // Extract slot number from section name to show number and name together
+        const match = sec.name.match(/^(\d+)번$/);
+        let displayName = sec.name;
+        if (match && wall.members) {
+          const slotNum = parseInt(match[1], 10);
+          const member = wall.members[slotNum];
+          if (member) {
+            displayName = `${member.emoji} ${sec.name} ${member.name}`;
+          }
+        }
+
+        // Make the header title look like a premium badge / header
+        let headerTitleHTML = '';
+        if (sec.id === 'notice-section') {
+          headerTitleHTML = `
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+              <h3 class="text-xs font-black text-slate-850 dark:text-slate-100 truncate" title="${escapeHTML(displayName)}">
+                📌 ${escapeHTML(displayName)}
+              </h3>
+            </div>
+          `;
+        } else {
+          headerTitleHTML = `
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-clay-purple"></span>
+              <h3 class="text-xs font-black text-slate-850 dark:text-slate-100 truncate" title="${escapeHTML(displayName)}">
+                ${escapeHTML(displayName)}
+              </h3>
+            </div>
+          `;
+        }
+
         const headerHTML = `
-          <div class="flex justify-between items-center mb-3 pb-2 border-b-2 border-slate-900/5 dark:border-white/5 flex-shrink-0">
-            <h3 class="text-xs font-black text-slate-800 dark:text-slate-200 truncate pr-2 max-w-[200px]" title="${escapeHTML(sec.name)}">
-              ${escapeHTML(sec.name)}
-            </h3>
+          <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100 dark:border-slate-800/80 flex-shrink-0">
+            ${headerTitleHTML}
             ${adminHeaderControls}
           </div>
         `;
 
-        // Section add card button
-        const addCardBtnHTML = `
-          <button onclick="openCardModalForSection('${sec.id}')" class="w-full py-2.5 mb-3 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-clay-purple hover:bg-white/50 dark:hover:bg-black/20 rounded-2xl text-[10px] font-black text-slate-400 hover:text-clay-purple transition-all duration-150 flex items-center justify-center gap-1 cursor-pointer flex-shrink-0">
-            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-            <span>카드 추가</span>
-          </button>
-        `;
+        // Section add card button or restricted warning
+        let addCardBtnHTML = '';
+        const isRestrictedBoard = wall.maxUsers > 0;
+        const isMySection = myJoined && sec.name === `${myJoined.number}번`;
+        const canWrite = sec.id === 'notice-section' ? isBoardAdmin() : (!isRestrictedBoard || isMySection || isBoardAdmin());
+
+        if (canWrite) {
+          addCardBtnHTML = `
+            <button onclick="openCardModalForSection('${sec.id}')" class="w-full py-3 mb-4 bg-slate-50/50 dark:bg-slate-900/50 border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-clay-purple/60 dark:hover:border-clay-purple/60 hover:bg-clay-purple/[0.04] dark:hover:bg-clay-purple/[0.04] rounded-2xl text-[11px] font-black text-slate-500 dark:text-slate-400 hover:text-clay-purple dark:hover:text-clay-purple transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer flex-shrink-0 hover:scale-[1.01] shadow-sm hover:shadow-md">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>카드 추가</span>
+            </button>
+          `;
+        } else {
+          const lockText = sec.id === 'notice-section' ? '교사(관리자) 작성 전용' : `${escapeHTML(sec.name)} 전용 컬럼`;
+          addCardBtnHTML = `
+            <div class="w-full py-3 mb-4 bg-slate-100/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-2xl text-[10px] font-bold text-slate-450 dark:text-slate-500 flex items-center justify-center gap-1.5 cursor-not-allowed flex-shrink-0 select-none" title="${escapeHTML(sec.name)} 전용 컬럼입니다.">
+              <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-400 dark:text-slate-600"></i>
+              <span>🔒 ${lockText}</span>
+            </div>
+          `;
+        }
 
         const cardsContainer = document.createElement('div');
         cardsContainer.className = "space-y-4 overflow-y-auto pr-1 flex-grow custom-scrollbar";
 
         if (secCards.length === 0) {
           cardsContainer.innerHTML = `
-            <div class="py-12 text-center border-2 border-dashed border-slate-900/5 dark:border-white/5 rounded-2xl bg-slate-50/50 dark:bg-slate-950/20">
-              <i data-lucide="sticky-note" class="w-8 h-8 text-slate-300 dark:text-slate-700 mx-auto mb-2"></i>
-              <p class="text-[9px] font-bold text-slate-400 dark:text-slate-500">카드가 비어 있습니다.</p>
+            <div class="py-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800/80 rounded-2xl bg-slate-50/50 dark:bg-slate-950/20 transition-all duration-300">
+              <div class="w-10 h-10 rounded-full bg-slate-100/60 dark:bg-slate-900/60 flex items-center justify-center mx-auto mb-2.5 text-slate-400 dark:text-slate-600">
+                <i data-lucide="sticky-note" class="w-5 h-5 text-slate-400/85 dark:text-slate-600"></i>
+              </div>
+              <p class="text-[11px] font-extrabold text-slate-550 dark:text-slate-400">작성된 카드가 없습니다.</p>
+              <p class="text-[9px] font-bold text-slate-400/70 dark:text-slate-500/70 mt-1">새로운 아이디어를 채워보세요!</p>
             </div>
           `;
         } else {
@@ -563,7 +691,7 @@ function initWall() {
       // Render "Add Section" Column if Admin
       if (isBoardAdmin()) {
         const addColDiv = document.createElement('div');
-        addColDiv.className = "flex-shrink-0 w-80 bg-white/40 dark:bg-slate-950/5 border-4 border-dashed border-slate-300 dark:border-slate-800 rounded-3xl p-4 flex flex-col justify-center items-center shadow-sm h-32 hover:border-clay-purple hover:bg-white/60 transition-all duration-150";
+        addColDiv.className = "flex-shrink-0 w-48 bg-white/40 dark:bg-slate-950/5 border-4 border-dashed border-slate-300 dark:border-slate-800 rounded-3xl p-4 flex flex-col justify-center items-center shadow-sm h-32 hover:border-clay-purple hover:bg-white/60 transition-all duration-150";
         addColDiv.id = "add-section-col-trigger";
         addColDiv.innerHTML = `
           <button onclick="showAddSectionForm()" class="flex flex-col items-center gap-1.5 text-slate-400 hover:text-clay-purple font-black text-xs transition-colors cursor-pointer w-full h-full justify-center">
@@ -619,6 +747,146 @@ function initWall() {
     updateIcons();
   }
 
+  // --- SLOT SELECTION SCREEN RENDERING & REGISTRATION ---
+  function renderNumberSelectGrid(wall) {
+    const lobbyTitleEl = document.getElementById('lobby-board-title');
+    const lobbyTopicEl = document.getElementById('lobby-board-topic');
+    if (lobbyTitleEl) {
+      lobbyTitleEl.textContent = wall.title;
+    }
+    if (lobbyTopicEl) {
+      lobbyTopicEl.textContent = wall.topic || '';
+      if (wall.topic) {
+        lobbyTopicEl.classList.remove('hidden');
+      } else {
+        lobbyTopicEl.classList.add('hidden');
+      }
+    }
+
+    const grid = document.getElementById('number-buttons-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const maxUsers = wall.maxUsers || 0;
+    for (let i = 1; i <= maxUsers; i++) {
+      const member = wall.members[i];
+      const btn = document.createElement('button');
+      
+      if (member) {
+        // Occupied slot
+        btn.className = "flex flex-col items-center justify-center p-4 rounded-2xl border-4 border-slate-200 dark:border-slate-800 bg-slate-150 dark:bg-slate-900 opacity-60 cursor-not-allowed select-none transition-all shadow-sm";
+        btn.disabled = true;
+        btn.innerHTML = `
+          <span class="text-[10px] font-black text-slate-400 dark:text-slate-500">${i}번</span>
+          <span class="text-2xl my-1 select-none">${member.emoji}</span>
+          <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 truncate max-w-full" title="${escapeHTML(member.name)}">${escapeHTML(member.name)}</span>
+        `;
+      } else {
+        // Free slot
+        btn.className = "flex flex-col items-center justify-center p-4 rounded-2xl border-4 border-violet-200 dark:border-slate-800 bg-white dark:bg-clay-cardDark hover:border-clay-purple hover:scale-105 active:scale-95 cursor-pointer transition-all shadow-clay-flat-sm";
+        btn.innerHTML = `
+          <span class="text-[10px] font-black text-slate-550 dark:text-slate-400">${i}번</span>
+          <span class="text-2xl my-1 text-slate-350 dark:text-slate-650 select-none">❓</span>
+          <span class="text-[9px] font-bold text-slate-400 dark:text-slate-550">선택 가능</span>
+        `;
+        btn.onclick = () => {
+          openRegisterModal(i);
+        };
+      }
+      grid.appendChild(btn);
+    }
+  }
+
+  let selectedRegisterNumber = null;
+  const registerModal = document.getElementById('register-modal');
+  const registerModalContent = document.getElementById('register-modal-content');
+  const btnCloseRegisterModal = document.getElementById('btn-close-register-modal');
+  const registerSlotForm = document.getElementById('register-slot-form');
+  const registerNameInput = document.getElementById('register-name-input');
+  const registerModalTitleText = document.getElementById('register-modal-title-text');
+
+  function openRegisterModal(number) {
+    selectedRegisterNumber = number;
+    if (registerModalTitleText) {
+      registerModalTitleText.textContent = `${number}번 등록하기`;
+    }
+    if (registerNameInput) {
+      registerNameInput.value = '';
+    }
+    const firstEmoji = document.querySelector('input[name="register-emoji"]');
+    if (firstEmoji) firstEmoji.checked = true;
+
+    if (registerModal) {
+      registerModal.classList.remove('hidden');
+      setTimeout(() => {
+        if (registerModalContent) {
+          registerModalContent.classList.remove('scale-95', 'opacity-0');
+          registerModalContent.classList.add('scale-100', 'opacity-100');
+        }
+      }, 50);
+    }
+  }
+
+  function closeRegisterModal() {
+    if (registerModalContent) {
+      registerModalContent.classList.remove('scale-100', 'opacity-100');
+      registerModalContent.classList.add('scale-95', 'opacity-0');
+    }
+    setTimeout(() => {
+      if (registerModal) registerModal.classList.add('hidden');
+      selectedRegisterNumber = null;
+    }, 200);
+  }
+
+  if (btnCloseRegisterModal) {
+    btnCloseRegisterModal.onclick = closeRegisterModal;
+  }
+  if (registerModal) {
+    registerModal.addEventListener('click', (e) => {
+      if (e.target === registerModal) {
+        closeRegisterModal();
+      }
+    });
+  }
+
+  if (registerSlotForm) {
+    registerSlotForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = registerNameInput.value.trim();
+      const emojiEl = document.querySelector('input[name="register-emoji"]:checked');
+      const emoji = emojiEl ? emojiEl.value : '😃';
+
+      if (!name) return;
+      if (!selectedRegisterNumber) return;
+
+      if (containsProfanity(name)) {
+        alert('부적절한 표현(욕설, 비하, 성적 표현 등)이 감지되어 등록할 수 없습니다. 서로 배려하는 예쁜 언어를 사용해 주세요! 🌸');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/wall/${boardId}/join`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            number: selectedRegisterNumber,
+            name,
+            emoji,
+            clientUuid
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '등록에 실패했습니다.');
+
+        closeRegisterModal();
+        renderBoard(data.wall);
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  }
+
   // Helper: Extract YouTube video ID
   function getYouTubeId(url) {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -628,11 +896,21 @@ function initWall() {
 
   // Create individual card elements
   function createCardDOM(card, isTopPreference) {
+    const myJoined = getMyJoinedMember(currentWall);
+    let commentAuthorElHTML = '';
+    if (myJoined) {
+      const commentAuthorVal = `${myJoined.emoji} ${myJoined.number}번 ${myJoined.name}`;
+      commentAuthorElHTML = `<input type="text" id="comment-author-${card.id}" value="${commentAuthorVal}" readonly class="w-24 bg-slate-100 dark:bg-slate-900/40 cursor-not-allowed border border-slate-950/10 dark:border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-black opacity-70">`;
+    } else {
+      commentAuthorElHTML = `<input type="text" id="comment-author-${card.id}" placeholder="이름" class="w-16 bg-white/50 dark:bg-black/20 border border-slate-950/10 dark:border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-black focus:outline-none placeholder-slate-400">`;
+    }
+
     const cardDiv = document.createElement('div');
     const isNotice = !!card.isNotice;
-    let extraClasses = isTopPreference 
-      ? ' !border-rose-400 dark:!border-rose-400 shadow-[0_0_25px_rgba(244,63,94,0.45)] ring-4 ring-rose-400/30 scale-[1.01]' 
-      : '';
+    let extraClasses = '';
+    if (isTopPreference) {
+      extraClasses += ' popular-card-highlight';
+    }
     if (isNotice) {
       extraClasses += ' !border-slate-800 dark:!border-slate-200 border-4 shadow-lg scale-[1.01]';
     }
@@ -721,7 +999,7 @@ function initWall() {
     if (isTopPreference) {
       crownHTML = `
         <div class="absolute -top-4 -right-3 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-2 border-rose-500 dark:border-rose-400 px-3 py-1.5 rounded-full text-xs font-title font-black tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(244,63,94,0.35)] animate-bounce z-10 select-none">
-          <span class="text-rose-500">❤️</span> 공감 1위
+          <span class="text-rose-500">🔥</span> 인기 글
         </div>
       `;
     }
@@ -775,6 +1053,9 @@ function initWall() {
               <i data-lucide="pin" class="w-4 h-4 ${isNotice ? 'text-amber-500 fill-amber-500' : 'text-slate-400'}"></i>
             </button>
             ` : ''}
+            <button onclick="editCard(event, '${card.id}')" class="w-8 h-8 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-slate-100 flex items-center justify-center cursor-pointer transition-colors" title="카드 수정">
+              <i data-lucide="edit-2" class="w-4 h-4 text-slate-500"></i>
+            </button>
             <button onclick="deleteCard('${card.id}')" class="w-8 h-8 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-slate-100 flex items-center justify-center cursor-pointer transition-colors" title="카드 삭제">
               <i data-lucide="trash-2" class="w-4 h-4 text-red-500"></i>
             </button>
@@ -789,7 +1070,7 @@ function initWall() {
           
           <!-- Add Comment Form -->
           <div class="flex gap-1.5 mt-2">
-            <input type="text" id="comment-author-${card.id}" placeholder="이름" class="w-16 bg-white/50 dark:bg-black/20 border border-slate-950/10 dark:border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-black focus:outline-none placeholder-slate-400">
+            ${commentAuthorElHTML}
             <input type="text" id="comment-text-${card.id}" placeholder="댓글 입력..." class="w-full bg-white/50 dark:bg-black/20 border border-slate-950/10 dark:border-white/10 rounded-lg px-2.5 py-1.5 text-[10px] font-bold focus:outline-none placeholder-slate-400">
             <button onclick="submitComment('${card.id}')" class="px-2 py-1.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg text-[10px] font-black hover:opacity-85 cursor-pointer">등록</button>
           </div>
@@ -913,6 +1194,119 @@ function initWall() {
     }
   };
 
+  // Editing a card
+  window.editCard = (event, cardId) => {
+    if (event) event.stopPropagation(); // Prevent opening detail modal
+    if (!currentWall || !currentWall.cards) return;
+    const card = currentWall.cards[cardId];
+    if (!card) return;
+
+    window.editingCardId = cardId;
+    activeCardSectionId = card.sectionId || '';
+
+    // Change modal title and submit button text
+    const titleEl = document.getElementById('card-modal-title-text');
+    if (titleEl) titleEl.textContent = '카드 수정하기';
+    const btnTextEl = document.getElementById('card-submit-btn-text');
+    if (btnTextEl) btnTextEl.textContent = '카드 수정 완료';
+
+    // Populate values
+    const authorEl = document.getElementById('card-author');
+    if (authorEl) authorEl.value = card.author || '';
+    const titleInput = document.getElementById('card-title');
+    if (titleInput) titleInput.value = card.title || '';
+    const contentEl = document.getElementById('card-content');
+    if (contentEl) contentEl.value = card.content || '';
+
+    // Restore background color selection
+    if (card.bgColor) {
+      const colorRadio = document.querySelector(`input[name="color-picker"][value="${card.bgColor}"]`);
+      if (colorRadio) colorRadio.checked = true;
+    }
+
+    // Restore image preview
+    const imageEl = document.getElementById('card-image-url');
+    if (imageEl) imageEl.value = card.image || '';
+    if (card.image) {
+      const ytId = getYouTubeId(card.image);
+      if (!ytId) {
+        if (modalImgPreview && modalImgPreviewContainer) {
+          modalImgPreview.src = card.image;
+          modalImgPreviewContainer.classList.remove('hidden');
+        }
+      } else {
+        if (modalImgPreviewContainer) {
+          modalImgPreviewContainer.classList.add('hidden');
+          modalImgPreview.src = '';
+        }
+      }
+    } else {
+      if (modalImgPreviewContainer) {
+        modalImgPreviewContainer.classList.add('hidden');
+        modalImgPreview.src = '';
+      }
+    }
+
+    // Restore link preview
+    if (card.previewUrl) {
+      activePreview = {
+        previewUrl: card.previewUrl,
+        previewTitle: card.previewTitle || '',
+        previewDesc: card.previewDesc || '',
+        previewImage: card.previewImage || ''
+      };
+      
+      if (linkPreviewTitle) linkPreviewTitle.textContent = card.previewTitle || '링크 연결됨';
+      if (linkPreviewDesc) linkPreviewDesc.textContent = card.previewDesc || card.previewUrl;
+      if (linkPreviewUrl) linkPreviewUrl.textContent = card.previewUrl;
+
+      if (card.previewImage && linkPreviewImg && linkPreviewImageContainer) {
+        linkPreviewImg.src = card.previewImage;
+        linkPreviewImageContainer.classList.remove('hidden');
+      } else if (linkPreviewImageContainer) {
+        linkPreviewImageContainer.classList.add('hidden');
+      }
+
+      if (linkPreviewBox) {
+        linkPreviewBox.classList.remove('hidden');
+      }
+    } else {
+      activePreview = null;
+      if (linkPreviewBox) {
+        linkPreviewBox.classList.add('hidden');
+      }
+    }
+
+    // Restore attachment
+    if (card.attachmentName && card.attachmentData) {
+      if (cardAttachmentNameInput) cardAttachmentNameInput.value = card.attachmentName;
+      if (cardAttachmentDataInput) cardAttachmentDataInput.value = card.attachmentData;
+      
+      if (attachmentStatusEl) {
+        attachmentStatusEl.textContent = card.attachmentName;
+        attachmentStatusEl.className = "text-xs font-black text-rose-500 self-center truncate max-w-[200px]";
+      }
+      if (btnRemoveAttachmentEl) btnRemoveAttachmentEl.classList.remove('hidden');
+    } else {
+      if (typeof removeAttachmentFile === 'function') {
+        removeAttachmentFile();
+      }
+    }
+
+    // Restore notice pin
+    const isNoticeEl = document.getElementById('card-is-notice');
+    if (isNoticeEl) {
+      isNoticeEl.checked = !!card.isNotice;
+    }
+
+    // Open Modal
+    cardModal.classList.remove('hidden');
+    setTimeout(() => {
+      cardModalContent.classList.remove('scale-95', 'opacity-0');
+      cardModalContent.classList.add('scale-100', 'opacity-100');
+    }, 50);
+  };
+
   // --- FLOATING ACTIONS / MODAL HANDLERS ---
   if (btnFloatingAdd) {
     btnFloatingAdd.onclick = () => {
@@ -1012,6 +1406,14 @@ function initWall() {
     cardModalContent.classList.add('scale-95', 'opacity-0');
     setTimeout(() => {
       cardModal.classList.add('hidden');
+
+      // Reset edit mode states
+      window.editingCardId = null;
+      const titleEl = document.getElementById('card-modal-title-text');
+      if (titleEl) titleEl.textContent = '카드 작성하기';
+      const btnTextEl = document.getElementById('card-submit-btn-text');
+      if (btnTextEl) btnTextEl.textContent = '포스트 보드에 부착하기';
+
       // Reset image preview when closing modal
       if (modalImgPreviewContainer) {
         modalImgPreviewContainer.classList.add('hidden');
@@ -1027,6 +1429,13 @@ function initWall() {
       // Reset document attachments when closing modal
       if (typeof removeAttachmentFile === 'function') {
         removeAttachmentFile();
+      }
+      // Reset form input values
+      if (cardCreationForm) {
+        cardCreationForm.reset();
+        if (typeof updateNumberLoginUI === 'function') {
+          updateNumberLoginUI();
+        }
       }
     }, 200);
   }
@@ -1190,6 +1599,19 @@ function initWall() {
       }
     }
     
+    const myJoined = getMyJoinedMember(currentWall);
+    if (detailCommentAuthor) {
+      if (myJoined) {
+        detailCommentAuthor.value = `${myJoined.emoji} ${myJoined.number}번 ${myJoined.name}`;
+        detailCommentAuthor.readOnly = true;
+        detailCommentAuthor.classList.add('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
+      } else {
+        detailCommentAuthor.value = '';
+        detailCommentAuthor.readOnly = false;
+        detailCommentAuthor.classList.remove('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
+      }
+    }
+
     // Open Modal
     cardDetailModal.classList.remove('hidden');
     setTimeout(() => {
@@ -1405,9 +1827,11 @@ function initWall() {
       const attachmentData = document.getElementById('card-attachment-data').value;
 
       // Optimistic Close: Close modal instantly so the UX feels 100% immediate
+      const isEditMode = !!window.editingCardId;
+      const targetCardId = window.editingCardId;
       closeModal();
 
-      const payload = { author, title, content, bgColor, image, isNotice, sectionId: activeCardSectionId, attachmentName, attachmentData };
+      const payload = { author, title, content, bgColor, image, isNotice, sectionId: activeCardSectionId, attachmentName, attachmentData, clientUuid };
       if (activePreview) {
         payload.previewUrl = activePreview.previewUrl;
         payload.previewTitle = activePreview.previewTitle;
@@ -1422,19 +1846,23 @@ function initWall() {
         headers['X-KFCMan-Auth'] = token;
       }
 
+      const url = isEditMode ? `/api/wall/${boardId}/cards/${targetCardId}` : `/api/wall/${boardId}/cards`;
+      const method = isEditMode ? 'PUT' : 'POST';
+
       try {
-        const res = await fetch(`/api/wall/${boardId}/cards`, {
-          method: 'POST',
+        const res = await fetch(url, {
+          method: method,
           headers: headers,
           body: JSON.stringify(payload)
         });
         if (!res.ok) {
           const errData = await res.json();
-          throw new Error(errData.error || '카드 작성에 실패했습니다.');
+          throw new Error(errData.error || (isEditMode ? '카드 수정에 실패했습니다.' : '카드 작성에 실패했습니다.'));
         }
 
         // Success - clear form
         cardCreationForm.reset();
+        updateNumberLoginUI();
         if (isNoticeEl) isNoticeEl.checked = false;
         // Immediate local refresh
         fetch(`/api/wall/${boardId}`).then(r => r.json()).then(w => renderBoard(w));
@@ -1442,6 +1870,16 @@ function initWall() {
         alert(err.message);
         // Reopen modal to let user try again if request fails
         cardModal.classList.remove('hidden');
+        
+        // Restore editing state if it was edit mode
+        if (isEditMode) {
+          window.editingCardId = targetCardId;
+          const titleEl = document.getElementById('card-modal-title-text');
+          if (titleEl) titleEl.textContent = '카드 수정하기';
+          const btnTextEl = document.getElementById('card-submit-btn-text');
+          if (btnTextEl) btnTextEl.textContent = '카드 수정 완료';
+        }
+
         setTimeout(() => {
           cardModalContent.classList.remove('scale-95', 'opacity-0');
           cardModalContent.classList.add('scale-100', 'opacity-100');
@@ -1490,7 +1928,7 @@ function initWall() {
   window.showAddSectionForm = () => {
     const trigger = document.getElementById('add-section-col-trigger');
     if (!trigger) return;
-    trigger.className = "flex-shrink-0 w-80 bg-slate-50 dark:bg-slate-900 border-4 border-slate-200 dark:border-slate-800 rounded-3xl p-4 flex flex-col shadow-sm h-32 justify-between transition-all";
+    trigger.className = "flex-shrink-0 w-48 bg-slate-50 dark:bg-slate-900 border-4 border-slate-200 dark:border-slate-800 rounded-3xl p-4 flex flex-col shadow-sm h-32 justify-between transition-all";
     trigger.innerHTML = `
       <div class="space-y-1.5 flex-grow">
         <label class="text-[10px] font-black text-slate-500 dark:text-slate-400">섹션 제목</label>
@@ -1508,7 +1946,7 @@ function initWall() {
   window.cancelAddSection = () => {
     const trigger = document.getElementById('add-section-col-trigger');
     if (!trigger) return;
-    trigger.className = "flex-shrink-0 w-80 bg-white/40 dark:bg-slate-950/5 border-4 border-dashed border-slate-300 dark:border-slate-800 rounded-3xl p-4 flex flex-col justify-center items-center shadow-sm h-32 hover:border-clay-purple hover:bg-white/60 transition-all duration-150";
+    trigger.className = "flex-shrink-0 w-48 bg-white/40 dark:bg-slate-950/5 border-4 border-dashed border-slate-300 dark:border-slate-800 rounded-3xl p-4 flex flex-col justify-center items-center shadow-sm h-32 hover:border-clay-purple hover:bg-white/60 transition-all duration-150";
     trigger.innerHTML = `
       <button onclick="showAddSectionForm()" class="flex flex-col items-center gap-1.5 text-slate-400 hover:text-clay-purple font-black text-xs transition-colors cursor-pointer w-full h-full justify-center">
         <i data-lucide="plus-circle" class="w-8 h-8"></i>
@@ -1612,7 +2050,29 @@ function initWall() {
   };
 
   // --- NUMBER MEMBER LOGIN MODULE ---
-  window.toggleNumberLogin = () => {
+  window.toggleNumberLogin = async () => {
+    if (currentWall && currentWall.maxUsers > 0) {
+      const myJoined = getMyJoinedMember(currentWall);
+      if (myJoined) {
+        if (confirm(`현재 선택한 번호(${myJoined.number}번)를 반납하고 로그아웃 하시겠습니까?`)) {
+          try {
+            await fetch(`/api/wall/${boardId}/leave`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ number: myJoined.number, clientUuid })
+            });
+            // Fetch updated state
+            const r = await fetch(`/api/wall/${boardId}`);
+            const w = await r.json();
+            renderBoard(w);
+          } catch (err) {
+            console.error('Failed to leave slot:', err);
+          }
+        }
+      }
+      return;
+    }
+
     const currentNumber = localStorage.getItem('kfcman_wall_member_number');
     if (currentNumber) {
       if (confirm('현재 번호 회원 로그아웃 하시겠습니까?')) {
@@ -1640,6 +2100,31 @@ function initWall() {
     const authorInput = document.getElementById('card-author');
     
     if (!btn || !textEl) return;
+
+    if (currentWall && currentWall.maxUsers > 0) {
+      // Slot selection entry mode
+      const myJoined = getMyJoinedMember(currentWall);
+      if (myJoined) {
+        textEl.textContent = `${myJoined.emoji} ${myJoined.number}번 ${myJoined.name} (반납)`;
+        btn.className = "btn px-4 py-3 text-xs font-black border-2 border-rose-200 dark:border-rose-950 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white shadow-clay-flat hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer";
+        
+        if (authorInput) {
+          authorInput.value = `${myJoined.emoji} ${myJoined.number}번 ${myJoined.name}`;
+          authorInput.readOnly = true;
+          authorInput.classList.add('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
+        }
+      } else {
+        textEl.textContent = "번호 선택 대기";
+        btn.className = "btn px-4 py-3 text-xs font-black border-2 border-amber-200 dark:border-slate-700 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-amber-400 shadow-clay-flat hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer";
+        
+        if (authorInput) {
+          authorInput.value = "";
+          authorInput.readOnly = false;
+          authorInput.classList.remove('bg-slate-100', 'cursor-not-allowed', 'opacity-70');
+        }
+      }
+      return;
+    }
     
     const currentNumber = localStorage.getItem('kfcman_wall_member_number');
     if (currentNumber) {
@@ -1687,6 +2172,82 @@ function initWall() {
     if (!isoStr) return '';
     const date = new Date(isoStr);
     return `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  }
+
+  // --- Collapsible Sidebar Event Listeners & State Restoration ---
+  const leftSidebar = document.getElementById('left-sidebar');
+  const btnSidebarToggle = document.getElementById('btn-sidebar-toggle');
+  
+  function setSidebarCollapsed(collapsed) {
+    const mainContent = document.getElementById('main-content');
+    const toggleIcon = document.getElementById('sidebar-toggle-icon');
+    
+    if (leftSidebar) {
+      if (collapsed) {
+        leftSidebar.classList.add('collapsed');
+        if (mainContent) {
+          mainContent.classList.remove('max-w-7xl', 'mx-auto');
+          mainContent.classList.add('max-w-none', 'px-6', 'md:px-10');
+        }
+        if (toggleIcon) {
+          toggleIcon.classList.remove('lucide-chevron-left');
+          toggleIcon.classList.add('lucide-chevron-right');
+          toggleIcon.setAttribute('data-lucide', 'chevron-right');
+        }
+      } else {
+        leftSidebar.classList.remove('collapsed');
+        if (mainContent) {
+          mainContent.classList.add('max-w-7xl', 'mx-auto');
+          mainContent.classList.remove('max-w-none', 'px-6', 'md:px-10');
+        }
+        if (toggleIcon) {
+          toggleIcon.classList.remove('lucide-chevron-right');
+          toggleIcon.classList.add('lucide-chevron-left');
+          toggleIcon.setAttribute('data-lucide', 'chevron-left');
+        }
+      }
+      localStorage.setItem('sidebarCollapsed', collapsed ? 'true' : 'false');
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    }
+  }
+
+  // Restore state from localStorage
+  const isSidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+  setSidebarCollapsed(isSidebarCollapsed);
+
+  if (btnSidebarToggle) {
+    btnSidebarToggle.addEventListener('click', () => {
+      const currentlyCollapsed = leftSidebar && leftSidebar.classList.contains('collapsed');
+      setSidebarCollapsed(!currentlyCollapsed);
+    });
+  }
+
+  // Theme check / toggle from sidebar
+  const themeToggleSidebar = document.getElementById('theme-toggle-btn-sidebar');
+  if (themeToggleSidebar) {
+    themeToggleSidebar.addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+      localStorage.setItem('darkMode', document.documentElement.classList.contains('dark') ? 'enabled' : 'disabled');
+    });
+  }
+
+  // Login / logout sidebar event listeners
+  const btnLogoutSidebar = document.getElementById('btn-logout-sidebar');
+  if (btnLogoutSidebar) {
+    btnLogoutSidebar.addEventListener('click', () => {
+      localStorage.removeItem('kfcman_auth_token');
+      localStorage.removeItem('kfcman_user_role');
+      window.location.href = '/';
+    });
+  }
+
+  const btnLoginSidebar = document.getElementById('btn-login-sidebar');
+  if (btnLoginSidebar) {
+    btnLoginSidebar.addEventListener('click', () => {
+      window.location.href = '/?login=true';
+    });
   }
 }
 
