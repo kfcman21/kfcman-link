@@ -2358,3 +2358,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initial runs
   checkLoginState();
+
+  // Auto-open login modal if ?login=true is passed in URL
+  const initParams = new URLSearchParams(window.location.search);
+  if (initParams.get('login') === 'true') {
+    openAuthModal('login');
+    const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+    window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+  }
