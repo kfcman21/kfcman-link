@@ -1,6 +1,22 @@
 <!DOCTYPE html>
 <html lang="ko" class="dark">
 <head>
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      fetch('/api/client-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: message, source: source, lineno: lineno, colno: colno, stack: error ? error.stack : '' })
+      }).catch(function() {});
+    };
+    window.onunhandledrejection = function(event) {
+      fetch('/api/client-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'Unhandled Promise Rejection: ' + event.reason, source: '', lineno: 0, colno: 0, stack: event.reason && event.reason.stack ? event.reason.stack : '' })
+      }).catch(function() {});
+    };
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>kfcman.link | 초고속 프리미엄 미니어처 단축 주소 서비스</title>
@@ -27,8 +43,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   
   <!-- QRious & Lucide Icons -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="/js/qrious.min.js"></script>
+  <script src="/js/lucide.min.js"></script>
   
   <!-- Tailwind config for Miniature World Clay aesthetic -->
   <script>
@@ -76,6 +92,178 @@
   
   <!-- Isometric Diorama Custom Micro-Animations -->
   <style>
+    /* Canva Custom Styles */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none; /* Hide scrollbar for Chrome, Safari and Opera */
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
+    
+    /* Canva Left Sidebar Active Tab Style */
+    #sidebar-logo:hover {
+      opacity: 0.9;
+    }
+    
+    /* Collapsible Sidebar Styles */
+    #left-sidebar {
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #left-sidebar.collapsed {
+      width: 5rem !important; /* w-20 */
+    }
+    #left-sidebar.collapsed .sidebar-text {
+      display: none !important;
+    }
+    #left-sidebar.collapsed #sidebar-logo {
+      justify-content: center;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    #left-sidebar.collapsed #btn-sidebar-create {
+      width: 3rem !important; /* w-12 */
+      padding-left: 0;
+      padding-right: 0;
+      justify-content: center;
+      margin-left: 0;
+      margin-right: 0;
+    }
+    #left-sidebar.collapsed #btn-sidebar-create span {
+      display: none !important;
+    }
+    #left-sidebar.collapsed nav {
+      padding-left: 0.25rem;
+      padding-right: 0.25rem;
+    }
+    #left-sidebar.collapsed nav button,
+    #left-sidebar.collapsed nav a {
+      width: 3.5rem !important; /* w-14 */
+      height: 3.5rem !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
+      padding: 0 !important;
+      border-left: none !important;
+      border-radius: 0.75rem !important;
+    }
+    #left-sidebar.collapsed nav button span,
+    #left-sidebar.collapsed nav a span {
+      font-size: 8px !important;
+      margin-top: 2px !important;
+      margin-left: 0 !important;
+      display: block !important;
+    }
+    
+    #left-sidebar:not(.collapsed) nav button,
+    #left-sidebar:not(.collapsed) nav a {
+      width: 13rem !important; /* w-52 */
+      height: 2.75rem !important; /* h-11 */
+      flex-direction: row !important;
+      justify-content: flex-start !important;
+      align-items: center !important;
+      padding-left: 1.25rem !important;
+      padding-right: 1.25rem !important;
+      border-radius: 0.75rem !important;
+    }
+    #left-sidebar:not(.collapsed) nav button span,
+    #left-sidebar:not(.collapsed) nav a span {
+      font-size: 0.85rem !important;
+      margin-top: 0 !important;
+      margin-left: 0.5rem !important;
+      display: inline-block !important;
+    }
+
+    #left-sidebar.collapsed #sidebar-profile-group {
+      flex-direction: column !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 0.25rem !important;
+    }
+    #left-sidebar.collapsed #sidebar-profile-group button {
+      margin-top: 0.25rem;
+    }
+    #left-sidebar.collapsed #sidebar-guest-group {
+      padding-left: 0.5rem !important;
+      padding-right: 0.5rem !important;
+    }
+    #left-sidebar.collapsed #btn-login-sidebar {
+      width: 2.25rem !important; /* w-9 */
+      padding: 0 !important;
+      justify-content: center !important;
+    }
+
+    /* Active Tab Highlight Style for Expanded/Collapsed */
+    .active#nav-item-shortener-side,
+    .active#nav-item-classroom-side,
+    .active#nav-item-projects-side,
+    .active#nav-item-settings-side,
+    .active#nav-item-wall-side,
+    .active#nav-item-chat-side,
+    .active#nav-item-docs-side {
+      background-color: rgba(114, 9, 183, 0.08) !important;
+      color: #7209b7 !important;
+    }
+    .dark .active#nav-item-shortener-side,
+    .dark .active#nav-item-classroom-side,
+    .dark .active#nav-item-projects-side,
+    .dark .active#nav-item-settings-side,
+    .dark .active#nav-item-wall-side,
+    .dark .active#nav-item-chat-side,
+    .active#nav-item-chat-side,
+    .dark .active#nav-item-docs-side {
+      background-color: rgba(167, 255, 213, 0.08) !important;
+      color: #a7ffd5 !important;
+    }
+    #left-sidebar:not(.collapsed) .active#nav-item-shortener-side,
+    #left-sidebar:not(.collapsed) .active#nav-item-classroom-side,
+    #left-sidebar:not(.collapsed) .active#nav-item-projects-side,
+    #left-sidebar:not(.collapsed) .active#nav-item-settings-side,
+    #left-sidebar:not(.collapsed) .active#nav-item-wall-side,
+    #left-sidebar:not(.collapsed) .active#nav-item-chat-side,
+    .active#nav-item-chat-side,
+    #left-sidebar:not(.collapsed) .active#nav-item-docs-side {
+      border-left: 4px solid #7209b7 !important;
+      border-radius: 0 12px 12px 0 !important;
+    }
+    .dark #left-sidebar:not(.collapsed) .active#nav-item-shortener-side,
+    .dark #left-sidebar:not(.collapsed) .active#nav-item-classroom-side,
+    .dark #left-sidebar:not(.collapsed) .active#nav-item-projects-side,
+    .dark #left-sidebar:not(.collapsed) .active#nav-item-settings-side,
+    .dark #left-sidebar:not(.collapsed) .active#nav-item-wall-side,
+    #left-sidebar:not(.collapsed) .active#nav-item-chat-side,
+    .active#nav-item-chat-side,
+    .dark #left-sidebar:not(.collapsed) .active#nav-item-docs-side {
+      border-left: 4px solid #a7ffd5 !important;
+      border-radius: 0 12px 12px 0 !important;
+    }
+    
+    /* Sidebar active icon glow & scale animation */
+    .active#nav-item-shortener-side i,
+    .active#nav-item-classroom-side i,
+    .active#nav-item-projects-side i,
+    .active#nav-item-settings-side i,
+    .active#nav-item-wall-side i, .active#nav-item-chat-side i,
+    .active#nav-item-chat-side i,
+    .active#nav-item-docs-side i {
+      transform: scale(1.15) rotate(3deg) !important;
+      filter: drop-shadow(0 0 6px currentColor) !important;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    /* Canva Document Card Hover */
+    .canva-card {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .canva-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.08);
+    }
+    .dark .canva-card:hover {
+      box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.3);
+    }
 
     html {
       font-size: 21.33px; /* Overall font size scaled up to 16pt for premium legibility */
@@ -410,34 +598,387 @@
         width: 2.25rem !important;
         height: 2.25rem !important;
       }
-      .board-type-card.active {
-        border-color: #7209b7 !important;
-        box-shadow: 0 0 15px rgba(114, 9, 183, 0.3) !important;
+
+      /* Premium styling for create-poll-card */
+      #create-poll-card {
+        background: rgba(255, 255, 255, 0.75) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border: 4px solid rgba(255, 255, 255, 0.8) !important;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05), inset 0 2px 4px rgba(255, 255, 255, 0.8) !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
       }
+
+      .dark #create-poll-card {
+        background: rgba(20, 26, 42, 0.75) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border: 4px solid rgba(255, 255, 255, 0.05) !important;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.1) !important;
+      }
+
+      /* Beautiful Focus States for Text Inputs & Selects */
+      #create-poll-card input[type="text"],
+      #create-poll-card input[type="number"],
+      #create-poll-card select {
+        background: rgba(248, 250, 252, 0.6) !important;
+        border: 2px solid rgba(226, 232, 240, 0.8) !important;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02) !important;
+        transition: all 0.25s ease !important;
+      }
+
+      .dark #create-poll-card input[type="text"],
+      .dark #create-poll-card input[type="number"],
+      .dark #create-poll-card select {
+        background: rgba(10, 15, 28, 0.6) !important;
+        border: 2px solid rgba(255, 255, 255, 0.05) !important;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+      }
+
+      #create-poll-card input[type="text"]:focus,
+      #create-poll-card input[type="number"]:focus,
+      #create-poll-card select:focus {
+        border-color: #8b5cf6 !important;
+        box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+        background: #ffffff !important;
+      }
+
+      .dark #create-poll-card input[type="text"]:focus,
+      .dark #create-poll-card input[type="number"]:focus,
+      .dark #create-poll-card select:focus {
+        border-color: #06b6d4 !important;
+        box-shadow: 0 0 0 4px rgba(6, 182, 210, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+        background: rgba(10, 15, 28, 0.8) !important;
+      }
+
+      /* Board Type Card enhancements */
+      .board-type-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        border: 2px solid rgba(226, 232, 240, 0.8) !important;
+        background: rgba(248, 250, 252, 0.5) !important;
+      }
+
+      .dark .board-type-card {
+        border: 2px solid rgba(255, 255, 255, 0.05) !important;
+        background: rgba(15, 20, 34, 0.4) !important;
+      }
+
+      .board-type-card:hover {
+        transform: translateY(-4px) scale(1.02) !important;
+        border-color: rgba(139, 92, 246, 0.5) !important;
+        box-shadow: 0 12px 20px rgba(139, 92, 246, 0.1) !important;
+      }
+
+      .dark .board-type-card:hover {
+        border-color: rgba(6, 182, 212, 0.5) !important;
+        box-shadow: 0 12px 20px rgba(6, 182, 212, 0.15) !important;
+      }
+
+      /* Board Type Card active state - premium gradient */
+      .board-type-card.active {
+        border-color: #8b5cf6 !important;
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(6, 182, 212, 0.08)) !important;
+        box-shadow: 0 10px 25px rgba(139, 92, 246, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.2) !important;
+        transform: translateY(-2px) scale(1.02) !important;
+      }
+
       .dark .board-type-card.active {
-        border-color: rgba(167, 255, 213, 0.5) !important;
-        box-shadow: 0 0 15px rgba(167, 255, 213, 0.25) !important;
+        border-color: #06b6d4 !important;
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(6, 182, 212, 0.15)) !important;
+        box-shadow: 0 10px 25px rgba(6, 182, 212, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
       }
     }
   </style>
 </head>
 
-<body class="bg-slate-100 dark:bg-[#080a10] text-slate-800 dark:text-slate-100 font-body min-h-screen flex flex-col relative overflow-x-hidden transition-colors pb-20 lg:pb-0">
+<body class="bg-slate-100 dark:bg-[#080a10] text-slate-800 dark:text-slate-100 font-body min-h-screen relative transition-colors pb-20 lg:pb-0 overflow-x-hidden">
 
   <!-- 3D Toy-like Background Glow Orbs -->
   <div class="glow-orb hidden w-[40vw] h-[40vw] bg-clay-purple top-[-10%] left-[-10%] bobbing"></div>
   <div class="glow-orb hidden w-[35vw] h-[35vw] bg-clay-grass bottom-[10%] right-[-5%] animation-delay-2000 bobbing" style="animation-delay: 2s;"></div>
 
-  <!-- Header -->
-  <header class="h-20 flex items-center border-b-4 border-white bg-white dark:bg-clay-night sticky top-0 z-50 transition-colors shadow-sm px-4 md:px-0">
+  <div class="flex min-h-screen w-screen bg-slate-100 dark:bg-[#080a10] transition-colors relative">
+    
+    <!-- Canva Left Navigation Sidebar (Desktop only) -->
+    <aside id="left-sidebar" class="hidden lg:flex w-60 flex-col items-center justify-between border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f1422] py-6 flex-shrink-0 z-[200] relative shadow-sm">
+      <!-- Toggle Button -->
+      <button id="btn-sidebar-toggle" type="button" class="absolute top-6 -right-3 w-6 h-6 rounded-full bg-white dark:bg-slate-900 border border-slate-250 dark:border-slate-750 flex items-center justify-center shadow-md hover:scale-110 transition-all cursor-pointer z-50">
+        <i data-lucide="chevron-left" class="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" id="sidebar-toggle-icon"></i>
+      </button>
+
+      <!-- Top Section -->
+      <div class="flex flex-col items-center w-full gap-4">
+        <!-- Sidebar Brand Logo -->
+        <div class="flex items-center justify-between select-none w-full mb-3 px-4">
+          <a href="/" class="font-title flex items-center gap-3 group w-full" id="sidebar-logo">
+            <!-- SVG Logo Mark -->
+            <div class="relative w-11 h-11 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shadow-sm group-hover:scale-105 group-hover:shadow-md transition-all flex-shrink-0">
+              <svg class="w-9 h-9" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="logo-grad-side-1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#7209b7" />
+                    <stop offset="50%" stop-color="#3a86c8" />
+                    <stop offset="100%" stop-color="#2ec4b6" />
+                  </linearGradient>
+                  <linearGradient id="logo-grad-side-2" x1="100%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#ff0054" />
+                    <stop offset="50%" stop-color="#ff9f1c" />
+                    <stop offset="100%" stop-color="#4cc9f0" />
+                  </linearGradient>
+                  <filter id="glow-side" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                  <clipPath id="interlock-clip-side">
+                    <rect x="0" y="42" width="55" height="58" />
+                  </clipPath>
+                </defs>
+                <rect x="22" y="38" width="56" height="24" rx="12" stroke="url(#logo-grad-side-2)" stroke-width="10" stroke-linecap="round" fill="none" transform="rotate(45 50 50)" />
+                <rect x="22" y="38" width="56" height="24" rx="12" stroke="url(#logo-grad-side-1)" stroke-width="10" stroke-linecap="round" fill="none" transform="rotate(-45 50 50)" />
+                <g clip-path="url(#interlock-clip-side)">
+                  <rect x="22" y="38" width="56" height="24" rx="12" stroke="url(#logo-grad-side-2)" stroke-width="10" stroke-linecap="round" fill="none" transform="rotate(45 50 50)" />
+                </g>
+                <circle cx="50" cy="50" r="7" fill="#ffffff" class="opacity-80" />
+                <circle cx="50" cy="50" r="4" fill="#a7ffd5" filter="url(#glow-side)" class="animate-pulse" />
+              </svg>
+            </div>
+            <!-- Wordmark -->
+            <div class="flex flex-col leading-none text-left sidebar-text">
+              <span class="text-[13px] font-extrabold text-slate-800 dark:text-slate-100 tracking-wider font-title">KFCMAN</span>
+              <span class="text-[9px] font-black bg-gradient-to-r from-clay-purple to-clay-sky text-transparent bg-clip-text mt-0.5 tracking-widest font-title">.LINK</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- Sidebar Create button -->
+        <div class="w-full px-4 mb-3">
+          <button id="btn-sidebar-create" type="button" class="w-full py-3 bg-gradient-to-tr from-clay-purple to-clay-sky text-white rounded-2xl flex items-center justify-center gap-2 shadow-md hover:scale-105 transition-all cursor-pointer font-bold flex-shrink-0">
+            <i data-lucide="plus" class="w-5 h-5 text-white font-bold"></i>
+            <span class="text-xs font-black tracking-wider sidebar-text">만들기</span>
+          </button>
+        </div>
+
+        <div id="create-popover" class="hidden absolute left-full ml-2 top-16 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-3 z-50 flex flex-col gap-1 w-48 text-left text-xs font-black">
+          <button onclick="openShortenerModal(); document.getElementById('create-popover').classList.add('hidden');" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-800 dark:text-white cursor-pointer flex items-center gap-2">
+            <i data-lucide="sparkles" class="w-4 h-4 text-violet-500"></i>
+            <span>단축 URL 생성</span>
+          </button>
+          <a href="/wall" onclick="document.getElementById('create-popover').classList.add('hidden');" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-800 dark:text-white cursor-pointer flex items-center gap-2">
+            <i data-lucide="layout-grid" class="w-4 h-4 text-orange-500"></i>
+            <span>실시간 칸반 보드</span>
+          </a>
+          <button id="btn-sidebar-create-poll" type="button" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-800 dark:text-white cursor-pointer flex items-center gap-2">
+            <i data-lucide="vote" class="w-4 h-4 text-rose-500"></i>
+            <span>실시간 설문 개설</span>
+          </button>
+        </div>
+
+        <!-- Sidebar Navigation Buttons -->
+        <nav class="flex flex-col gap-1.5 items-center w-full px-2">
+          <button onclick="switchMainTab('shortener')" id="nav-item-shortener-side" class="w-full h-11 px-4 rounded-xl flex items-center gap-3 text-slate-450 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer font-bold active group">
+            <svg class="w-5 h-5 group-hover:scale-110 group-hover:rotate-[6deg] transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(139,92,246,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-side-home" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#8b5cf6" />
+                  <stop offset="100%" stop-color="#ec4899" />
+                </linearGradient>
+              </defs>
+              <path d="M12 3L3 10.5V20C3 20.5523 3.44772 21 4 21H9V14H15V21H20C20.5523 21 21 20.5523 21 20V10.5L12 3Z" fill="url(#grad-side-home)"/>
+              <path d="M12 3L3 10.5L12 3ZM21 10.5L12 3L21 10.5Z" stroke="url(#grad-side-home)" stroke-width="1.5"/>
+            </svg>
+            <span class="text-sm font-black sidebar-text">홈</span>
+          </button>
+          
+          <button onclick="switchMainTab('classroom')" id="nav-item-classroom-side" class="w-full h-11 px-4 rounded-xl flex items-center gap-3 text-slate-450 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer font-bold group">
+            <svg class="w-5 h-5 group-hover:scale-110 group-hover:rotate-[6deg] transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(168,85,247,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-side-classroom" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#a855f7" />
+                  <stop offset="100%" stop-color="#d946ef" />
+                </linearGradient>
+              </defs>
+              <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="url(#grad-side-classroom)"/>
+              <path d="M6 10V14.5C6 16.5 8.5 18 12 18C15.5 18 18 16.5 18 14.5V10" stroke="url(#grad-side-classroom)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <path d="M20 7.5V14.5" stroke="url(#grad-side-classroom)" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span class="text-sm font-black sidebar-text">교실</span>
+          </button>
+          
+          <button onclick="switchMainTab('projects')" id="nav-item-projects-side" class="w-full h-11 px-4 rounded-xl flex items-center gap-3 text-slate-450 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer font-bold group">
+            <svg class="w-5 h-5 group-hover:scale-110 group-hover:rotate-[6deg] transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(14,165,233,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-side-projects" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#0ea5e9" />
+                  <stop offset="100%" stop-color="#06b6d4" />
+                </linearGradient>
+              </defs>
+              <path d="M4 4H9L11 7H20C21.1046 7 22 7.89543 22 9V19C22 20.1046 21.1046 21 20 21H4C2.89543 21 2 20.1046 2 19V6C2 4.89543 2.89543 4 4 4Z" fill="url(#grad-side-projects)" fill-opacity="0.25" stroke="url(#grad-side-projects)" stroke-width="1.5"/>
+              <path d="M2 9H22" stroke="url(#grad-side-projects)" stroke-width="1.5"/>
+            </svg>
+            <span class="text-sm font-black sidebar-text">프로젝트</span>
+          </button>
+          
+          <a href="/wall" id="nav-item-wall-side" class="w-full h-11 px-4 rounded-xl flex items-center gap-3 text-slate-450 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer font-bold group">
+            <svg class="w-5 h-5 group-hover:scale-110 group-hover:rotate-[6deg] transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(249,115,22,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-side-kanban" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f97316" />
+                  <stop offset="100%" stop-color="#f59e0b" />
+                </linearGradient>
+              </defs>
+              <rect x="3" y="3" width="5" height="18" rx="1.5" fill="url(#grad-side-kanban)" opacity="0.25" stroke="url(#grad-side-kanban)" stroke-width="1.5"/>
+              <rect x="9.5" y="3" width="5" height="18" rx="1.5" fill="url(#grad-side-kanban)" opacity="0.25" stroke="url(#grad-side-kanban)" stroke-width="1.5"/>
+              <rect x="16" y="3" width="5" height="18" rx="1.5" fill="url(#grad-side-kanban)" opacity="0.25" stroke="url(#grad-side-kanban)" stroke-width="1.5"/>
+              <rect x="4" y="5" width="3" height="4" rx="1" fill="url(#grad-side-kanban)"/>
+              <rect x="10.5" y="5" width="3" height="6" rx="1" fill="url(#grad-side-kanban)"/>
+              <rect x="17" y="5" width="3" height="5" rx="1" fill="url(#grad-side-kanban)"/>
+            </svg>
+            <span class="text-sm font-black sidebar-text">칸반 보드</span>
+          </a>
+          
+          <a href="/chat" id="nav-item-chat-side" class="w-full h-11 px-4 rounded-xl flex items-center gap-3 text-slate-450 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer font-bold group">
+            <svg class="w-5 h-5 group-hover:scale-110 group-hover:rotate-[6deg] transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(234,179,8,0.35)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-side-chat" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#fbbf24" />
+                  <stop offset="100%" stop-color="#f59e0b" />
+                </linearGradient>
+              </defs>
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="url(#grad-side-chat)" fill-opacity="0.25" stroke="url(#grad-side-chat)" stroke-width="1.5"/>
+              <path d="M8 10H8.01M12 10H12.01M16 10H16.01" stroke="url(#grad-side-chat)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="text-sm font-black sidebar-text">주제 톡방</span>
+          </a>
+          
+          <a href="/docs" id="nav-item-docs-side" class="w-full h-11 px-4 rounded-xl flex items-center gap-3 text-slate-450 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer font-bold group">
+            <svg class="w-5 h-5 group-hover:scale-110 group-hover:rotate-[6deg] transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(20,184,166,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-side-docs" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#20b8a6" />
+                  <stop offset="100%" stop-color="#10b981" />
+                </linearGradient>
+              </defs>
+              <path d="M6 2H14L18 6V20C18 21.1046 17.1046 22 16 22H6C4.89543 22 4 21.1046 4 20V4C4 2.89543 4.89543 2 6 2Z" fill="url(#grad-side-docs)" fill-opacity="0.15" stroke="url(#grad-side-docs)" stroke-width="1.5"/>
+              <path d="M14 2V6H18L14 2Z" fill="url(#grad-side-docs)" stroke="url(#grad-side-docs)" stroke-width="1.5" stroke-linejoin="round"/>
+              <line x1="7" y1="10" x2="15" y2="10" stroke="url(#grad-side-docs)" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="7" y1="14" x2="15" y2="14" stroke="url(#grad-side-docs)" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span class="text-sm font-black sidebar-text">HWP 문서</span>
+          </a>
+          <!-- Tetris Battle Sidebar Item -->
+          <a href="/tetris" id="nav-item-tetris-side" class="w-full h-11 px-4 rounded-xl flex items-center gap-3 text-slate-450 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer font-bold group">
+            <svg class="w-5 h-5 group-hover:scale-110 group-hover:rotate-[6deg] transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(236,72,153,0.35)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-side-tetris" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#ec4899" />
+                  <stop offset="100%" stop-color="#8b5cf6" />
+                </linearGradient>
+              </defs>
+              <rect x="3" y="10" width="18" height="6" rx="1.5" fill="url(#grad-side-tetris)" fill-opacity="0.25" stroke="url(#grad-side-tetris)" stroke-width="1.5"/>
+              <rect x="9" y="4" width="6" height="12" rx="1.5" fill="url(#grad-side-tetris)" fill-opacity="0.25" stroke="url(#grad-side-tetris)" stroke-width="1.5"/>
+              <rect x="10" y="5" width="4" height="4" rx="1" fill="url(#grad-side-tetris)"/>
+              <rect x="4" y="11" width="4" height="4" rx="1" fill="url(#grad-side-tetris)"/>
+              <rect x="10" y="11" width="4" height="4" rx="1" fill="url(#grad-side-tetris)"/>
+              <rect x="16" y="11" width="4" height="4" rx="1" fill="url(#grad-side-tetris)"/>
+            </svg>
+            <span class="text-sm font-black sidebar-text">테트리스 배틀</span>
+          </a>
+          
+          <button onclick="switchMainTab('settings')" id="nav-item-settings-side" class="w-full h-11 px-4 rounded-xl flex items-center gap-3 text-slate-450 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer font-bold group">
+            <svg class="w-5 h-5 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(100,116,139,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-side-settings" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#64748b" />
+                  <stop offset="100%" stop-color="#94a3b8" />
+                </linearGradient>
+              </defs>
+              <circle cx="12" cy="12" r="3" stroke="url(#grad-side-settings)" stroke-width="1.5" fill="url(#grad-side-settings)" fill-opacity="0.2"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="url(#grad-side-settings)" stroke-width="1.5" fill="none"/>
+            </svg>
+            <span class="text-sm font-black sidebar-text">설정</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Bottom Section -->
+      <div class="flex flex-col items-center w-full gap-4">
+
+
+        <!-- Profile details -->
+        <div id="sidebar-profile-group" class="hidden flex items-center gap-3 w-full px-4">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-clay-purple to-clay-sky border-2 border-white text-white flex items-center justify-center font-black text-xs shadow-sm cursor-pointer select-none flex-shrink-0" id="sidebar-profile-circle" title="프로필">
+            서
+          </div>
+          <div class="flex-grow text-left leading-tight sidebar-text min-w-0">
+            <div class="text-[11px] font-black text-slate-850 dark:text-white truncate" id="sidebar-profile-name">사용자명</div>
+            <div class="text-[9px] font-bold text-slate-400">정회원</div>
+          </div>
+          <button class="w-8 h-8 rounded-lg hover:bg-rose-500/10 text-rose-500 flex items-center justify-center cursor-pointer transition-colors flex-shrink-0" id="btn-logout-sidebar" title="로그아웃">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <div id="sidebar-guest-group" class="flex items-center justify-center w-full px-4">
+          <button class="w-full h-10 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 flex items-center justify-center gap-2 cursor-pointer text-slate-850 dark:text-white font-bold" id="btn-login-sidebar" title="로그인">
+            <i data-lucide="log-in" class="w-4.5 h-4.5 flex-shrink-0"></i>
+            <span class="text-xs font-black sidebar-text">로그인</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Side Content Panel -->
+    <div class="flex-grow flex flex-col min-h-screen overflow-x-hidden relative">
+
+      <!-- Header -->
+      <header class="lg:hidden h-20 flex items-center border-b-4 border-white bg-white dark:bg-clay-night sticky top-0 z-50 transition-colors shadow-sm px-4 md:px-0">
     <div class="max-w-7xl mx-auto px-4 md:px-6 w-full flex justify-between items-center">
       
       <!-- Brand Logo -->
-      <a href="/" class="font-title text-2xl font-black tracking-tight flex items-center gap-0.5 cursor-pointer select-none group" id="logo-link">
-        <span class="text-slate-900 dark:text-white transition-transform duration-200 group-hover:translate-x-[-2px]">KFC</span>
-        <span class="bg-gradient-to-r from-clay-purple to-clay-sky text-transparent bg-clip-text font-extrabold">MAN</span>
-        <span class="text-clay-grass font-black">.</span>
-        <span class="bg-gradient-to-r from-clay-sky to-clay-mint text-transparent bg-clip-text font-black">LINK</span>
+      <a href="/" class="font-title text-2xl font-black tracking-tight flex items-center gap-2 cursor-pointer select-none group" id="logo-link">
+        <!-- SVG Logo Mark -->
+        <div class="w-11 h-11 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shadow-sm group-hover:scale-105 group-hover:shadow-md transition-all flex-shrink-0">
+          <svg class="w-9 h-9" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="logo-grad-hdr-1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#7209b7" />
+                <stop offset="50%" stop-color="#3a86c8" />
+                <stop offset="100%" stop-color="#2ec4b6" />
+              </linearGradient>
+              <linearGradient id="logo-grad-hdr-2" x1="100%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#ff0054" />
+                <stop offset="50%" stop-color="#ff9f1c" />
+                <stop offset="100%" stop-color="#4cc9f0" />
+              </linearGradient>
+              <filter id="glow-hdr" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              <clipPath id="interlock-clip-hdr">
+                <rect x="0" y="42" width="55" height="58" />
+              </clipPath>
+            </defs>
+            <rect x="22" y="38" width="56" height="24" rx="12" stroke="url(#logo-grad-hdr-2)" stroke-width="10" stroke-linecap="round" fill="none" transform="rotate(45 50 50)" />
+            <rect x="22" y="38" width="56" height="24" rx="12" stroke="url(#logo-grad-hdr-1)" stroke-width="10" stroke-linecap="round" fill="none" transform="rotate(-45 50 50)" />
+            <g clip-path="url(#interlock-clip-hdr)">
+              <rect x="22" y="38" width="56" height="24" rx="12" stroke="url(#logo-grad-hdr-2)" stroke-width="10" stroke-linecap="round" fill="none" transform="rotate(45 50 50)" />
+            </g>
+            <circle cx="50" cy="50" r="7" fill="#ffffff" class="opacity-80" />
+            <circle cx="50" cy="50" r="4" fill="#a7ffd5" filter="url(#glow-hdr)" class="animate-pulse" />
+          </svg>
+        </div>
+        <!-- Wordmark -->
+        <div class="flex items-center gap-0.5 text-base md:text-xl font-title">
+          <span class="text-slate-900 dark:text-white font-extrabold tracking-tight transition-transform duration-200 group-hover:translate-x-[-1px]">KFCMAN</span>
+          <span class="text-clay-grass font-black">.</span>
+          <span class="bg-gradient-to-r from-clay-sky to-clay-mint text-transparent bg-clip-text font-black">LINK</span>
+        </div>
       </a>
 
       <!-- Navigation & Controls -->
@@ -452,19 +993,57 @@
         <!-- Nav menu for Members (Sleek layout-preserving icon buttons) -->
         <nav class="hidden lg:flex gap-1.5 max-lg:!hidden" id="header-nav">
           <a href="#shortener-section" class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center justify-center cursor-pointer active" id="nav-item-shortener" title="단축주소 및 통계">
-            <i data-lucide="link-2" class="w-5 h-5"></i>
+            <svg class="w-5.5 h-5.5 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(139,92,246,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-mob-link" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#8b5cf6" />
+                  <stop offset="100%" stop-color="#ec4899" />
+                </linearGradient>
+              </defs>
+              <path d="M9 17H7A5 5 0 0 1 7 7H9" stroke="url(#grad-mob-link)" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M15 7H17A5 5 0 0 1 17 17H15" stroke="url(#grad-mob-link)" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="8" y1="12" x2="16" y2="12" stroke="url(#grad-mob-link)" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
           </a>
           <a href="#polls-section" class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center justify-center cursor-pointer" id="nav-item-polls" title="실시간 설문 광장">
-            <i data-lucide="vote" class="w-5 h-5"></i>
+            <svg class="w-5.5 h-5.5 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(244,63,94,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-mob-vote" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f43f5e" />
+                  <stop offset="100%" stop-color="#ec4899" />
+                </linearGradient>
+              </defs>
+              <path d="M4 9C4 7.89543 4.89543 7 6 7H18C19.1046 7 20 7.89543 20 9V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V9Z" stroke="url(#grad-mob-vote)" stroke-width="2" fill="url(#grad-mob-vote)" fill-opacity="0.15"/>
+              <path d="M8 7V5C8 3.89543 8.89543 3 10 3H14C15.1046 3 16 3.89543 16 5V7" stroke="url(#grad-mob-vote)" stroke-width="2"/>
+              <path d="M10 9H14V13L12 11.5L10 13V9Z" fill="url(#grad-mob-vote)"/>
+            </svg>
           </a>
           <a href="#classroom-section" class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center justify-center cursor-pointer" id="nav-item-classroom" title="으쓱점수 학급 대시보드">
-            <i data-lucide="award" class="w-5 h-5"></i>
+            <svg class="w-5.5 h-5.5 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(168,85,247,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-mob-award" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#a855f7" />
+                  <stop offset="100%" stop-color="#d946ef" />
+                </linearGradient>
+              </defs>
+              <circle cx="12" cy="8" r="6" fill="url(#grad-mob-award)" stroke="url(#grad-mob-award)" stroke-width="2"/>
+              <path d="M15.47 13.79L19 21L12 18L5 21L8.53 13.79" stroke="url(#grad-mob-award)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="url(#grad-mob-award)" fill-opacity="0.2"/>
+            </svg>
           </a>
           <a href="/wall" class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center justify-center cursor-pointer" id="nav-item-wall" title="실시간 협업 게시판 kfcman-wall" style="display: none;">
             <i data-lucide="layout-grid" class="w-5 h-5"></i>
           </a>
           <a href="#settings-section" class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center justify-center cursor-pointer" id="nav-item-settings" title="통합 설정 및 관리 패널">
-            <i data-lucide="settings" class="w-5 h-5"></i>
+            <svg class="w-5.5 h-5.5 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(100,116,139,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-mob-settings" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#64748b" />
+                  <stop offset="100%" stop-color="#94a3b8" />
+                </linearGradient>
+              </defs>
+              <circle cx="12" cy="12" r="3" stroke="url(#grad-mob-settings)" stroke-width="2" fill="url(#grad-mob-settings)" fill-opacity="0.2"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="url(#grad-mob-settings)" stroke-width="2" fill="none"/>
+            </svg>
           </a>
         </nav>
         
@@ -472,16 +1051,20 @@
         <div class="flex items-center gap-3">
           
           <!-- HWP Docs Global Icon (Visible for all visitors) -->
-          <a href="/docs" class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand dark:bg-[#131824] hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center justify-center shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-slate-800 dark:text-white" title="KFC MAN-HWP - 한글 문서 보관함 바로가기">
-            <i data-lucide="file-text" class="w-5 h-5 text-clay-purple animate-pulse"></i>
+          <a href="/docs" class="hidden w-10 h-10 border-2 border-white rounded-xl bg-clay-sand dark:bg-[#131824] hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center justify-center shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-slate-800 dark:text-white" id="nav-item-docs-header" title="KFC MAN-HWP - 한글 문서 보관함 바로가기">
+            <svg class="w-5.5 h-5.5 animate-pulse transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(20,184,166,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-mob-docs" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#20b8a6" />
+                  <stop offset="100%" stop-color="#10b981" />
+                </linearGradient>
+              </defs>
+              <path d="M6 2H14L18 6V20C18 21.1046 17.1046 22 16 22H6C4.89543 22 4 21.1046 4 20V4C4 2.89543 4.89543 2 6 2Z" fill="url(#grad-mob-docs)" fill-opacity="0.15" stroke="url(#grad-mob-docs)" stroke-width="2"/>
+              <path d="M14 2V6H18L14 2Z" fill="url(#grad-mob-docs)" stroke="url(#grad-mob-docs)" stroke-width="2"/>
+            </svg>
           </a>
           
-          <!-- Theme switch button -->
-          <button class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand dark:bg-white/5 flex items-center justify-center shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-slate-800 dark:text-white" id="theme-toggle-btn" title="테마 변경 (화이트/블랙)" class="max-lg:!hidden" aria-label="테마 변경">
-            <!-- Icon sets (Toggled via CSS dark class) -->
-            <i data-lucide="sun" class="w-5 h-5 block dark:hidden text-clay-toy"></i>
-            <i data-lucide="moon" class="w-5 h-5 hidden dark:block text-clay-mint"></i>
-          </button>
+
           
           <!-- Guest Auth buttons (Sleek layout-preserving icon buttons) -->
           <div class="flex items-center gap-2 max-lg:!hidden" id="guest-header-buttons">
@@ -513,30 +1096,43 @@
     </div>
   </div>
 
-  <main class="flex-grow max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10 w-full relative">
+  <main id="main-content" class="flex-grow max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10 w-full relative transition-all duration-300">
     
     <!-- 1. Guest Landing Welcome Screen -->
     <div class="flex flex-col items-center justify-center text-center py-10 md:py-20" id="guest-content">
       
       <!-- Bobbing Clay Toy Illustration Header -->
       <div class="w-40 h-40 bg-gradient-to-tr from-clay-purple to-clay-sky rounded-[40px] border-4 border-white shadow-clay-flat-lg flex items-center justify-center bobbing mb-10 text-white relative">
-        <i data-lucide="globe" class="w-20 h-20 text-white animate-spin" style="animation-duration: 10s;"></i>
-        <div class="absolute -right-4 -bottom-4 bg-clay-toy border-4 border-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-clay-flat"><i data-lucide="sparkles" class="w-6 h-6 text-black"></i></div>
+        <!-- Premium Spinning Globe SVG -->
+        <svg class="w-20 h-20 text-white animate-spin" style="animation-duration: 20s;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 1"/>
+          <path d="M12 2C12 2 16 6 16 12C16 18 12 22 12 22C12 22 8 18 8 12C8 6 12 2 12 2Z" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M2 12H22" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M3.5 7.5H20.5" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+          <path d="M3.5 16.5H20.5" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+        </svg>
+        <!-- Premium Sparkle Badge SVG -->
+        <div class="absolute -right-4 -bottom-4 bg-clay-toy border-4 border-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-clay-flat">
+          <svg class="w-7 h-7 text-black" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 3C12 3 13 8 16 11C19 14 21 12 21 12C21 12 16 13 13 16C10 19 12 21 12 21C12 21 11 16 8 13C5 10 3 12 3 12C3 12 8 11 11 8C14 5 12 3 12 3Z" fill="currentColor"/>
+          </svg>
+        </div>
       </div>
 
-      <h1 class="font-title text-4xl md:text-6xl font-black tracking-tight leading-none text-slate-900 dark:text-white max-w-3xl">
-        길고 지저분한 주소는 그만,<br>
-        <span class="bg-gradient-to-r from-clay-purple via-clay-sky to-clay-grass text-transparent bg-clip-text">나만의 토이 월드 링크</span>로 단축하세요!
+      <h1 class="font-title text-4xl md:text-6xl font-black tracking-tight leading-none text-slate-900 dark:text-white max-w-4xl">
+        수업의 시작부터 피드백까지,<br>
+        <span class="bg-gradient-to-r from-clay-purple via-clay-sky to-clay-grass text-transparent bg-clip-text">클릭 한 번으로 더욱 편리하게!</span>
       </h1>
       
-      <p class="mt-6 text-base md:text-lg text-slate-600 dark:text-slate-300 max-w-xl font-bold leading-relaxed text-center">
-        kfcman.link는 아기자기한 미니어처 감성의 단축 URL 플랫폼입니다. 가입 승인 즉시 정밀한 실시간 유입경로 분석 대시보드와 여론 조사 보드가 제공됩니다.
+      <p class="mt-6 text-base md:text-lg text-slate-600 dark:text-slate-300 max-w-2xl font-bold leading-relaxed text-center">
+        kfcman.link는 선생님과 학생을 긴밀하게 잇는 교실 소통 및 학급 보조 플랫폼입니다.<br>
+        단축 URL 서비스와 더불어, 실시간 협업 칸반 보드 및 맞춤형 피드백 설문 툴을 편리하게 경험해 보세요.
       </p>
 
       <div class="mt-10 flex gap-4 justify-center flex-wrap">
         <button class="btn px-6 py-4 text-sm font-black border-4 border-white rounded-2xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat-lg hover:shadow-clay-flat hover:translate-x-1 hover:translate-y-1 transition-all cursor-pointer" id="btn-hero-start">무료로 가입하고 시작하기</button>
         <button class="btn px-6 py-4 text-sm font-black border-4 border-white rounded-2xl bg-clay-sand dark:bg-[#131824] hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 transition-all cursor-pointer shadow-clay-flat-lg hover:shadow-clay-flat hover:translate-x-1 hover:translate-y-1" id="btn-hero-login">기존 회원 로그인</button>
-        <a href="/docs" class="btn px-6 py-4 text-sm font-black border-4 border-white rounded-2xl bg-gradient-to-r from-clay-purple to-clay-sky hover:opacity-90 text-white shadow-clay-flat-lg hover:shadow-clay-flat hover:translate-x-1 hover:translate-y-1 transition-all cursor-pointer flex items-center gap-2">
+        <a href="/docs" class="hidden btn px-6 py-4 text-sm font-black border-4 border-white rounded-2xl bg-gradient-to-r from-clay-purple to-clay-sky hover:opacity-90 text-white shadow-clay-flat-lg hover:shadow-clay-flat hover:translate-x-1 hover:translate-y-1 transition-all cursor-pointer flex items-center gap-2" id="nav-item-docs-hero">
           <i data-lucide="file-text" class="w-5 h-5 text-white animate-pulse"></i>
           <span>한글 공유/편집 공간 바로가기</span>
         </a>
@@ -549,97 +1145,349 @@
     <div class="hidden space-y-12" id="member-content">
       
       <!-- URL Shortener Section -->
+      <!-- URL Shortener Section (Redesigned as Canva Dashboard Home) -->
       <section class="shortener-section scroll-mt-24" id="shortener-section">
         
-        <!-- Input Form Clay Card -->
-        <div class="max-w-3xl mx-auto bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 md:p-8 shadow-clay-flat-lg clay-card transition-colors" id="input-container">
-          <div class="flex items-center gap-3 border-b-4 border-white pb-4 mb-6">
-            <div class="w-10 h-10 rounded-xl border-2 border-white bg-clay-mint flex items-center justify-center shadow-clay-flat text-black"><i data-lucide="link-2" class="w-5 h-5"></i></div>
-            <h2 class="text-xl font-black text-slate-900 dark:text-white text-left"><span class="bg-gradient-to-r from-clay-purple via-clay-sky to-clay-mint text-transparent bg-clip-text">단축 주소 신규 생성</span></h2>
+        <!-- 1. Canva Gradient Banner -->
+        <div id="canva-banner" class="w-full bg-gradient-to-r from-clay-purple via-clay-sky to-clay-mint rounded-3xl p-8 md:p-12 text-center relative overflow-hidden shadow-sm mb-8">
+          <!-- Decorative bubble vectors -->
+          <div class="absolute -left-12 -top-12 w-48 h-48 rounded-full bg-white/10 blur-xl pointer-events-none"></div>
+          <div class="absolute -right-12 -bottom-12 w-64 h-64 rounded-full bg-white/10 blur-2xl pointer-events-none"></div>
+
+          <div class="relative z-10 font-title">
+            <h1 class="text-3xl md:text-4xl font-black text-white drop-shadow-sm leading-tight">
+              수업의 시작부터 피드백까지, 클릭 한 번으로 편리하게
+            </h1>
+            
+            <!-- Centered Canva Search Bar -->
+            <div class="max-w-xl mx-auto mt-6 bg-white dark:bg-slate-900 border-2 border-clay-purple dark:border-slate-800 rounded-full px-5 py-3 shadow-md flex items-center gap-3 focus-within:border-clay-purple dark:focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-clay-purple/20 transition-all">
+              <i data-lucide="search" class="w-5 h-5 text-clay-purple dark:text-slate-400 flex-shrink-0"></i>
+              <input type="text" id="canva-search-input" placeholder="단축주소, 목적지 링크, 여론조사 검색..." class="w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400">
+            </div>
           </div>
-
-          <!-- Usage Limit Tracker (For Regular Members) -->
-          <div id="usage-limit-container" class="hidden mb-6 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 text-left shadow-sm">
-            <div class="flex justify-between items-center text-xs mb-1.5">
-              <span class="font-extrabold text-slate-500 dark:text-slate-400">단축 주소 생성 한도 (최대 50회)</span>
-              <span class="font-black text-clay-purple dark:text-clay-mint text-xs" id="usage-limit-text">0 / 50 개 사용됨</span>
-            </div>
-            <div class="w-full h-3 rounded-full bg-slate-200/50 dark:bg-slate-950/40 overflow-hidden border border-slate-300/10 shadow-inner">
-              <div id="usage-limit-bar" class="h-full rounded-full bg-gradient-to-r from-clay-purple to-clay-grass transition-all duration-500" style="width: 0%;"></div>
-            </div>
-            <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-1">
-              <i data-lucide="info" class="w-3.5 h-3.5 inline"></i>
-              일반회원은 최대 50개까지 생성 가능합니다. 추가 혜택을 위해 관리자에게 '우수회원👑' 승급을 문의하세요.
-            </p>
-          </div>
-
-          <form id="shorten-form" class="space-y-5 text-left">
-            <div class="space-y-2">
-              <label class="block text-xs font-black text-slate-600 dark:text-slate-300">줄이고 싶은 원본 긴 URL 주소 (Destination URL)</label>
-              <div class="flex items-center bg-slate-50 dark:bg-slate-950 border-4 border-white rounded-2xl px-4 py-3.5 gap-3 shadow-clay-flat focus-within:border-clay-sky focus-within:ring-2 focus-within:ring-clay-sky/20 transition-all">
-                <i data-lucide="globe" class="w-5 h-5 text-slate-400"></i>
-                <input type="url" id="url-input" placeholder="https://very-long-example-link.com/path-details..." required autocomplete="off" class="w-full bg-transparent border-none outline-none text-sm font-bold text-slate-800 dark:text-white placeholder-slate-400">
-              </div>
-            </div>
-
-            <div class="space-y-2">
-              <label class="block text-xs font-black text-slate-600 dark:text-slate-300">나만의 커스텀 단축 코드 (선택 사항)</label>
-              <div class="flex items-center bg-slate-50 dark:bg-slate-950 border-4 border-white rounded-2xl px-4 py-3.5 gap-3 shadow-clay-flat focus-within:border-clay-sky focus-within:ring-2 focus-within:ring-clay-sky/20 transition-all">
-                <span class="text-xs font-black text-slate-500 border-r-2 border-slate-300 dark:border-slate-800 pr-3 select-none">kfcman.link /</span>
-                <input type="text" id="custom-alias-input" placeholder="custom-name" autocomplete="off" class="w-full bg-transparent border-none outline-none text-sm font-bold text-slate-800 dark:text-white placeholder-slate-400">
-              </div>
-              <p class="text-xs font-black text-slate-600 dark:text-slate-400 mt-1 flex items-center gap-1.5"><i data-lucide="info" class="w-4 h-4 text-clay-sky flex-shrink-0"></i> <span>한글 단축 코드 입력이 가능합니다! 지정하지 않으면 6자리의 영문/숫자 코드가 자동 발급됩니다.</span></p>
-            </div>
-
-            <button type="submit" class="w-full py-4 text-sm font-black border-4 border-white rounded-2xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat-lg hover:shadow-clay-flat hover:translate-x-1 hover:translate-y-1 transition-all flex items-center justify-center gap-2 cursor-pointer" id="shorten-btn">
-              <span>단축 URL 생성하기</span>
-              <i data-lucide="sparkles" class="w-4 h-4"></i>
-            </button>
-          </form>
         </div>
 
-        <!-- Result Display Clay Card -->
-        <div class="hidden max-w-3xl mx-auto bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 md:p-8 shadow-clay-flat-lg clay-card text-center" id="result-container">
-          <div class="w-16 h-16 rounded-full border-4 border-white bg-clay-mint flex items-center justify-center mx-auto mb-6 shadow-clay-flat animate-bounce text-black"><i data-lucide="check-circle" class="w-8 h-8"></i></div>
-          
-          <h2 class="text-2xl font-black text-slate-900 dark:text-white"><span class="bg-gradient-to-r from-clay-purple via-clay-sky to-clay-mint text-transparent bg-clip-text">축하합니다! 링크 생성 완료</span></h2>
-          <p class="text-sm font-bold text-slate-500 mt-2">길고 복잡했던 주소가 아주 깜찍하고 안전하게 정렬되었습니다.</p>
-
-          <div class="mt-8 space-y-4 text-left">
-            <!-- Brand Short URL -->
-            <div class="bg-slate-50 dark:bg-slate-950 border-4 border-white p-4 rounded-2xl shadow-clay-flat flex justify-between items-center gap-4">
-              <div class="flex flex-col">
-                <span class="text-[10px] font-black text-slate-400">브랜드 단축 URL (도메인 포함)</span>
-                <span class="text-sm font-black text-clay-sky dark:text-clay-mint break-all mt-1" id="brand-url-display">http://kfcman.link/code</span>
+        <!-- 2. Canva Horizontal Categories -->
+        <div id="canva-categories" class="w-full overflow-x-auto py-2 mb-8 no-scrollbar">
+          <div class="flex gap-6 min-w-max px-2 justify-center">
+            
+            <!-- Magic Layers / URL Shorten -->
+            <button onclick="openShortenerModal()" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
+              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-violet-500/50 group-hover:to-indigo-500/30 group-hover:shadow-[0_12px_24px_-8px_rgba(139,92,246,0.45)] transition-all duration-500 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-tr from-violet-500/0 to-indigo-500/0 group-hover:from-violet-500/10 group-hover:to-indigo-500/10 transition-all duration-500"></div>
+                <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
+                  <svg class="w-6 h-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(139,92,246,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="grad-sparkles" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#8b5cf6" />
+                      <stop offset="100%" stop-color="#ec4899" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M12 3C12 3 13 8 16 11C19 14 21 12 21 12C21 12 16 13 13 16C10 19 12 21 12 21C12 21 11 16 8 13C5 10 3 12 3 12C3 12 8 11 11 8C14 5 12 3 12 3Z" fill="url(#grad-sparkles)"/>
+                  <path d="M19 5C19 5 19.5 7 21 8.5C22.5 10 23 9.5 23 9.5C23 9.5 21 10 19.5 11.5C18 13 19 14 19 14C19 14 18.5 12 17 10.5C15.5 9 15 9.5 15 9.5C15 9.5 17 9 18.5 7.5C20 6 19 5 19 5Z" fill="url(#grad-sparkles)" opacity="0.8"/>
+                </svg>
+                </div>
               </div>
-              <button class="w-11 h-11 rounded-xl border-2 border-white bg-white dark:bg-slate-800 text-black dark:text-white hover:bg-slate-100 flex items-center justify-center shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex-shrink-0 cursor-pointer" id="btn-copy-brand" title="주소 복사">
-                <i data-lucide="copy" class="w-4 h-4"></i>
-              </button>
-            </div>
-
-            <!-- Local Short URL -->
-            <div class="bg-slate-50 dark:bg-slate-950 border-4 border-white p-4 rounded-2xl shadow-clay-flat flex justify-between items-center gap-4">
-              <div class="flex flex-col">
-                <span class="text-[10px] font-black text-slate-400">임시/대체 접속용 로컬 URL</span>
-                <span class="text-sm font-black text-clay-purple dark:text-clay-mint break-all mt-1" id="local-url-display">http://localhost:3000/code</span>
-              </div>
-              <button class="w-11 h-11 rounded-xl border-2 border-white bg-white dark:bg-slate-800 text-black dark:text-white hover:bg-slate-100 flex items-center justify-center shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex-shrink-0 cursor-pointer" id="btn-copy-local" title="주소 복사">
-                <i data-lucide="copy" class="w-4 h-4"></i>
-              </button>
-            </div>
-          </div>
-
-          <div class="mt-8 flex gap-3 justify-center">
-            <button class="btn flex-1 py-3 text-xs font-black border-2 border-white rounded-xl bg-clay-toy hover:bg-amber-400 text-black shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer" id="btn-qr-trigger">
-              <i data-lucide="qr-code" class="w-4 h-4"></i>
-              <span>QR코드 다운받기</span>
+              <span class="text-[12px] font-black text-slate-650 dark:text-slate-400 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors duration-300">단축 URL 생성</span>
             </button>
-            <button class="btn flex-1 py-3 text-xs font-black border-2 border-white rounded-xl bg-clay-sand dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-100 flex items-center justify-center gap-1.5 shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer" id="btn-reset">
-              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-              <span>새 주소 추가 생성</span>
+
+            <!-- Live Kanban Board -->
+            <a href="/wall" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
+              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-orange-500/50 group-hover:to-amber-500/30 group-hover:shadow-[0_12px_24px_-8px_rgba(249,115,22,0.45)] transition-all duration-500 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-tr from-orange-500/0 to-amber-500/0 group-hover:from-orange-500/10 group-hover:to-amber-500/10 transition-all duration-500"></div>
+                <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
+                  <svg class="w-6 h-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(249,115,22,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="grad-kanban" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#f97316" />
+                      <stop offset="100%" stop-color="#f59e0b" />
+                    </linearGradient>
+                  </defs>
+                  <rect x="3" y="3" width="5" height="18" rx="1.5" fill="url(#grad-kanban)" opacity="0.25" stroke="url(#grad-kanban)" stroke-width="1.5"/>
+                  <rect x="9.5" y="3" width="5" height="18" rx="1.5" fill="url(#grad-kanban)" opacity="0.25" stroke="url(#grad-kanban)" stroke-width="1.5"/>
+                  <rect x="16" y="3" width="5" height="18" rx="1.5" fill="url(#grad-kanban)" opacity="0.25" stroke="url(#grad-kanban)" stroke-width="1.5"/>
+                  <rect x="4" y="5" width="3" height="4" rx="1" fill="url(#grad-kanban)"/>
+                  <rect x="10.5" y="5" width="3" height="6" rx="1" fill="url(#grad-kanban)"/>
+                  <rect x="10.5" y="13" width="3" height="4" rx="1" fill="url(#grad-kanban)" opacity="0.7"/>
+                  <rect x="17" y="5" width="3" height="5" rx="1" fill="url(#grad-kanban)"/>
+                </svg>
+                </div>
+              </div>
+              <span class="text-[12px] font-black text-slate-650 dark:text-slate-400 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors duration-300">실시간 칸반</span>
+            </a>
+
+            <!-- Preference Poll -->
+            <button id="btn-category-create-poll" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
+              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-rose-500/50 group-hover:to-pink-500/30 group-hover:shadow-[0_12px_24px_-8px_rgba(244,63,94,0.45)] transition-all duration-500 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-tr from-rose-500/0 to-pink-500/0 group-hover:from-rose-500/10 group-hover:to-pink-500/10 transition-all duration-500"></div>
+                <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
+                  <svg class="w-6 h-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(244,63,94,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="grad-vote" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#f43f5e" />
+                      <stop offset="100%" stop-color="#ec4899" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M4 9C4 7.89543 4.89543 7 6 7H18C19.1046 7 20 7.89543 20 9V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V9Z" stroke="url(#grad-vote)" stroke-width="1.5" fill="url(#grad-vote)" fill-opacity="0.15"/>
+                  <path d="M8 7V5C8 3.89543 8.89543 3 10 3H14C15.1046 3 16 3.89543 16 5V7" stroke="url(#grad-vote)" stroke-width="1.5"/>
+                  <path d="M10 9H14V13L12 11.5L10 13V9Z" fill="url(#grad-vote)"/>
+                  <path d="M9 14.5L11 16.5L15 12" stroke="url(#grad-vote)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                </div>
+              </div>
+              <span class="text-[12px] font-black text-slate-650 dark:text-slate-400 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors duration-300">실시간 설문</span>
+            </button>
+
+            <!-- Classroom Board -->
+            <button onclick="switchMainTab('classroom')" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
+              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-purple-500/50 group-hover:to-fuchsia-500/30 group-hover:shadow-[0_12px_24px_-8px_rgba(168,85,247,0.45)] transition-all duration-500 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-tr from-purple-500/0 to-fuchsia-500/0 group-hover:from-purple-500/10 group-hover:to-fuchsia-500/10 transition-all duration-500"></div>
+                <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
+                  <svg class="w-6 h-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(168,85,247,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="grad-award" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#a855f7" />
+                      <stop offset="100%" stop-color="#d946ef" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M8.5 14.5L6 21L12 18.5L18 21L15.5 14.5" stroke="url(#grad-award)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="url(#grad-award)" fill-opacity="0.2"/>
+                  <circle cx="12" cy="10" r="6" fill="url(#grad-award)" stroke="url(#grad-award)" stroke-width="1.5"/>
+                  <path d="M12 7L13.25 9.5L16 9.75L14 11.5L14.5 14.25L12 12.75L9.5 14.25L10 11.5L8 9.75L10.75 9.5L12 7Z" fill="#ffffff"/>
+                </svg>
+                </div>
+              </div>
+              <span class="text-[12px] font-black text-slate-650 dark:text-slate-400 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors duration-300">으쓱 학급 보드</span>
+            </button>
+
+            <!-- HWP Docs -->
+            <a href="/docs" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
+              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-teal-500/50 group-hover:to-emerald-500/30 group-hover:shadow-[0_12px_24px_-8px_rgba(20,184,166,0.45)] transition-all duration-500 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-tr from-teal-500/0 to-emerald-500/0 group-hover:from-teal-500/10 group-hover:to-teal-500/10 transition-all duration-500"></div>
+                <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
+                  <svg class="w-6 h-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(20,184,166,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="grad-docs" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#20b8a6" />
+                      <stop offset="100%" stop-color="#10b981" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M6 2H14L18 6V20C18 21.1046 17.1046 22 16 22H6C4.89543 22 4 21.1046 4 20V4C4 2.89543 4.89543 2 6 2Z" fill="url(#grad-docs)" fill-opacity="0.15" stroke="url(#grad-docs)" stroke-width="1.5"/>
+                  <path d="M14 2V6H18L14 2Z" fill="url(#grad-docs)" stroke="url(#grad-docs)" stroke-width="1.5" stroke-linejoin="round"/>
+                  <line x1="7" y1="10" x2="15" y2="10" stroke="url(#grad-docs)" stroke-width="1.5" stroke-linecap="round"/>
+                  <line x1="7" y1="14" x2="15" y2="14" stroke="url(#grad-docs)" stroke-width="1.5" stroke-linecap="round"/>
+                  <line x1="7" y1="18" x2="11" y2="18" stroke="url(#grad-docs)" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                </div>
+              </div>
+              <span class="text-[12px] font-black text-slate-650 dark:text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors duration-300">HWP 문서</span>
+            </a>
+
+            <!-- Quick QR -->
+            <button id="btn-category-qr" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
+              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-blue-500/50 group-hover:to-sky-500/30 group-hover:shadow-[0_12px_24px_-8px_rgba(59,130,246,0.45)] transition-all duration-500 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-tr from-blue-500/0 to-sky-500/0 group-hover:from-blue-500/10 group-hover:to-blue-500/10 transition-all duration-500"></div>
+                <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
+                  <svg class="w-6 h-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="grad-qr" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#3b82f6" />
+                      <stop offset="100%" stop-color="#06b6d4" />
+                    </linearGradient>
+                  </defs>
+                  <rect x="3" y="3" width="6" height="6" rx="1.5" stroke="url(#grad-qr)" stroke-width="1.5" fill="url(#grad-qr)" fill-opacity="0.1"/>
+                  <rect x="5" y="5" width="2" height="2" rx="0.5" fill="url(#grad-qr)"/>
+                  <rect x="15" y="3" width="6" height="6" rx="1.5" stroke="url(#grad-qr)" stroke-width="1.5" fill="url(#grad-qr)" fill-opacity="0.1"/>
+                  <rect x="17" y="5" width="2" height="2" rx="0.5" fill="url(#grad-qr)"/>
+                  <rect x="3" y="15" width="6" height="6" rx="1.5" stroke="url(#grad-qr)" stroke-width="1.5" fill="url(#grad-qr)" fill-opacity="0.1"/>
+                  <rect x="5" y="17" width="2" height="2" rx="0.5" fill="url(#grad-qr)"/>
+                  <rect x="15" y="15" width="2" height="2" rx="0.5" fill="url(#grad-qr)"/>
+                  <rect x="19" y="15" width="2" height="2" rx="0.5" fill="url(#grad-qr)"/>
+                  <rect x="15" y="19" width="2" height="2" rx="0.5" fill="url(#grad-qr)"/>
+                  <rect x="19" y="19" width="2" height="2" rx="0.5" fill="url(#grad-qr)" opacity="0.4"/>
+                  <rect x="11" y="11" width="2" height="2" rx="0.5" fill="url(#grad-qr)"/>
+                  <rect x="11" y="5" width="2" height="2" rx="0.5" fill="url(#grad-qr)" opacity="0.4"/>
+                  <rect x="5" y="11" width="2" height="2" rx="0.5" fill="url(#grad-qr)" opacity="0.4"/>
+                </svg>
+                </div>
+              </div>
+              <span class="text-[12px] font-black text-slate-650 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">QR코드 생성</span>
+            </button>
+
+            <!-- Stats Dashboard -->
+            <button onclick="switchMainTab('projects')" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
+              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-sky-500/50 group-hover:to-cyan-500/30 group-hover:shadow-[0_12px_24px_-8px_rgba(14,165,233,0.45)] transition-all duration-500 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-tr from-sky-500/0 to-cyan-500/0 group-hover:from-sky-500/10 group-hover:to-cyan-500/10 transition-all duration-500"></div>
+                <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
+                  <svg class="w-6 h-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(14,165,233,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="grad-stats" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#0ea5e9" />
+                      <stop offset="100%" stop-color="#06b6d4" />
+                    </linearGradient>
+                  </defs>
+                  <rect x="4" y="13" width="3.5" height="7" rx="1.5" fill="url(#grad-stats)" fill-opacity="0.25" stroke="url(#grad-stats)" stroke-width="1.5"/>
+                  <rect x="10.25" y="8" width="3.5" height="12" rx="1.5" fill="url(#grad-stats)" fill-opacity="0.25" stroke="url(#grad-stats)" stroke-width="1.5"/>
+                  <rect x="16.5" y="3" width="3.5" height="17" rx="1.5" fill="url(#grad-stats)"/>
+                  <path d="M4 14.5L10.25 9.5L16.5 4.5H20.5V8.5L16.5 4.5" stroke="url(#grad-stats)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                </div>
+              </div>
+              <span class="text-[12px] font-black text-slate-650 dark:text-slate-400 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors duration-300">최근 프로젝트</span>
+            </button>
+
+            <!-- Settings -->
+            <button onclick="switchMainTab('settings')" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
+              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-slate-500/50 group-hover:to-slate-600/30 group-hover:shadow-[0_12px_24px_-8px_rgba(100,116,139,0.45)] transition-all duration-500 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-tr from-slate-500/0 to-slate-600/0 group-hover:from-slate-500/10 group-hover:to-slate-600/10 transition-all duration-500"></div>
+                <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
+                  <svg class="w-6 h-6 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(100,116,139,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="grad-settings" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#64748b" />
+                      <stop offset="100%" stop-color="#94a3b8" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="10" cy="14" r="4" stroke="url(#grad-settings)" stroke-width="1.5" fill="url(#grad-settings)" fill-opacity="0.2"/>
+                  <circle cx="10" cy="14" r="1.5" stroke="url(#grad-settings)" stroke-width="1.5"/>
+                  <path d="M10 9V8M10 20V19M5 14H4M16 14H15M6.5 10.5L5.5 9.5M14.5 18.5L13.5 17.5M6.5 17.5L5.5 18.5M14.5 10.5L13.5 11.5" stroke="url(#grad-settings)" stroke-width="1.5" stroke-linecap="round"/>
+                  <circle cx="17" cy="7" r="2.5" stroke="url(#grad-settings)" stroke-width="1.5" fill="url(#grad-settings)" fill-opacity="0.2"/>
+                  <circle cx="17" cy="7" r="1" stroke="url(#grad-settings)" stroke-width="1.5"/>
+                  <path d="M17 3.5V4.5M17 10.5V9.5M13.5 7H14.5M20.5 7H19.5" stroke="url(#grad-settings)" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                </div>
+              </div>
+              <span class="text-[12px] font-black text-slate-650 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-400 transition-colors duration-300">설정 및 관리</span>
             </button>
           </div>
         </div>
+
+        <!-- 3. Canva Highlights -->
+        <div id="canva-highlights" class="mb-10 text-left">
+          <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 mb-4 tracking-tight">하이라이트</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <button onclick="openShortenerModal()" class="w-full text-left rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all flex flex-col justify-between h-36 relative overflow-hidden group cursor-pointer border border-white/10">
+              <div class="absolute right-0 bottom-0 translate-x-4 translate-y-4 opacity-15 group-hover:scale-110 group-hover:rotate-[-6deg] transition-all duration-700 ease-out">
+                <svg class="w-24 h-24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9 17H7A5 5 0 0 1 7 7H9" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                  <path d="M15 7H17A5 5 0 0 1 17 17H15" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                  <line x1="8" y1="12" x2="16" y2="12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center group-hover:scale-110 group-hover:bg-white/30 transition-all duration-300">
+                <svg class="w-5 h-5 text-white group-hover:rotate-6 transition-transform" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9 17H7A5 5 0 0 1 7 7H9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                  <path d="M15 7H17A5 5 0 0 1 17 17H15" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                  <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div>
+                <h4 class="text-xs font-black">초고속 단축 URL 서비스</h4>
+                <p class="text-[9px] text-white/80 font-bold mt-1 line-clamp-2">길고 복잡한 긴 인터넷 주소를 귀여운 미니어처 코드 주소로 압축합니다.</p>
+              </div>
+            </button>
+
+            <a href="/wall" class="w-full text-left rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all flex flex-col justify-between h-36 relative overflow-hidden group cursor-pointer border border-white/10">
+              <div class="absolute right-0 bottom-0 translate-x-4 translate-y-4 opacity-15 group-hover:scale-110 group-hover:rotate-[-6deg] transition-all duration-700 ease-out">
+                <svg class="w-24 h-24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="3" y="3" width="5" height="18" rx="1.5" stroke="white" stroke-width="1.5"/>
+                  <rect x="9.5" y="3" width="5" height="18" rx="1.5" stroke="white" stroke-width="1.5"/>
+                  <rect x="16" y="3" width="5" height="18" rx="1.5" stroke="white" stroke-width="1.5"/>
+                  <rect x="4" y="5" width="3" height="4" rx="1" fill="white"/>
+                  <rect x="10.5" y="5" width="3" height="6" rx="1" fill="white"/>
+                  <rect x="17" y="5" width="3" height="5" rx="1" fill="white"/>
+                </svg>
+              </div>
+              <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center group-hover:scale-110 group-hover:bg-white/30 transition-all duration-300">
+                <svg class="w-5 h-5 text-white group-hover:rotate-6 transition-transform" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="3" y="3" width="5" height="18" rx="1.5" stroke="currentColor" stroke-width="2"/>
+                  <rect x="9.5" y="3" width="5" height="18" rx="1.5" stroke="currentColor" stroke-width="2"/>
+                  <rect x="16" y="3" width="5" height="18" rx="1.5" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </div>
+              <div>
+                <h4 class="text-xs font-black">실시간 협업 게시판</h4>
+                <p class="text-[9px] text-white/80 font-bold mt-1 line-clamp-2">수업 중 실시간으로 학생들의 아이디어를 수집하고 칸반 형태로 정렬합니다.</p>
+              </div>
+            </a>
+
+            <button id="btn-highlight-create-poll" class="w-full text-left rounded-2xl bg-gradient-to-br from-rose-500 to-orange-500 text-white p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all flex flex-col justify-between h-36 relative overflow-hidden group cursor-pointer border border-white/10">
+              <div class="absolute right-0 bottom-0 translate-x-4 translate-y-4 opacity-15 group-hover:scale-110 group-hover:rotate-[-6deg] transition-all duration-700 ease-out">
+                <svg class="w-24 h-24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 9C4 7.89543 4.89543 7 6 7H18C19.1046 7 20 7.89543 20 9V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V9Z" stroke="white" stroke-width="1.5"/>
+                  <path d="M8 7V5C8 3.89543 8.89543 3 10 3H14C15.1046 3 16 3.89543 16 5V7" stroke="white" stroke-width="1.5"/>
+                </svg>
+              </div>
+              <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center group-hover:scale-110 group-hover:bg-white/30 transition-all duration-300">
+                <svg class="w-5 h-5 text-white group-hover:rotate-6 transition-transform" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 9H20V21H4V9Z" stroke="currentColor" stroke-width="2"/>
+                  <path d="M8 9V5H16V9" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </div>
+              <div>
+                <h4 class="text-xs font-black">실시간 설문 광장 피드백</h4>
+                <p class="text-[9px] text-white/80 font-bold mt-1 line-clamp-2">투표 카드를 개설하여 비로그인 접속 학생들의 피드백을 실시간 집계합니다.</p>
+              </div>
+            </button>
+
+            <button onclick="switchMainTab('classroom')" class="w-full text-left rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-700 text-white p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all flex flex-col justify-between h-36 relative overflow-hidden group cursor-pointer border border-white/10">
+              <div class="absolute right-0 bottom-0 translate-x-4 translate-y-4 opacity-15 group-hover:scale-110 group-hover:rotate-[-6deg] transition-all duration-700 ease-out">
+                <svg class="w-24 h-24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="10" r="6" stroke="white" stroke-width="1.5"/>
+                  <path d="M8.5 14.5L6 21L12 18.5L18 21L15.5 14.5" stroke="white" stroke-width="1.5"/>
+                </svg>
+              </div>
+              <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center group-hover:scale-110 group-hover:bg-white/30 transition-all duration-300">
+                <svg class="w-5 h-5 text-white group-hover:rotate-6 transition-transform" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="9" r="5" stroke="currentColor" stroke-width="2"/>
+                  <path d="M9 14L7 20L12 18L17 20L15 14" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </div>
+              <div>
+                <h4 class="text-xs font-black">으쓱점수 학급 대시보드</h4>
+                <p class="text-[9px] text-white/80 font-bold mt-1 line-clamp-2">학급 명렬표를 기반으로 스티커 점수 부여 및 온도계 달성 이벤트를 엽니다.</p>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4. Canva Recent Items -->
+        <div class="text-left mb-6">
+          <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
+            <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 tracking-tight">최근</h3>
+            
+            <!-- Filter Toolbar -->
+            <div class="flex items-center gap-2 text-[10px] font-black">
+              <select id="canva-filter-owner" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 focus:outline-none cursor-pointer">
+                <option value="all">모든 소유자</option>
+                <option value="me">내가 소유한 항목</option>
+              </select>
+              
+              <select id="canva-filter-type" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 focus:outline-none cursor-pointer">
+                <option value="all">모든 유형</option>
+                <option value="link">단축 주소</option>
+                <option value="poll">설문 조사</option>
+                <option value="wall">협업 게시판</option>
+              </select>
+
+              <!-- Grid/List Switch -->
+              <div class="flex items-center border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-slate-900">
+                <button id="btn-view-grid" type="button" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-purple-600 dark:text-purple-400 bg-slate-100 dark:bg-slate-800 cursor-pointer" title="그리드 보기">
+                  <i data-lucide="grid" class="w-3.5 h-3.5"></i>
+                </button>
+                <button id="btn-view-list" type="button" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-pointer bg-transparent" title="리스트 보기">
+                  <i data-lucide="list" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grid View Container -->
+          <div id="canva-recent-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full">
+            <!-- Grid Cards will be dynamically injected here -->
+          </div>
+        </div>
+
       </section>
 
       <!-- 3. Dashboard Stats List Section -->
@@ -812,7 +1660,7 @@
           <div class="flex justify-between items-center border-b-4 border-white pb-4 mb-5">
             <div class="flex items-center gap-3">
               <i data-lucide="file-plus-2" class="w-8 h-8 text-clay-purple"></i>
-              <h3 class="text-3xl font-black text-slate-950 dark:text-white">New kfcman-on</h3>
+              <h3 id="poll-card-mode-title" class="text-3xl font-black text-slate-950 dark:text-white">New kfcman-on</h3>
             </div>
             <button class="w-8 h-8 rounded-lg border-2 border-white bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover" id="btn-close-poll-create" type="button"><i data-lucide="x" class="w-4 h-4"></i></button>
           </div>
@@ -831,7 +1679,11 @@
                 <!-- 카드 1: 설문 -->
                 <div class="board-type-card active border-4 border-white dark:border-white/10 rounded-2xl p-3 bg-slate-50 dark:bg-slate-900/40 cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover hover:-translate-y-0.5 transition-all text-left flex flex-col gap-2" data-value="bar">
                   <div class="w-8 h-8 rounded-lg bg-clay-purple text-white flex items-center justify-center shadow-clay-flat flex-shrink-0">
-                    <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                    <svg class="w-6 h-6 filter drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="4" y="14" width="3" height="7" rx="0.75" fill="white"/>
+                      <rect x="10.5" y="8" width="3" height="13" rx="0.75" fill="white"/>
+                      <rect x="17" y="3" width="3" height="18" rx="0.75" fill="white"/>
+                    </svg>
                   </div>
                   <div>
                     <h4 class="text-[11px] font-black text-slate-800 dark:text-white">설문 (막대)</h4>
@@ -841,7 +1693,12 @@
                 <!-- 카드 2: 선호도 -->
                 <div class="board-type-card border-4 border-white dark:border-white/10 rounded-2xl p-3 bg-slate-50 dark:bg-slate-900/40 cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover hover:-translate-y-0.5 transition-all text-left flex flex-col gap-2" data-value="donut">
                   <div class="w-8 h-8 rounded-lg bg-clay-sky text-white flex items-center justify-center shadow-clay-flat flex-shrink-0">
-                    <i data-lucide="pie-chart" class="w-4 h-4"></i>
+                    <svg class="w-6 h-6 filter drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M21.2 12C20.6 6.4 15.6 1.4 10 0.8V10H19.2C19.7 10.7 20 11.3 20.2 12H21.2Z" fill="white"/>
+                      <path d="M18.8 14H10V22.8C14.9 22.2 18.8 18.3 19.4 13.4C19.2 13.6 19 13.8 18.8 14Z" fill="white" opacity="0.8"/>
+                      <path d="M8 22.6V12H0.8C1.4 17.6 6.4 22.6 12 23.2C10.7 23.2 9.3 23 8 22.6Z" fill="white" opacity="0.6"/>
+                      <path d="M0.8 10H8V0.8C3.1 1.4 0.8 5.3 0.8 10Z" fill="white" opacity="0.4"/>
+                    </svg>
                   </div>
                   <div>
                     <h4 class="text-[11px] font-black text-slate-800 dark:text-white">선호도 (도넛)</h4>
@@ -851,7 +1708,10 @@
                 <!-- 카드 3: 워드클라우드 -->
                 <div class="board-type-card border-4 border-white dark:border-white/10 rounded-2xl p-3 bg-slate-50 dark:bg-slate-900/40 cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover hover:-translate-y-0.5 transition-all text-left flex flex-col gap-2" data-value="cloud">
                   <div class="w-8 h-8 rounded-lg bg-clay-grass text-black flex items-center justify-center shadow-clay-flat flex-shrink-0">
-                    <i data-lucide="cloud-lightning" class="w-4 h-4"></i>
+                    <svg class="w-6 h-6 filter drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M19 10C19.8 10 20.6 10.3 21.2 10.8C22.3 11.7 23 13 23 14.5C23 17 21 19 18.5 19H7.5C4.5 19 2 16.5 2 13.5C2 10.8 4 8.5 6.7 8.1C7.4 5.2 10 3 13 3C16.4 3 19.2 5.5 19.7 8.8C19.5 8.8 19.2 8.8 19 8.8" stroke="white" stroke-width="2" stroke-linecap="round" fill="white" fill-opacity="0.2"/>
+                      <path d="M13 14.5L10.5 19.5H13.5L11 23.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
                   </div>
                   <div>
                     <h4 class="text-[11px] font-black text-slate-800 dark:text-white">워드클라우드</h4>
@@ -861,7 +1721,11 @@
                 <!-- 카드 4: 개방형 질문 -->
                 <div class="board-type-card border-4 border-white dark:border-white/10 rounded-2xl p-3 bg-slate-50 dark:bg-slate-900/40 cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover hover:-translate-y-0.5 transition-all text-left flex flex-col gap-2" data-value="open">
                   <div class="w-8 h-8 rounded-lg bg-indigo-500 text-white flex items-center justify-center shadow-clay-flat flex-shrink-0">
-                    <i data-lucide="message-square" class="w-4 h-4"></i>
+                    <svg class="w-6 h-6 filter drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M21 15C21 16.1046 20.1046 17 19 17H7L3 21V5C3 3.89543 3.89543 3 6 3H19C20.1046 3 21 3.89543 21 5V15Z" stroke="white" stroke-width="2" fill="white" fill-opacity="0.2"/>
+                      <line x1="7" y1="8" x2="17" y2="8" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                      <line x1="7" y1="12" x2="13" y2="12" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
                   </div>
                   <div>
                     <h4 class="text-[11px] font-black text-slate-800 dark:text-white">개방형 질문</h4>
@@ -871,7 +1735,17 @@
                 <!-- 카드 5: 만족도 척도 -->
                 <div class="board-type-card border-4 border-white dark:border-white/10 rounded-2xl p-3 bg-slate-50 dark:bg-slate-900/40 cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover hover:-translate-y-0.5 transition-all text-left flex flex-col gap-2" data-value="scale">
                   <div class="w-8 h-8 rounded-lg bg-clay-toy text-black flex items-center justify-center shadow-clay-flat flex-shrink-0">
-                    <i data-lucide="sliders" class="w-4 h-4"></i>
+                    <svg class="w-6 h-6 filter drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <line x1="4" y1="21" x2="4" y2="14" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                      <line x1="4" y1="10" x2="4" y2="3" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                      <circle cx="4" cy="12" r="2.5" fill="white"/>
+                      <line x1="12" y1="21" x2="12" y2="12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                      <line x1="12" y1="8" x2="12" y2="3" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                      <circle cx="12" cy="10" r="2.5" fill="white"/>
+                      <line x1="20" y1="21" x2="20" y2="16" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                      <line x1="20" y1="12" x2="20" y2="3" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                      <circle cx="20" cy="14" r="2.5" fill="white"/>
+                    </svg>
                   </div>
                   <div>
                     <h4 class="text-[11px] font-black text-slate-800 dark:text-white">만족도 척도</h4>
@@ -881,7 +1755,13 @@
                 <!-- 카드 6: 서바이벌 퀴즈 -->
                 <div class="board-type-card border-4 border-white dark:border-white/10 rounded-2xl p-3 bg-slate-50 dark:bg-slate-900/40 cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover hover:-translate-y-0.5 transition-all text-left flex flex-col gap-2" data-value="quiz">
                   <div class="w-8 h-8 rounded-lg bg-clay-red text-white flex items-center justify-center shadow-clay-flat flex-shrink-0">
-                    <i data-lucide="trophy" class="w-4 h-4"></i>
+                    <svg class="w-6 h-6 filter drop-shadow-[0_0_8px_rgba(255,255,255,0.25)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M6 9H4.5C3.12 9 2 7.88 2 6.5C2 5.12 3.12 4 4.5 4H6V9Z" stroke="white" stroke-width="1.5" fill="white" fill-opacity="0.1"/>
+                      <path d="M18 9H19.5C20.88 9 22 7.88 22 6.5C22 5.12 20.88 4 19.5 4H18V9Z" stroke="white" stroke-width="1.5" fill="white" fill-opacity="0.1"/>
+                      <path d="M6 2H18V10C18 13.31 15.31 16 12 16C8.69 16 6 13.31 6 10V2Z" fill="white"/>
+                      <path d="M12 16V22" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                      <path d="M8 22H16" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
                   </div>
                   <div>
                     <h4 class="text-[11px] font-black text-slate-800 dark:text-white">서바이벌 퀴즈</h4>
@@ -1295,7 +2175,16 @@
 <section class="settings-section scroll-mt-24 border-t-4 border-dashed border-white/20 pt-10 hidden" id="settings-section">
         <div class="text-left mb-6">
           <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-            <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-sand dark:bg-[#131824] hover:bg-slate-200 text-slate-800 dark:text-white transition-all shadow-clay-flat flex items-center justify-center cursor-pointer"><i data-lucide="settings" class="w-5 h-5"></i></span>
+            <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-sand dark:bg-[#131824] hover:bg-slate-200 text-slate-800 dark:text-white transition-all shadow-clay-flat flex items-center justify-center cursor-pointer"><svg class="w-5.5 h-5.5 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(100,116,139,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-mob-settings" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#64748b" />
+                  <stop offset="100%" stop-color="#94a3b8" />
+                </linearGradient>
+              </defs>
+              <circle cx="12" cy="12" r="3" stroke="url(#grad-mob-settings)" stroke-width="2" fill="url(#grad-mob-settings)" fill-opacity="0.2"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="url(#grad-mob-settings)" stroke-width="2" fill="none"/>
+            </svg></span>
             <span class="bg-gradient-to-r from-clay-purple via-clay-sky to-clay-mint text-transparent bg-clip-text">통합 설정 제어판</span>
           </h2>
           <p class="text-xs font-bold text-slate-500 mt-2">시스템 리소스 모니터링, 가입 대기열 승인, 다채널 알림 및 서비스별 설정을 관리합니다.</p>
@@ -1362,6 +2251,48 @@
             <div class="text-left font-sans">
               <span class="text-[9px] font-black text-slate-400 block">무중단 업타임</span>
               <span class="text-xs font-black text-slate-900 dark:text-white truncate" id="monitor-uptime-val">0일 0시간</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- OCI Tetris Monitor Resource Grid -->
+        <div class="text-left border-b-2 border-dashed border-slate-200 dark:border-white/10 pb-2 mb-4">
+          <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+            <i data-lucide="gamepad-2" class="text-clay-purple w-4 h-4"></i>
+            오라클 클라우드 테트리스 서버 운영 현황
+          </h3>
+        </div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <!-- Active Players -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-4 shadow-clay-flat flex items-center gap-3 clay-card">
+            <div class="w-10 h-10 rounded-xl border-2 border-white bg-clay-purple text-white flex items-center justify-center"><i data-lucide="users" class="w-5 h-5"></i></div>
+            <div class="text-left">
+              <span class="text-[9px] font-black text-slate-400 block">실시간 참가자 수</span>
+              <span class="text-base font-black text-slate-900 dark:text-white" id="monitor-tetris-players">0명</span>
+            </div>
+          </div>
+          <!-- Spectators -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-4 shadow-clay-flat flex items-center gap-3 clay-card">
+            <div class="w-10 h-10 rounded-xl border-2 border-white bg-clay-sky text-white flex items-center justify-center"><i data-lucide="eye" class="w-5 h-5"></i></div>
+            <div class="text-left">
+              <span class="text-[9px] font-black text-slate-400 block">실시간 관전자 수</span>
+              <span class="text-base font-black text-slate-900 dark:text-white" id="monitor-tetris-spectators">0명</span>
+            </div>
+          </div>
+          <!-- Sockets Connected -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-4 shadow-clay-flat flex items-center gap-3 clay-card">
+            <div class="w-10 h-10 rounded-xl border-2 border-white bg-clay-toy text-black flex items-center justify-center"><i data-lucide="activity" class="w-5 h-5"></i></div>
+            <div class="text-left">
+              <span class="text-[9px] font-black text-slate-400 block">총 활성 소켓 연결 수</span>
+              <span class="text-base font-black text-slate-900 dark:text-white" id="monitor-tetris-sockets">0개</span>
+            </div>
+          </div>
+          <!-- Game State -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-4 shadow-clay-flat flex items-center gap-3 clay-card">
+            <div class="w-10 h-10 rounded-xl border-2 border-white bg-clay-grass text-black flex items-center justify-center"><i data-lucide="play-circle" class="w-5 h-5"></i></div>
+            <div class="text-left font-sans">
+              <span class="text-[9px] font-black text-slate-400 block">현재 대결 상태</span>
+              <span class="text-xs font-black text-slate-900 dark:text-white truncate" id="monitor-tetris-state">대기실 (lobby)</span>
             </div>
           </div>
         </div>
@@ -1439,7 +2370,7 @@
               <!-- 1. Webhook Settings -->
               <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white p-5 rounded-2xl shadow-clay-flat space-y-3">
                 <div class="flex justify-between items-center">
-                  <h4 class="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5"><i data-lucide="slack" class="w-4 h-4 text-clay-purple"></i> Discord / Telegram Webhook</h4>
+                  <h4 class="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5"><i data-lucide="webhook" class="w-4 h-4 text-clay-purple"></i> Discord / Telegram Webhook</h4>
                   <label class="switch-container inline-flex items-center cursor-pointer relative w-12 h-6 rounded-full bg-slate-200 dark:bg-slate-800 border-2 border-white shadow-inner">
                     <input type="checkbox" id="chk-webhook-enabled" class="sr-only cursor-pointer">
                     <div class="switch-dot w-4 h-4 rounded-full bg-black dark:bg-clay-mint border border-white absolute left-1 top-0.5"></div>
@@ -1611,6 +2542,33 @@
                </div>
              </div>
 
+             <!-- Theme Configuration Card -->
+             <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat clay-card text-left space-y-4 mb-6">
+               <h4 class="text-sm font-black text-slate-950 dark:text-white flex items-center gap-1.5"><i data-lucide="palette" class="w-4 h-4 text-clay-purple"></i> 화면 테마 설정 (Theme Settings)</h4>
+               <p class="text-xs text-slate-400 leading-normal">
+                 서비스의 화면 테마를 라이트 모드 또는 다크 모드로 변경합니다. 데스크톱과 모바일 장치 모두 동기화되어 즉시 적용됩니다.
+               </p>
+               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                 <!-- Light Mode Option -->
+                 <label class="border-2 border-white rounded-2xl p-4 bg-slate-50 dark:bg-slate-950 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900/50 transition-all shadow-sm">
+                   <div class="flex items-center gap-3">
+                     <div class="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-500 flex items-center justify-center"><i data-lucide="sun" class="w-4.5 h-4.5"></i></div>
+                     <span class="text-xs font-black text-slate-800 dark:text-slate-200">라이트 모드 (Light)</span>
+                   </div>
+                   <input type="radio" name="theme-preference" value="light" class="w-4.5 h-4.5 accent-clay-purple cursor-pointer">
+                 </label>
+                 
+                 <!-- Dark Mode Option -->
+                 <label class="border-2 border-white rounded-2xl p-4 bg-slate-50 dark:bg-slate-950 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900/50 transition-all shadow-sm">
+                   <div class="flex items-center gap-3">
+                     <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center"><i data-lucide="moon" class="w-4.5 h-4.5"></i></div>
+                     <span class="text-xs font-black text-slate-800 dark:text-slate-200">다크 모드 (Dark)</span>
+                   </div>
+                   <input type="radio" name="theme-preference" value="dark" class="w-4.5 h-4.5 accent-clay-purple cursor-pointer">
+                 </label>
+               </div>
+             </div>
+
              <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat clay-card text-left space-y-4">
                <h4 class="text-sm font-black text-slate-950 dark:text-white flex items-center gap-1.5"><i data-lucide="trash-2" class="w-4 h-4 text-clay-red"></i> 단축 링크 데이터 청소</h4>
                <p class="text-xs text-slate-400 leading-normal">
@@ -1629,7 +2587,16 @@
         <div class="classroom-settings-section" id="classroom-settings-section">
           <div class="text-left mb-6">
             <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-              <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-purple text-white flex items-center justify-center shadow-clay-flat"><i data-lucide="settings" class="w-5 h-5"></i></span>
+              <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-purple text-white flex items-center justify-center shadow-clay-flat"><svg class="w-5.5 h-5.5 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(100,116,139,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-mob-settings" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#64748b" />
+                  <stop offset="100%" stop-color="#94a3b8" />
+                </linearGradient>
+              </defs>
+              <circle cx="12" cy="12" r="3" stroke="url(#grad-mob-settings)" stroke-width="2" fill="url(#grad-mob-settings)" fill-opacity="0.2"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="url(#grad-mob-settings)" stroke-width="2" fill="none"/>
+            </svg></span>
               <span class="bg-gradient-to-r from-clay-purple via-clay-sky to-clay-mint text-transparent bg-clip-text">학급 설정 제어판</span>
             </h2>
             <p class="text-xs font-bold text-slate-500 mt-2">학급 운영 규칙, 개인정보 보호 및 폰트 종류를 설정합니다.</p>
@@ -1821,6 +2788,118 @@
 
       <!-- ==================== MODALS LISTS ==================== -->
 
+  <!-- 0. Canva Style URL Shortener Modal -->
+  <div class="modal-overlay hidden fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm animate-fade-in" id="shortener-modal">
+    <div class="bg-white dark:bg-[#161b26] w-full h-full p-6 md:p-10 shadow-lg animate-scale-up text-left relative overflow-y-auto flex flex-col justify-start" id="shortener-modal-content">
+      <div class="max-w-2xl mx-auto w-full relative pt-6">
+      <button class="absolute right-0 top-0 w-8 h-8 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer shadow-sm z-20" id="btn-shortener-modal-close" type="button">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+      
+      <!-- Input Form -->
+      <div class="w-full text-left transition-colors" id="input-container">
+        <div class="flex items-center gap-3 border-b-4 border-white dark:border-slate-800 pb-4 mb-6">
+          <div class="w-10 h-10 rounded-xl border-2 border-white bg-clay-mint flex items-center justify-center shadow-clay-flat text-black"><svg class="w-5.5 h-5.5 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(139,92,246,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-mob-link" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#8b5cf6" />
+                  <stop offset="100%" stop-color="#ec4899" />
+                </linearGradient>
+              </defs>
+              <path d="M9 17H7A5 5 0 0 1 7 7H9" stroke="url(#grad-mob-link)" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M15 7H17A5 5 0 0 1 17 17H15" stroke="url(#grad-mob-link)" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="8" y1="12" x2="16" y2="12" stroke="url(#grad-mob-link)" stroke-width="2.5" stroke-linecap="round"/>
+            </svg></div>
+          <h2 class="text-lg font-black text-slate-900 dark:text-white"><span class="bg-gradient-to-r from-clay-purple via-clay-sky to-clay-mint text-transparent bg-clip-text">단축 주소 신규 생성</span></h2>
+        </div>
+
+        <!-- Usage Limit Tracker (For Regular Members) -->
+        <div id="usage-limit-container" class="hidden mb-6 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 text-left shadow-sm">
+          <div class="flex justify-between items-center text-xs mb-1.5">
+            <span class="font-extrabold text-slate-500 dark:text-slate-400">단축 주소 생성 한도 (최대 50회)</span>
+            <span class="font-black text-clay-purple dark:text-clay-mint text-xs" id="usage-limit-text">0 / 50 개 사용됨</span>
+          </div>
+          <div class="w-full h-3 rounded-full bg-slate-200/50 dark:bg-slate-950/40 overflow-hidden border border-slate-300/10 shadow-inner">
+            <div id="usage-limit-bar" class="h-full rounded-full bg-gradient-to-r from-clay-purple to-clay-grass transition-all duration-500" style="width: 0%;"></div>
+          </div>
+          <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-2 flex items-center gap-1">
+            <i data-lucide="info" class="w-3.5 h-3.5 inline"></i>
+            일반회원은 최대 50개까지 생성 가능합니다. 추가 혜택을 위해 관리자에게 '우수회원👑' 승급을 문의하세요.
+          </p>
+        </div>
+
+        <form id="shorten-form" class="space-y-4">
+          <div class="space-y-1.5">
+            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-300">줄이고 싶은 원본 긴 URL 주소 (Destination URL)</label>
+            <div class="flex items-center bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-3 py-2.5 gap-2 shadow-inner focus-within:border-clay-sky focus-within:ring-2 focus-within:ring-clay-sky/20 transition-all">
+              <i data-lucide="globe" class="w-4 h-4 text-slate-400"></i>
+              <input type="url" id="url-input" placeholder="https://very-long-example-link.com/path-details..." required autocomplete="off" class="w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400">
+            </div>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-300">나만의 커스텀 단축 코드 (선택 사항)</label>
+            <div class="flex items-center bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-3 py-2.5 gap-2 shadow-inner focus-within:border-clay-sky focus-within:ring-2 focus-within:ring-clay-sky/20 transition-all">
+              <span class="text-xs font-black text-slate-500 border-r-2 border-slate-300 dark:border-slate-800 pr-2 select-none">kfcman.link /</span>
+              <input type="text" id="custom-alias-input" placeholder="custom-name" autocomplete="off" class="w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400">
+            </div>
+            <p class="text-[9px] font-bold text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1"><i data-lucide="info" class="w-3.5 h-3.5 text-clay-sky flex-shrink-0"></i> <span>한글 단축 코드 입력이 가능합니다!</span></p>
+          </div>
+
+          <button type="submit" class="w-full py-3.5 text-xs font-black border-2 border-white dark:border-slate-800 rounded-2xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer" id="shorten-btn">
+            <span>단축 URL 생성하기</span>
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- Result Display -->
+      <div class="hidden w-full text-center" id="result-container">
+        <div class="w-14 h-14 rounded-full border-2 border-white bg-clay-mint flex items-center justify-center mx-auto mb-4 shadow-clay-flat animate-bounce text-black"><i data-lucide="check-circle" class="w-7 h-7"></i></div>
+        
+        <h2 class="text-lg font-black text-slate-900 dark:text-white"><span class="bg-gradient-to-r from-clay-purple via-clay-sky to-clay-mint text-transparent bg-clip-text">링크 생성 완료</span></h2>
+        <p class="text-xs font-bold text-slate-500 mt-1">길고 복잡했던 주소가 깜찍하게 단축되었습니다.</p>
+
+        <div class="mt-6 space-y-3 text-left">
+          <!-- Brand Short URL -->
+          <div class="bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 p-3 rounded-2xl shadow-inner flex justify-between items-center gap-3">
+            <div class="flex flex-col min-w-0">
+              <span class="text-[9px] font-black text-slate-400">브랜드 단축 URL</span>
+              <span class="text-xs font-black text-clay-sky dark:text-clay-mint truncate mt-0.5" id="brand-url-display">http://kfcman.link/code</span>
+            </div>
+            <button class="w-9 h-9 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-black dark:text-white hover:bg-slate-100 flex items-center justify-center shadow-sm flex-shrink-0 cursor-pointer" id="btn-copy-brand" title="주소 복사">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <!-- Local Short URL -->
+          <div class="bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 p-3 rounded-2xl shadow-inner flex justify-between items-center gap-3">
+            <div class="flex flex-col min-w-0">
+              <span class="text-[9px] font-black text-slate-400">로컬 URL</span>
+              <span class="text-xs font-black text-clay-purple dark:text-clay-mint truncate mt-0.5" id="local-url-display">http://localhost:3000/code</span>
+            </div>
+            <button class="w-9 h-9 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-black dark:text-white hover:bg-slate-100 flex items-center justify-center shadow-sm flex-shrink-0 cursor-pointer" id="btn-copy-local" title="주소 복사">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-6 flex gap-2.5 justify-center">
+          <button class="btn flex-1 py-2.5 text-xs font-black border border-slate-250 rounded-xl bg-clay-toy hover:bg-amber-400 text-black shadow-sm flex items-center justify-center gap-1 cursor-pointer" id="btn-qr-trigger">
+            <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+            <span>QR코드 다운</span>
+          </button>
+          <button class="btn flex-1 py-2.5 text-xs font-black border border-slate-250 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-100 flex items-center justify-center gap-1 shadow-sm cursor-pointer" id="btn-reset">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>새 주소 생성</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
   <!-- 1. Authentication Modal (Login/Register Tab Switcher) -->
   <div class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" id="auth-modal">
     <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg w-full max-w-sm animate-scale-up text-left relative clay-card">
@@ -1837,12 +2916,12 @@
         <form id="login-form" class="space-y-4">
           <div class="space-y-1">
             <label class="block text-[10px] font-black text-slate-500">계정 아이디 (Username)</label>
-            <input type="text" id="login-username" placeholder="아이디 입력" required disabled class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-white">
+            <input type="text" id="login-username" placeholder="아이디 입력" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-white">
           </div>
           <div class="space-y-1">
             <label class="block text-[10px] font-black text-slate-500">계정 비밀번호 (Password)</label>
             <div class="relative w-full flex items-center">
-              <input type="password" id="login-password" placeholder="비밀번호 입력" required disabled class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl pl-3 pr-10 py-2 text-xs font-bold text-slate-800 dark:text-white">
+              <input type="password" id="login-password" placeholder="비밀번호 입력" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl pl-3 pr-10 py-2 text-xs font-bold text-slate-800 dark:text-white">
               <button type="button" class="absolute right-3 text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer btn-toggle-password" data-target="login-password" title="비밀번호 보이기/숨기기">
                 <i data-lucide="eye" class="w-4 h-4"></i>
               </button>
@@ -1860,12 +2939,12 @@
         <form id="register-form" class="space-y-3">
           <div class="space-y-1">
             <label class="block text-[10px] font-black text-slate-500">계정 아이디 생성</label>
-            <input type="text" id="register-username" placeholder="사용할 아이디 입력" required disabled class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-white">
+            <input type="text" id="register-username" placeholder="사용할 아이디 입력" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-white">
           </div>
           <div class="space-y-1">
             <label class="block text-[10px] font-black text-slate-500">계정 비밀번호 설정</label>
             <div class="relative w-full flex items-center">
-              <input type="password" id="register-password" placeholder="비밀번호 입력" required disabled class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl pl-3 pr-10 py-2 text-xs font-bold text-slate-800 dark:text-white">
+              <input type="password" id="register-password" placeholder="비밀번호 입력" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl pl-3 pr-10 py-2 text-xs font-bold text-slate-800 dark:text-white">
               <button type="button" class="absolute right-3 text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer btn-toggle-password" data-target="register-password" title="비밀번호 보이기/숨기기">
                 <i data-lucide="eye" class="w-4 h-4"></i>
               </button>
@@ -1874,7 +2953,7 @@
           <div class="space-y-1">
             <label class="block text-[10px] font-black text-slate-500">비밀번호 확인 확인</label>
             <div class="relative w-full flex items-center">
-              <input type="password" id="register-confirm-password" placeholder="비밀번호 다시 입력" required disabled class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl pl-3 pr-10 py-2 text-xs font-bold text-slate-800 dark:text-white">
+              <input type="password" id="register-confirm-password" placeholder="비밀번호 다시 입력" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl pl-3 pr-10 py-2 text-xs font-bold text-slate-800 dark:text-white">
               <button type="button" class="absolute right-3 text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer btn-toggle-password" data-target="register-confirm-password" title="비밀번호 보이기/숨기기">
                 <i data-lucide="eye" class="w-4 h-4"></i>
               </button>
@@ -2311,66 +3390,145 @@
       </div>
     </div>
   </footer>
+  </div>
+  </div>
 
 
   <!-- Mobile Bottom Navigation (Visible only on mobile/tablet) -->
-  <div class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-[#161b26]/95 backdrop-blur-md border-t-2 border-white px-4 py-2 flex justify-around items-center shadow-lg transition-all">
+  <div class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-[#161b26]/95 backdrop-blur-md border-t-2 border-white px-4 py-3 flex justify-around items-center shadow-lg transition-all">
     
     <!-- 1. Guest Nav Group (Visible when logged out) -->
     <div id="mobile-nav-guest-group" class="flex justify-around items-center w-full">
-      <a href="#shortener-section" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white active" id="mobile-nav-shortener">
-        <i data-lucide="link-2" class="w-5 h-5"></i>
-        <span class="text-[9px] font-black">단축하기</span>
+      <a href="#shortener-section" class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white active" id="mobile-nav-shortener">
+        <svg class="w-5.5 h-5.5 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(139,92,246,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-mob-link" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#8b5cf6" />
+                  <stop offset="100%" stop-color="#ec4899" />
+                </linearGradient>
+              </defs>
+              <path d="M9 17H7A5 5 0 0 1 7 7H9" stroke="url(#grad-mob-link)" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M15 7H17A5 5 0 0 1 17 17H15" stroke="url(#grad-mob-link)" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="8" y1="12" x2="16" y2="12" stroke="url(#grad-mob-link)" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
       </a>
-      <a href="#dashboard-section" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-dashboard">
-        <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
-        <span class="text-[9px] font-black">대시보드</span>
+      <a href="#dashboard-section" class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-dashboard">
+        <svg class="w-5.5 h-5.5 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(14,165,233,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-mob-stats" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#0ea5e9" />
+                  <stop offset="100%" stop-color="#06b6d4" />
+                </linearGradient>
+              </defs>
+              <rect x="3" y="13" width="4" height="8" rx="1" fill="url(#grad-mob-stats)"/>
+              <rect x="10" y="8" width="4" height="13" rx="1" fill="url(#grad-mob-stats)"/>
+              <rect x="17" y="3" width="4" height="18" rx="1" fill="url(#grad-mob-stats)"/>
+            </svg>
       </a>
-      <a href="#polls-section" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-polls">
-        <i data-lucide="vote" class="w-5 h-5"></i>
-        <span class="text-[9px] font-black">설문광장</span>
+      <a href="#polls-section" class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-polls">
+        <svg class="w-5.5 h-5.5 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(244,63,94,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-mob-vote" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f43f5e" />
+                  <stop offset="100%" stop-color="#ec4899" />
+                </linearGradient>
+              </defs>
+              <path d="M4 9C4 7.89543 4.89543 7 6 7H18C19.1046 7 20 7.89543 20 9V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V9Z" stroke="url(#grad-mob-vote)" stroke-width="2" fill="url(#grad-mob-vote)" fill-opacity="0.15"/>
+              <path d="M8 7V5C8 3.89543 8.89543 3 10 3H14C15.1046 3 16 3.89543 16 5V7" stroke="url(#grad-mob-vote)" stroke-width="2"/>
+              <path d="M10 9H14V13L12 11.5L10 13V9Z" fill="url(#grad-mob-vote)"/>
+            </svg>
       </a>
     </div>
 
     <!-- 2. Member Classroom Nav Group (Visible when logged in) -->
     <div id="mobile-nav-member-group" class="hidden flex justify-around items-center w-full">
-      <a href="#shortener-section" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-shortener-member">
-        <i data-lucide="link-2" class="w-5 h-5"></i>
-        <span class="text-[9px] font-black">단축주소</span>
+      <a href="#shortener-section" class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-shortener-member">
+        <svg class="w-5.5 h-5.5 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(139,92,246,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-mob-link" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#8b5cf6" />
+                  <stop offset="100%" stop-color="#ec4899" />
+                </linearGradient>
+              </defs>
+              <path d="M9 17H7A5 5 0 0 1 7 7H9" stroke="url(#grad-mob-link)" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M15 7H17A5 5 0 0 1 17 17H15" stroke="url(#grad-mob-link)" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="8" y1="12" x2="16" y2="12" stroke="url(#grad-mob-link)" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
       </a>
-      <a href="#polls-section" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-polls-member">
-        <i data-lucide="vote" class="w-5 h-5"></i>
-        <span class="text-[9px] font-black">설문</span>
+      <a href="#polls-section" class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-polls-member">
+        <svg class="w-5.5 h-5.5 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(244,63,94,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-mob-vote" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f43f5e" />
+                  <stop offset="100%" stop-color="#ec4899" />
+                </linearGradient>
+              </defs>
+              <path d="M4 9C4 7.89543 4.89543 7 6 7H18C19.1046 7 20 7.89543 20 9V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V9Z" stroke="url(#grad-mob-vote)" stroke-width="2" fill="url(#grad-mob-vote)" fill-opacity="0.15"/>
+              <path d="M8 7V5C8 3.89543 8.89543 3 10 3H14C15.1046 3 16 3.89543 16 5V7" stroke="url(#grad-mob-vote)" stroke-width="2"/>
+              <path d="M10 9H14V13L12 11.5L10 13V9Z" fill="url(#grad-mob-vote)"/>
+            </svg>
       </a>
-      <a href="#classroom-section" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-classroom">
-        <i data-lucide="award" class="w-5 h-5"></i>
-        <span class="text-[9px] font-black">으쓱점수</span>
+      <a href="#classroom-section" class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-classroom">
+        <svg class="w-5.5 h-5.5 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(168,85,247,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-mob-award" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#a855f7" />
+                  <stop offset="100%" stop-color="#d946ef" />
+                </linearGradient>
+              </defs>
+              <circle cx="12" cy="8" r="6" fill="url(#grad-mob-award)" stroke="url(#grad-mob-award)" stroke-width="2"/>
+              <path d="M15.47 13.79L19 21L12 18L5 21L8.53 13.79" stroke="url(#grad-mob-award)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="url(#grad-mob-award)" fill-opacity="0.2"/>
+            </svg>
       </a>
-      <a href="/docs" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-docs" style="display: none;">
-        <i data-lucide="file-text" class="w-5 h-5 text-clay-purple"></i>
-        <span class="text-[9px] font-black">한글공유</span>
+      <a href="/docs" class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-docs" style="display: none;">
+        <svg class="w-5.5 h-5.5 animate-pulse transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(20,184,166,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-mob-docs" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#20b8a6" />
+                  <stop offset="100%" stop-color="#10b981" />
+                </linearGradient>
+              </defs>
+              <path d="M6 2H14L18 6V20C18 21.1046 17.1046 22 16 22H6C4.89543 22 4 21.1046 4 20V4C4 2.89543 4.89543 2 6 2Z" fill="url(#grad-mob-docs)" fill-opacity="0.15" stroke="url(#grad-mob-docs)" stroke-width="2"/>
+              <path d="M14 2V6H18L14 2Z" fill="url(#grad-mob-docs)" stroke="url(#grad-mob-docs)" stroke-width="2"/>
+            </svg>
       </a>
-      <a href="#settings-section" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-settings">
-        <i data-lucide="settings" class="w-5 h-5"></i>
-        <span class="text-[9px] font-black">설정</span>
+      <a href="/wall" class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-wall" style="display: none;">
+        <svg class="w-5.5 h-5.5 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(249,115,22,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-mob-kanban" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f97316" />
+                  <stop offset="100%" stop-color="#f59e0b" />
+                </linearGradient>
+              </defs>
+              <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="url(#grad-mob-kanban)" stroke-width="2" fill="url(#grad-mob-kanban)" fill-opacity="0.2"/>
+              <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="url(#grad-mob-kanban)" stroke-width="2" fill="url(#grad-mob-kanban)" fill-opacity="0.2"/>
+              <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="url(#grad-mob-kanban)" stroke-width="2" fill="url(#grad-mob-kanban)" fill-opacity="0.2"/>
+              <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="url(#grad-mob-kanban)" stroke-width="2" fill="url(#grad-mob-kanban)" fill-opacity="0.2"/>
+            </svg>
+      </a>
+      <a href="#settings-section" class="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-settings">
+        <svg class="w-5.5 h-5.5 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(100,116,139,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-mob-settings" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#64748b" />
+                  <stop offset="100%" stop-color="#94a3b8" />
+                </linearGradient>
+              </defs>
+              <circle cx="12" cy="12" r="3" stroke="url(#grad-mob-settings)" stroke-width="2" fill="url(#grad-mob-settings)" fill-opacity="0.2"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="url(#grad-mob-settings)" stroke-width="2" fill="none"/>
+            </svg>
       </a>
     </div>
     
-    <!-- Mobile Theme Toggle -->
-    <button class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer" id="theme-toggle-btn-mobile" title="테마 변경">
-      <i data-lucide="sun" class="w-5 h-5 block dark:hidden text-clay-toy"></i>
-      <i data-lucide="moon" class="w-5 h-5 hidden dark:block text-clay-mint"></i>
-      <span class="text-[9px] font-black">테마변경</span>
-    </button>
+
     
     <!-- Mobile Log Out (Visible only when logged in) -->
-    <button class="hidden flex flex-col items-center gap-0.5 text-clay-red cursor-pointer" id="btn-logout-mobile" title="로그아웃">
+    <button class="hidden flex flex-col items-center text-clay-red cursor-pointer" id="btn-logout-mobile" title="로그아웃">
       <i data-lucide="log-out" class="w-5 h-5"></i>
-      <span class="text-[9px] font-black">로그아웃</span>
     </button>
   </div>
 
   <!-- Application Frontend Logic JS -->
-  <script src="/js/app.js?v=202605282330"></script>
+  <script src="/js/app.js?v=202606041804"></script>
 </body>
 </html>

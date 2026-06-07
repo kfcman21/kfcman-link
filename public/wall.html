@@ -53,10 +53,12 @@
       }
     }
     body {
+      background: linear-gradient(180deg, #dbeafe 0%, #eff6ff 50%, #f1f5f9 100%) no-repeat fixed;
       background-color: #f1f5f9;
       transition: background-color 0.3s ease;
     }
     .dark body {
+      background: linear-gradient(180deg, #0f172a 0%, #020617 100%) no-repeat fixed;
       background-color: #0c0f17;
     }
     /* Pastel card backgrounds */
@@ -191,7 +193,9 @@
     .active#nav-item-projects-side,
     .active#nav-item-settings-side,
     .active#nav-item-wall-side,
-    .active#nav-item-docs-side {
+    .active#nav-item-chat-side,
+    .active#nav-item-docs-side,
+    .active#nav-item-tetris-side {
       background-color: rgba(114, 9, 183, 0.08) !important;
       color: #7209b7 !important;
     }
@@ -200,7 +204,10 @@
     .dark .active#nav-item-projects-side,
     .dark .active#nav-item-settings-side,
     .dark .active#nav-item-wall-side,
-    .dark .active#nav-item-docs-side {
+    .dark .active#nav-item-chat-side,
+    .active#nav-item-chat-side,
+    .dark .active#nav-item-docs-side,
+    .dark .active#nav-item-tetris-side {
       background-color: rgba(167, 255, 213, 0.08) !important;
       color: #a7ffd5 !important;
     }
@@ -209,7 +216,10 @@
     #left-sidebar:not(.collapsed) .active#nav-item-projects-side,
     #left-sidebar:not(.collapsed) .active#nav-item-settings-side,
     #left-sidebar:not(.collapsed) .active#nav-item-wall-side,
-    #left-sidebar:not(.collapsed) .active#nav-item-docs-side {
+    #left-sidebar:not(.collapsed) .active#nav-item-chat-side,
+    .active#nav-item-chat-side,
+    #left-sidebar:not(.collapsed) .active#nav-item-docs-side,
+    #left-sidebar:not(.collapsed) .active#nav-item-tetris-side {
       border-left: 4px solid #7209b7 !important;
       border-radius: 0 12px 12px 0 !important;
     }
@@ -218,7 +228,10 @@
     .dark #left-sidebar:not(.collapsed) .active#nav-item-projects-side,
     .dark #left-sidebar:not(.collapsed) .active#nav-item-settings-side,
     .dark #left-sidebar:not(.collapsed) .active#nav-item-wall-side,
-    .dark #left-sidebar:not(.collapsed) .active#nav-item-docs-side {
+    #left-sidebar:not(.collapsed) .active#nav-item-chat-side,
+    .active#nav-item-chat-side,
+    .dark #left-sidebar:not(.collapsed) .active#nav-item-docs-side,
+    .dark #left-sidebar:not(.collapsed) .active#nav-item-tetris-side {
       border-left: 4px solid #a7ffd5 !important;
       border-radius: 0 12px 12px 0 !important;
     }
@@ -227,8 +240,10 @@
     .active#nav-item-classroom-side i,
     .active#nav-item-projects-side i,
     .active#nav-item-settings-side i,
-    .active#nav-item-wall-side i,
-    .active#nav-item-docs-side i {
+    .active#nav-item-wall-side i, .active#nav-item-chat-side i,
+    .active#nav-item-chat-side i,
+    .active#nav-item-docs-side i,
+    .active#nav-item-tetris-side i, .active#nav-item-tetris-side svg {
       transform: scale(1.15) rotate(3deg) !important;
       filter: drop-shadow(0 0 6px currentColor) !important;
       transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -236,7 +251,7 @@
   </style>
 </head>
 <body class="font-sans antialiased text-slate-800 dark:text-slate-100 min-h-screen pb-12 transition-colors duration-200">
-  <div class="flex min-h-screen w-screen bg-slate-100 dark:bg-clay-night transition-colors relative">
+  <div class="flex min-h-screen w-screen bg-transparent transition-colors relative">
     
     <!-- Collapsible Sidebar (Desktop only) -->
     <aside id="left-sidebar" class="hidden lg:flex w-60 flex-col items-center justify-between border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f1422] py-6 flex-shrink-0 z-[200] relative shadow-sm">
@@ -363,6 +378,20 @@
             <span class="text-sm font-black sidebar-text">칸반 보드</span>
           </a>
           
+          <a href="/chat" id="nav-item-chat-side" class="w-full h-11 px-4 rounded-xl flex items-center gap-3 text-slate-450 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer font-bold group">
+            <svg class="w-5 h-5 group-hover:scale-110 group-hover:rotate-[6deg] transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(234,179,8,0.35)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-side-chat" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#fbbf24" />
+                  <stop offset="100%" stop-color="#f59e0b" />
+                </linearGradient>
+              </defs>
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="url(#grad-side-chat)" fill-opacity="0.25" stroke="url(#grad-side-chat)" stroke-width="1.5"/>
+              <path d="M8 10H8.01M12 10H12.01M16 10H16.01" stroke="url(#grad-side-chat)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="text-sm font-black sidebar-text">주제 톡방</span>
+          </a>
+          
           <a href="/docs" id="nav-item-docs-side" class="w-full h-11 px-4 rounded-xl flex items-center gap-3 text-slate-450 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer font-bold group">
             <svg class="w-5 h-5 group-hover:scale-110 group-hover:rotate-[6deg] transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(20,184,166,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <defs>
@@ -377,6 +406,24 @@
               <line x1="7" y1="14" x2="15" y2="14" stroke="url(#grad-side-docs)" stroke-width="1.5" stroke-linecap="round"/>
             </svg>
             <span class="text-sm font-black sidebar-text">HWP 문서</span>
+          </a>
+          <!-- Tetris Battle Sidebar Item -->
+          <a href="/tetris" id="nav-item-tetris-side" class="w-full h-11 px-4 rounded-xl flex items-center gap-3 text-slate-450 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer font-bold group">
+            <svg class="w-5 h-5 group-hover:scale-110 group-hover:rotate-[6deg] transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(236,72,153,0.35)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="grad-side-tetris" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#ec4899" />
+                  <stop offset="100%" stop-color="#8b5cf6" />
+                </linearGradient>
+              </defs>
+              <rect x="3" y="10" width="18" height="6" rx="1.5" fill="url(#grad-side-tetris)" fill-opacity="0.25" stroke="url(#grad-side-tetris)" stroke-width="1.5"/>
+              <rect x="9" y="4" width="6" height="12" rx="1.5" fill="url(#grad-side-tetris)" fill-opacity="0.25" stroke="url(#grad-side-tetris)" stroke-width="1.5"/>
+              <rect x="10" y="5" width="4" height="4" rx="1" fill="url(#grad-side-tetris)"/>
+              <rect x="4" y="11" width="4" height="4" rx="1" fill="url(#grad-side-tetris)"/>
+              <rect x="10" y="11" width="4" height="4" rx="1" fill="url(#grad-side-tetris)"/>
+              <rect x="16" y="11" width="4" height="4" rx="1" fill="url(#grad-side-tetris)"/>
+            </svg>
+            <span class="text-sm font-black sidebar-text">테트리스 배틀</span>
           </a>
           
           <a href="/?tab=settings" id="nav-item-settings-side" class="w-full h-11 px-4 rounded-xl flex items-center gap-3 text-slate-450 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer font-bold group">
@@ -599,6 +646,21 @@
                   </div>
                 </div>
               </label>
+              <!-- Chat Layout option -->
+              <label class="cursor-pointer">
+                <input type="radio" name="wall-layout-picker" value="chat" class="hidden peer">
+                <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 peer-checked:border-yellow-500 peer-checked:bg-yellow-50/30 dark:peer-checked:bg-yellow-950/15 peer-checked:shadow-[2px_2px_0px_0px_rgba(234,179,8,0.55)] transition-all text-left h-full flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center gap-2 mb-1">
+                      <div class="w-6 h-6 rounded-lg bg-yellow-100 dark:bg-yellow-950/50 flex items-center justify-center text-yellow-600">
+                        <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+                      </div>
+                      <span class="text-xs font-black text-slate-800 dark:text-slate-100">주제 톡방 매칭형</span>
+                    </div>
+                    <span class="text-[9px] font-bold text-slate-400 dark:text-slate-500 block leading-relaxed">카톡처럼 말하고, 입력 내용에 따라 공통주제 톡방이 자동 생성 및 매칭됩니다.</span>
+                  </div>
+                </div>
+              </label>
             </div>
           </div>
           
@@ -654,7 +716,7 @@
         </h2>
         <p class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-6">사용할 번호 버튼을 클릭하고 이모지와 이름을 등록하여 입장해 주세요.</p>
         
-        <div id="number-buttons-grid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+        <div id="number-buttons-grid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 w-full max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
           <!-- Dynamic number buttons -->
         </div>
       </div>
@@ -695,11 +757,15 @@
             <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
             <span>전체 초기화</span>
           </button>
+          <button id="btn-change-max-users" class="btn hidden flex-grow sm:flex-grow-0 px-4 py-3 text-xs font-black border-2 border-violet-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-clay-flat hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            <span>인원 제한 설정</span>
+          </button>
         </div>
       </div>
 
       <!-- Real-time Cards Grid -->
-      <div id="cards-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div id="cards-grid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 w-full max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
         <!-- Dynamic Cards go here -->
       </div>
       
@@ -708,6 +774,91 @@
         <i data-lucide="sticky-note" class="w-12 h-12 text-slate-400 mx-auto mb-4 animate-bounce"></i>
         <h3 class="text-sm font-black text-slate-600 dark:text-slate-400 mb-1">작성된 카드가 아직 없습니다</h3>
         <p class="text-xs text-slate-400">오른쪽 아래 플로팅 버턴(+)을 눌러 첫 번째 카드를 작성해 보세요!</p>
+      </div>
+
+      <!-- Real-time Chat Layout (KakaoTalk Style) -->
+      <div id="chat-layout-container" class="hidden grid grid-cols-1 md:grid-cols-12 gap-6 w-full h-[70vh] min-h-[500px]">
+        <!-- Left Panel: Chatroom List -->
+        <div class="md:col-span-4 bg-white dark:bg-clay-cardDark border-4 border-yellow-100 dark:border-slate-800 rounded-3xl p-4 flex flex-col shadow-clay-flat-lg overflow-hidden h-full">
+          <div class="flex items-center justify-between border-b-2 border-slate-100 dark:border-slate-800 pb-3 mb-3 flex-shrink-0">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <h3 class="text-sm font-black text-slate-800 dark:text-white flex items-center gap-1.5 truncate">
+                <i data-lucide="message-circle" class="text-yellow-500 w-4.5 h-4.5 flex-shrink-0"></i>
+                주제별 톡방 (<span id="chat-rooms-count">0</span>)
+              </h3>
+            </div>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <button id="btn-chat-create-room" class="w-7 h-7 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 flex items-center justify-center text-slate-500 hover:text-yellow-650 dark:hover:text-yellow-400 transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-850" title="수동으로 주제 톡방 개설">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+              </button>
+              <span class="text-[9px] font-bold text-slate-400">인기순</span>
+            </div>
+          </div>
+
+          <!-- Nickname Config Row -->
+          <div class="mb-3 p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/85 flex items-center gap-2 flex-shrink-0">
+            <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 whitespace-nowrap">💬 대화명:</span>
+            <input type="text" id="chat-nickname-input" placeholder="대화명 입력 (기본: 익명)" class="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1 text-[10px] font-bold focus:outline-none focus:border-yellow-400">
+          </div>
+
+          <!-- Dynamic Chatroom List -->
+          <div id="chat-rooms-list" class="flex-grow overflow-y-auto pr-1 space-y-2.5 custom-scrollbar">
+            <!-- Dynamic room items -->
+          </div>
+
+          <!-- Bottom Chat Input (Global matching bar) -->
+          <div class="mt-3 pt-3 border-t-2 border-slate-100 dark:border-slate-800 flex-shrink-0">
+            <form id="chat-global-input-form" class="relative">
+              <input type="text" id="chat-global-input" placeholder="카톡처럼 메시지 입력... (예: #치킨 맛집 추천)" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-yellow-250 dark:border-slate-800 rounded-2xl pl-4 pr-12 py-3 text-xs font-bold text-slate-805 dark:text-white focus:outline-none focus:border-yellow-400">
+              <button type="submit" class="absolute right-1.5 top-1.5 w-9 h-9 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-slate-900 flex items-center justify-center cursor-pointer transition-all shadow-sm">
+                <i data-lucide="send" class="w-4 h-4"></i>
+              </button>
+            </form>
+            <p class="text-[9px] font-semibold text-slate-400 dark:text-slate-500 mt-2 text-center">💡 해시태그(#주제)를 쓰면 특정 주제방으로, 없으면 키워드를 자동 매칭해요.</p>
+          </div>
+        </div>
+
+        <!-- Right Panel: Conversation Screen -->
+        <div class="md:col-span-8 bg-[#bacee0] dark:bg-[#1a2332] border-4 border-yellow-100 dark:border-slate-800 rounded-3xl flex flex-col shadow-clay-flat-lg overflow-hidden h-full relative">
+          <!-- Room Header -->
+          <div class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm px-5 py-4 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between z-10 flex-shrink-0">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 id="chat-active-room-title" class="text-sm font-black text-slate-900 dark:text-white">톡방을 선택하거나 메시지를 남겨보세요</h3>
+                <span id="chat-active-room-tag" class="hidden text-[10px] font-black px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-400">#대화방</span>
+              </div>
+              <p id="chat-active-room-desc" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-0.5">주제 톡방을 클릭하면 대화에 참여할 수 있습니다.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="chat-active-room-like-btn" class="hidden px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-[10px] font-black border border-rose-200 dark:border-rose-900/50 text-rose-500 flex items-center gap-1 cursor-pointer transition-all">
+                <i data-lucide="heart" class="w-3.5 h-3.5 fill-rose-500"></i>
+                <span id="chat-active-room-likes">0</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Empty state when no chatroom selected -->
+          <div id="chat-conversation-empty" class="flex-grow flex flex-col items-center justify-center text-center p-8 select-none">
+            <div class="w-16 h-16 rounded-2xl bg-white/50 dark:bg-slate-800/50 flex items-center justify-center text-yellow-500 mb-4 shadow-sm">
+              <i data-lucide="message-square" class="w-8 h-8"></i>
+            </div>
+            <h4 class="text-xs font-black text-slate-700 dark:text-slate-300">활성화된 주제 톡방이 없습니다</h4>
+            <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1 max-w-xs leading-relaxed">왼쪽의 주제 톡방 목록에서 방을 선택하거나, 메시지를 새로 작성하여 첫 공통주제 톡방을 개설해 보세요.</p>
+          </div>
+
+          <!-- Chat messages area -->
+          <div id="chat-messages-area" class="hidden flex-grow overflow-y-auto px-5 py-4 space-y-3.5 custom-scrollbar">
+            <!-- Dynamic chat bubbles go here -->
+          </div>
+
+          <!-- Input bar for selected room -->
+          <div id="chat-message-input-container" class="hidden p-3 bg-white dark:bg-slate-900 border-t border-slate-200/50 dark:border-slate-800/50 flex-shrink-0">
+            <form id="chat-room-input-form" class="flex gap-2">
+              <input type="text" id="chat-room-input" placeholder="이 톡방에 메시지 보내기..." required class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-805 rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-yellow-400">
+              <button type="submit" class="px-4 py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-slate-900 text-xs font-black cursor-pointer shadow-sm whitespace-nowrap">전송</button>
+            </form>
+          </div>
+        </div>
       </div>
 
     </div>

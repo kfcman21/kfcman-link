@@ -1787,3 +1787,33 @@ body.light-theme .custom-alias-wrapper .custom-alias-group {
   border-radius: 12px;
 }
 
+/* Popular Card (Top Preference) Highlight Styles */
+@keyframes popular-pulse {
+  0%, 100% {
+    transform: scale(1.01);
+    box-shadow: 0 0 25px rgba(244, 63, 94, 0.45), 0 0 10px rgba(139, 92, 246, 0.2);
+  }
+  50% {
+    transform: scale(1.025);
+    box-shadow: 0 0 35px rgba(244, 63, 94, 0.65), 0 0 20px rgba(139, 92, 246, 0.4);
+  }
+}
+
+.popular-card-highlight {
+  position: relative;
+  background-clip: padding-box;
+  border: 4px solid transparent !important;
+  animation: popular-pulse 3s infinite ease-in-out;
+}
+
+.popular-card-highlight::before {
+  content: '';
+  position: absolute;
+  top: -4px; right: -4px; bottom: -4px; left: -4px;
+  z-index: -1;
+  margin: 0px;
+  border-radius: 28px; /* Matches rounded-3xl with 4px border */
+  background: linear-gradient(135deg, #f43f5e, #8b5cf6, #3b82f6);
+  pointer-events: none;
+}
+

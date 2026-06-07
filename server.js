@@ -31,6 +31,10 @@ function containsProfanity(text) {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const http = require('http');
+const server = http.createServer(app);
+const { initTetris, getStats } = require('./tetris-server');
+initTetris(server);
 
 // Enable dynamic CORS for all origins (including chrome-extension:// schemes) and allow credentials
 app.use(cors({
@@ -46,7 +50,15 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Serve static frontend files from the public folder
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 // Blacklisted short codes (reserved keywords)
 const BLACKLIST = new Set([
@@ -64,7 +76,8 @@ const BLACKLIST = new Set([
   'logout',
   'me',
   'wall',
-  'docs'
+  'docs',
+  'chat'
 ]);
 
 // --------------------------------------------------------------------------
@@ -260,6 +273,11 @@ async function sendRegistrationNotification(newUsername) {
 // AUTHENTICATION APIs
 // --------------------------------------------------------------------------
 
+app.post('/api/client-error', (req, res) => {
+  console.error(' [CLIENT ERROR] ', req.body);
+  res.sendStatus(200);
+});
+
 // Endpoint: Register User
 app.post('/api/register', async (req, res) => {
   const { username, password } = req.body;
@@ -269,10 +287,10 @@ app.post('/api/register', async (req, res) => {
   }
 
   const cleanUsername = username.trim();
-  const usernameRegex = /^[a-zA-Z0-9_-]{3,16}$/;
+  const usernameRegex = /^[a-zA-Z0-9_\-\uac00-\ud7a3\u3130-\u318f]{2,16}$/;
   if (!usernameRegex.test(cleanUsername)) {
     return res.status(400).json({ 
-      error: '아이디는 3~16자 크기여야 하며 영문, 숫자, 하이픈(-), 언더바(_)만 사용 가능합니다.' 
+      error: '아이디는 2~16자 크기여야 하며 한글, 영문, 숫자, 하이픈(-), 언더바(_)만 사용 가능합니다.' 
     });
   }
 
@@ -1008,6 +1026,88 @@ app.delete('/api/polls/:id', authenticate, async (req, res) => {
   }
 });
 
+// Endpoint: Edit a poll (Owner or Admin Only)
+app.put('/api/polls/:id', authenticate, async (req, res) => {
+  const pollId = req.params.id;
+  const { title, options, durationMinutes, allowMultiple, dupMode, boardType, quizCorrectIndex, quizDuration } = req.body;
+  
+  try {
+    const poll = db.getPoll(pollId);
+    if (!poll) {
+      return res.status(404).json({ error: '해당 선호도 조사를 찾을 수 없습니다.' });
+    }
+
+    const cleanUser = req.username.toLowerCase();
+    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin';
+    const isOwner = poll.owner === cleanUser;
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ error: '이 선호도 조사를 수정할 권한이 없습니다.' });
+    }
+
+    const isSubjective = boardType === 'open' || boardType === 'cloud';
+    const finalOptions = isSubjective ? (options || []) : options;
+
+    const optionsText = Array.isArray(finalOptions) ? finalOptions.join(' ') : '';
+    if (containsProfanity(title) || containsProfanity(optionsText)) {
+      return res.status(400).json({ error: '부적절한 표현(욕설, 비하, 성적 표현 등)이 감지되어 설문을 수정할 수 없습니다. 🌸' });
+    }
+
+    if (!title || (!isSubjective && (!finalOptions || !Array.isArray(finalOptions) || finalOptions.length < 2))) {
+      return res.status(400).json({ error: '질문 제목과 최소 2개 이상의 문항을 입력해 주세요.' });
+    }
+
+    const duration = parseInt(durationMinutes) || 10;
+    if (duration < 1 || duration > 14400) {
+      return res.status(400).json({ error: '제한 시간은 최소 1분에서 최대 10일까지 지정 가능합니다.' });
+    }
+
+    // Update poll fields
+    poll.title = String(title || '').trim();
+    poll.allowMultiple = !!allowMultiple;
+    poll.dupMode = String(dupMode || 'once').toLowerCase();
+    poll.boardType = String(boardType || 'bar').toLowerCase();
+    
+    // Update expiresAt based on original createdAt and new duration minutes
+    const durationMs = duration * 60000;
+    poll.expiresAt = new Date(new Date(poll.createdAt).getTime() + durationMs).toISOString();
+
+    if (poll.boardType === 'quiz') {
+      poll.quizCorrectIndex = quizCorrectIndex !== undefined && quizCorrectIndex !== null ? parseInt(quizCorrectIndex) : null;
+      poll.quizDuration = quizDuration !== undefined && quizDuration !== null ? parseInt(quizDuration) : 30;
+    } else {
+      poll.quizCorrectIndex = null;
+      poll.quizDuration = 30;
+    }
+
+    // Update options: preserve votes by index, truncate or append
+    if (isSubjective) {
+      if (boardType === 'cloud' && (!poll.options || poll.options.length === 0)) {
+        poll.options = [];
+      }
+    } else {
+      const newFormattedOptions = [];
+      for (let i = 0; i < finalOptions.length; i++) {
+        const text = String(finalOptions[i] || '').trim();
+        const existingOpt = poll.options.find(o => o.index === i);
+        newFormattedOptions.push({
+          index: i,
+          text,
+          votes: existingOpt ? existingOpt.votes : 0,
+          totalScore: existingOpt ? (existingOpt.totalScore || 0) : 0
+        });
+      }
+      poll.options = newFormattedOptions;
+    }
+
+    await db.save();
+    return res.status(200).json({ message: '선호도 조사가 성공적으로 수정되었습니다!', poll });
+  } catch (err) {
+    console.error('Error updating poll:', err);
+    return res.status(500).json({ error: '선호도 조사 수정 도중 오류가 발생했습니다.' });
+  }
+});
+
 // Endpoint: Reset poll results for re-polling (Owner or Admin Only)
 app.post('/api/polls/:id/reset', authenticate, async (req, res) => {
   const pollId = req.params.id;
@@ -1110,7 +1210,6 @@ app.post('/api/classroom/students/bulk', authenticate, async (req, res) => {
 // Active SSE client connections grouped by wallId
 const wallClients = {};
 const https = require('https');
-const http = require('http');
 
 // Helper to broadcast updated wall data to all listening clients of a wallId
 function broadcastWallUpdate(wallId) {
@@ -1199,7 +1298,14 @@ function parseOgMetadata(html, url) {
   return metadata;
 }
 
-function scrapeUrl(url, callback) {
+function scrapeUrl(url, rawCallback) {
+  let called = false;
+  const callback = (metadata) => {
+    if (called) return;
+    called = true;
+    rawCallback(metadata);
+  };
+
   let parsedUrl;
   try {
     parsedUrl = new URL(url);
@@ -1265,8 +1371,16 @@ app.get('/api/scrape-metadata', (req, res) => {
     targetUrl = 'http://' + targetUrl;
   }
 
+  let sent = false;
   scrapeUrl(targetUrl, (metadata) => {
-    res.json(metadata);
+    if (sent) return;
+    sent = true;
+    if (res.headersSent) return;
+    try {
+      res.json(metadata);
+    } catch (err) {
+      console.error("Failed to send scrape-metadata json response:", err);
+    }
   });
 });
 
@@ -1343,14 +1457,14 @@ app.post('/api/wall', authenticate, async (req, res) => {
   }
 
   try {
-    const { title, description, maxUsers, layout } = req.body;
+    const { title, topic, description, maxUsers, layout } = req.body;
 
-    if (containsProfanity(title) || containsProfanity(description)) {
+    if (containsProfanity(title) || (topic && containsProfanity(topic)) || containsProfanity(description)) {
       return res.status(400).json({ error: '부적절한 표현(욕설, 비하, 성적 표현 등)이 감지되어 게시판을 개설할 수 없습니다.' });
     }
 
     const creator = req.username || 'anonymous'; 
-    const wall = await db.createWall(title, description, creator, maxUsers, layout);
+    const wall = await db.createWall(title, topic || '', description, creator, maxUsers, layout);
     return res.status(201).json(wall);
   } catch (err) {
     console.error('Error creating wall:', err);
@@ -1409,7 +1523,7 @@ app.get('/api/wall/:id', async (req, res) => {
 app.post('/api/wall/:id/cards', optionalAuthenticate, async (req, res) => {
   try {
     const wallId = req.params.id.trim().toUpperCase();
-    const { author, title, content, bgColor, image, previewUrl, previewTitle, previewDesc, previewImage, isNotice, sectionId, attachmentName, attachmentData } = req.body;
+    const { author, title, content, bgColor, image, previewUrl, previewTitle, previewDesc, previewImage, isNotice, sectionId, attachmentName, attachmentData, clientUuid } = req.body;
 
     if (containsProfanity(author) || containsProfanity(title) || containsProfanity(content)) {
       return res.status(400).json({ error: '부적절한 표현(욕설, 비하, 성적 표현 등)이 감지되어 등록할 수 없습니다. 서로 배려하는 예쁜 언어를 사용해 주세요! 🌸' });
@@ -1420,17 +1534,48 @@ app.post('/api/wall/:id/cards', optionalAuthenticate, async (req, res) => {
       return res.status(404).json({ error: '존재하지 않는 게시판입니다.' });
     }
 
+    const cleanUser = (req.username || '').toLowerCase();
+    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin' || wall.creator === cleanUser;
+
+    // Check write restriction for notice section
+    if (sectionId === 'notice-section' && !isAdmin) {
+      return res.status(403).json({ error: '공지사항 컬럼은 교사(관리자)만 작성할 수 있습니다.' });
+    }
+
+    // Check write restriction for slot-restricted columns wall layout
+    if (wall.layout === 'columns' && wall.maxUsers > 0 && !isAdmin) {
+      if (!sectionId) {
+        return res.status(400).json({ error: '작성할 섹션이 지정되지 않았습니다.' });
+      }
+      const section = (wall.sections || []).find(s => s.id === sectionId);
+      if (!section) {
+        return res.status(404).json({ error: '존재하지 않는 섹션입니다.' });
+      }
+      const match = section.name.match(/^(\d+)번$/);
+      if (!match) {
+        return res.status(403).json({ error: '이 컬럼에는 작성 권한이 없습니다.' });
+      }
+      const slotNum = parseInt(match[1], 10);
+      const member = wall.members && wall.members[slotNum];
+      if (!member || member.clientUuid !== clientUuid) {
+        return res.status(403).json({ error: `본인의 번호(${slotNum}번) 컬럼에만 카드를 작성할 수 있습니다.` });
+      }
+    }
+
+    // Check write restriction for chat layout (주제 톡방) - Only admins can create topic rooms (cards)
+    if (wall.layout === 'chat' && !isAdmin) {
+      return res.status(403).json({ error: '새로운 주제 톡방은 관리자(교사)만 개설할 수 있습니다. 🌸' });
+    }
+
     // Notice pin authorization check
     if (isNotice) {
-      const cleanUser = (req.username || '').toLowerCase();
-      const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin';
-      const isCreator = wall.creator === cleanUser;
-      if (!isCreator && !isAdmin) {
+      if (!isAdmin) {
         return res.status(403).json({ error: '공지사항은 게시판 개설자(관리자)만 고정할 수 있습니다.' });
       }
     }
 
-    const card = await db.addWallCard(wallId, author, title, content, bgColor, image, previewUrl, previewTitle, previewDesc, previewImage, isNotice, sectionId, attachmentName, attachmentData);
+    const finalIsNotice = isNotice || (sectionId === 'notice-section');
+    const card = await db.addWallCard(wallId, author, title, content, bgColor, image, previewUrl, previewTitle, previewDesc, previewImage, finalIsNotice, sectionId, attachmentName, attachmentData);
     
     // Broadcast change to all clients
     broadcastWallUpdate(wallId);
@@ -1587,10 +1732,27 @@ app.post('/api/wall/:id/cards/:cardId/comments', async (req, res) => {
   try {
     const wallId = req.params.id.trim().toUpperCase();
     const { cardId } = req.params;
-    const { author, text } = req.body;
+    const { author, text, clientUuid } = req.body;
 
     if (containsProfanity(author) || containsProfanity(text)) {
       return res.status(400).json({ error: '부적절한 표현(욕설, 비하, 성적 표현 등)이 감지되어 등록할 수 없습니다. 서로 배려하는 예쁜 언어를 사용해 주세요! 🌸' });
+    }
+
+    const wall = await db.getWall(wallId);
+    if (!wall) {
+      return res.status(404).json({ error: '존재하지 않는 게시판입니다.' });
+    }
+
+    const cleanUser = (req.username || '').toLowerCase();
+    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin' || wall.creator === cleanUser;
+
+    // Enforce slot check if maxUsers > 0
+    if (wall.maxUsers > 0 && !isAdmin) {
+      const members = Object.values(wall.members || {});
+      const myMember = members.find(m => m.clientUuid === clientUuid);
+      if (!myMember) {
+        return res.status(403).json({ error: '번호 로그인(이모지 및 이름 등록) 후 대화에 참여할 수 있습니다. 🌸' });
+      }
     }
 
     const card = await db.commentWallCard(wallId, cardId, author, text);
@@ -1641,6 +1803,120 @@ app.delete('/api/wall/:id/cards/:cardId', async (req, res) => {
   }
 });
 
+// 7.2. Edit a card from a wall
+app.put('/api/wall/:id/cards/:cardId', optionalAuthenticate, async (req, res) => {
+  try {
+    const wallId = req.params.id.trim().toUpperCase();
+    const { cardId } = req.params;
+    const { author, title, content, bgColor, image, previewUrl, previewTitle, previewDesc, previewImage, isNotice, sectionId, attachmentName, attachmentData, clientUuid } = req.body;
+
+    if (containsProfanity(author) || containsProfanity(title) || containsProfanity(content)) {
+      return res.status(400).json({ error: '부적절한 표현(욕설, 비하, 성적 표현 등)이 감지되어 수정할 수 없습니다. 서로 배려하는 예쁜 언어를 사용해 주세요! 🌸' });
+    }
+
+    const wall = await db.getWall(wallId);
+    if (!wall) {
+      return res.status(404).json({ error: '존재하지 않는 게시판입니다.' });
+    }
+
+    const cleanUser = (req.username || '').toLowerCase();
+    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin' || wall.creator === cleanUser;
+
+    // Check write restriction for notice section
+    if (sectionId === 'notice-section' && !isAdmin) {
+      return res.status(403).json({ error: '공지사항 컬럼의 카드는 교사(관리자)만 수정할 수 있습니다.' });
+    }
+
+    // Check write restriction for slot-restricted columns wall layout
+    if (wall.layout === 'columns' && wall.maxUsers > 0 && !isAdmin) {
+      if (!sectionId) {
+        return res.status(400).json({ error: '수정할 섹션이 지정되지 않았습니다.' });
+      }
+      const section = (wall.sections || []).find(s => s.id === sectionId);
+      if (!section) {
+        return res.status(404).json({ error: '존재하지 않는 섹션입니다.' });
+      }
+      const match = section.name.match(/^(\d+)번$/);
+      if (match) {
+        const slotNum = parseInt(match[1], 10);
+        const member = wall.members && wall.members[slotNum];
+        if (!member || member.clientUuid !== clientUuid) {
+          return res.status(403).json({ error: `본인의 번호(${slotNum}번) 컬럼의 카드만 수정할 수 있습니다.` });
+        }
+      }
+    }
+
+    // Notice pin authorization check
+    if (isNotice && !isAdmin) {
+      return res.status(403).json({ error: '공지사항은 게시판 개설자(관리자)만 고정할 수 있습니다.' });
+    }
+
+    const card = await db.editWallCard(wallId, cardId, author, title, content, bgColor, image, previewUrl, previewTitle, previewDesc, previewImage, isNotice, sectionId, attachmentName, attachmentData);
+
+    // Broadcast change to all clients
+    broadcastWallUpdate(wallId);
+
+    return res.status(200).json(card);
+  } catch (err) {
+    console.error('Error editing wall card:', err);
+    return res.status(500).json({ error: '카드 수정 도중 오류가 발생했습니다.' });
+  }
+});
+
+// 7.5. Join a wall member slot
+app.post('/api/wall/:id/join', async (req, res) => {
+  try {
+    const wallId = req.params.id.trim().toUpperCase();
+    const { number, name, emoji, clientUuid } = req.body;
+
+    if (!number || isNaN(number) || parseInt(number) < 1) {
+      return res.status(400).json({ error: '올바른 번호를 선택해 주세요.' });
+    }
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: '이름 또는 닉네임을 입력해 주세요.' });
+    }
+    if (!clientUuid) {
+      return res.status(400).json({ error: '유효한 클라이언트 UUID가 누락되었습니다.' });
+    }
+
+    if (containsProfanity(name)) {
+      return res.status(400).json({ error: '부적절한 표현(욕설, 비하, 성적 표현 등)이 감지되어 등록할 수 없습니다. 서로 배려하는 예쁜 언어를 사용해 주세요! 🌸' });
+    }
+
+    const wall = await db.joinWall(wallId, parseInt(number), name, emoji, clientUuid);
+    
+    // Broadcast updated wall to all listening clients
+    broadcastWallUpdate(wallId);
+
+    return res.status(200).json({ success: true, wall });
+  } catch (err) {
+    console.error('Error joining wall slot:', err);
+    return res.status(400).json({ error: err.message || '번호 선택 입장 도중 오류가 발생했습니다.' });
+  }
+});
+
+// 7.6. Leave a wall member slot
+app.post('/api/wall/:id/leave', async (req, res) => {
+  try {
+    const wallId = req.params.id.trim().toUpperCase();
+    const { number, clientUuid } = req.body;
+
+    if (!number || isNaN(number) || !clientUuid) {
+      return res.status(400).json({ error: '올바르지 않은 요청 파라미터입니다.' });
+    }
+
+    await db.leaveWall(wallId, parseInt(number), clientUuid);
+
+    // Broadcast updated wall to all listening clients
+    broadcastWallUpdate(wallId);
+
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('Error leaving wall slot:', err);
+    return res.status(500).json({ error: '번호 선택 퇴장 도중 오류가 발생했습니다.' });
+  }
+});
+
 // 8. Clear/Reset a wall (게시판 게시글 전체 초기화)
 app.post('/api/wall/:id/reset', async (req, res) => {
   try {
@@ -1654,6 +1930,34 @@ app.post('/api/wall/:id/reset', async (req, res) => {
   } catch (err) {
     console.error('Error resetting wall:', err);
     return res.status(500).json({ error: '게시판 초기화 도중 오류가 발생했습니다.' });
+  }
+});
+
+// Change wall max users limit (admins only)
+app.post('/api/wall/:id/max-users', optionalAuthenticate, async (req, res) => {
+  try {
+    const wallId = req.params.id.trim().toUpperCase();
+    const { maxUsers } = req.body;
+    const wall = await db.getWall(wallId);
+    if (!wall) {
+      return res.status(404).json({ error: '존재하지 않는 게시판입니다.' });
+    }
+    const cleanUser = (req.username || '').toLowerCase();
+    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin' || wall.creator === cleanUser;
+    if (!isAdmin) {
+      return res.status(403).json({ error: '게시판 관리자만 인원 제한을 설정할 수 있습니다.' });
+    }
+    const count = parseInt(maxUsers, 10);
+    if (isNaN(count) || count < 0) {
+      return res.status(400).json({ error: '유효한 접속자 수(0 이상의 숫자)를 입력해 주세요.' });
+    }
+    wall.maxUsers = count;
+    await db.save();
+    broadcastWallUpdate(wallId);
+    return res.status(200).json({ message: '인원 제한 설정이 변경되었습니다.', wall });
+  } catch (err) {
+    console.error('Error changing wall max users:', err);
+    return res.status(500).json({ error: '인원 제한 설정 변경 도중 오류가 발생했습니다.' });
   }
 });
 
@@ -1683,10 +1987,22 @@ app.delete('/api/wall/:id', authenticate, async (req, res) => {
 
 // Dedicated HTML page routers for cleaner URLs
 app.get('/wall', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.sendFile(path.join(__dirname, 'public', 'wall.html'));
+});
+app.get('/chat', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.sendFile(path.join(__dirname, 'public', 'wall.html'));
 });
 
 app.get('/wall/:id', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.sendFile(path.join(__dirname, 'public', 'wall.html'));
 });
 
@@ -1855,20 +2171,45 @@ app.use('/scratch', express.static(path.join(__dirname, 'scratch')));
 
 // Dedicated HTML page routers for docs
 app.get('/docs', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.sendFile(path.join(__dirname, 'public', 'docs.html'));
 });
 
 app.get('/docs/:id', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.sendFile(path.join(__dirname, 'public', 'docs.html'));
+});
+
+// Dedicated HTML page routers for tetris-battle
+app.use('/tetris', express.static(path.join(__dirname, 'public', 'tetris')));
+app.get('/tetris', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.sendFile(path.join(__dirname, 'public', 'tetris', 'index.html'));
+});
+
+app.get('/api/tetris/stats', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.json(getStats());
 });
 
 // SPA fallback
 app.get('*', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Start Server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`=========================================`);
   console.log(`🚀 KFCMan.link Server running on port ${PORT}`);
   console.log(`🔗 Local Address: http://localhost:${PORT}`);

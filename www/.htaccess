@@ -1,3 +1,11 @@
+<IfModule mod_headers.c>
+    <FilesMatch "\.(html|htm)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+</IfModule>
+
 RewriteEngine On
 
 # 1. Allow direct access to real files and folders (HTML, CSS, JS, favicon, etc.)

@@ -9,7 +9,16 @@ function initWall() {
   // 1. Core State and Route Parsing
   const pathSegments = window.location.pathname.split('/');
   let boardId = '';
-  if (pathSegments.length > 2 && pathSegments[1] === 'wall') {
+  if (window.location.pathname === '/chat') {
+    boardId = 'TALK';
+    // Dynamically adjust sidebar active styling for chat menu route
+    setTimeout(() => {
+      const chatSide = document.getElementById('nav-item-chat-side');
+      const wallSide = document.getElementById('nav-item-wall-side');
+      if (chatSide) chatSide.classList.add('active');
+      if (wallSide) wallSide.classList.remove('active');
+    }, 50);
+  } else if (pathSegments.length > 2 && pathSegments[1] === 'wall') {
     try {
       boardId = decodeURIComponent(pathSegments[2]).trim().toUpperCase();
     } catch (e) {
@@ -21,6 +30,7 @@ function initWall() {
   let currentWall = null;
   let activeCardSectionId = '';
   window.editingCardId = null;
+  let activeChatRoomCardId = null;
 
   function isBoardAdmin() {
     if (!currentUser || !currentWall) return false;
@@ -534,23 +544,78 @@ function initWall() {
       }
     }
 
+    // Handle board limit setting (인원 제한 설정)
+    const changeMaxUsersBtn = document.getElementById('btn-change-max-users');
+    if (changeMaxUsersBtn) {
+      if (isBoardAdmin()) {
+        changeMaxUsersBtn.classList.remove('hidden');
+        changeMaxUsersBtn.onclick = async () => {
+          const currentLimit = wall.maxUsers || 0;
+          const userInput = prompt(`접속 허용 인원(생성할 번호 버튼 개수)을 설정하세요.\n(0을 입력하면 인원 제한이 해제되어 번호선택 없이 자유롭게 입력할 수 있습니다.)\n현재 설정: ${currentLimit === 0 ? '제한 없음' : currentLimit + '명'}`, currentLimit);
+          if (userInput === null) return;
+          const count = parseInt(userInput.trim(), 10);
+          if (isNaN(count) || count < 0) {
+            alert('올바른 숫자(0 이상의 정수)를 입력해 주세요.');
+            return;
+          }
+
+          const headers = { 'Content-Type': 'application/json' };
+          const token = localStorage.getItem('kfcman_auth_token');
+          if (token) {
+            headers['X-KFCMan-Auth'] = token;
+          }
+
+          try {
+            const res = await fetch(`/api/wall/${wall.id}/max-users`, {
+              method: 'POST',
+              headers: headers,
+              body: JSON.stringify({ maxUsers: count })
+            });
+            if (!res.ok) {
+              const err = await res.json();
+              throw new Error(err.error || '설정 변경 실패');
+            }
+            alert('인원 제한 설정이 성공적으로 변경되었습니다. 🎉');
+          } catch (err) {
+            alert(err.message);
+          }
+        };
+      } else {
+        changeMaxUsersBtn.classList.add('hidden');
+      }
+    }
+
+    const chatLayoutContainer = document.getElementById('chat-layout-container');
+
     // Toggle FAB visibility and update cardsGrid wrapper classes based on layout
     if (btnFloatingAdd) {
-      if (wall.layout === 'columns') {
+      if (wall.layout === 'columns' || wall.layout === 'chat') {
         btnFloatingAdd.classList.add('hidden');
       } else {
         btnFloatingAdd.classList.remove('hidden');
       }
     }
 
+    if (wall.layout === 'chat') {
+      if (chatLayoutContainer) chatLayoutContainer.classList.remove('hidden');
+      cardsGrid.classList.add('hidden');
+      emptyCardsState.classList.add('hidden');
+      renderChatLayout(wall);
+      updateIcons();
+      return; // Block traditional card rendering
+    } else {
+      if (chatLayoutContainer) chatLayoutContainer.classList.add('hidden');
+      cardsGrid.classList.remove('hidden');
+    }
+
     if (wall.layout === 'columns') {
-      cardsGrid.className = "flex gap-3 overflow-x-auto pb-4 custom-scrollbar items-start w-full min-h-[50vh]";
+      cardsGrid.className = "flex gap-6 overflow-x-auto pb-6 custom-scrollbar items-start w-full min-h-[75vh] px-2";
     } else if (wall.layout === 'rows') {
       cardsGrid.className = "max-w-3xl mx-auto flex flex-col gap-6 w-full";
     } else if (wall.layout === 'timeline') {
       cardsGrid.className = "relative pt-16 pb-8 flex gap-12 overflow-x-auto w-full custom-scrollbar items-start min-h-[55vh] px-10";
     } else {
-      cardsGrid.className = "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full";
+      cardsGrid.className = "grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 w-full max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar";
     }
 
     // Render Cards
@@ -581,7 +646,7 @@ function initWall() {
         const secCards = cards.filter(c => c.sectionId === sec.id);
 
         const colDiv = document.createElement('div');
-        colDiv.className = "flex-shrink-0 w-48 bg-white/95 dark:bg-slate-900/90 border-2 border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 flex flex-col max-h-[75vh] shadow-[0_8px_30px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] transition-all duration-300 hover:border-slate-350 dark:hover:border-slate-750";
+        colDiv.className = "flex-shrink-0 w-72 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md border border-white/20 dark:border-slate-800/80 rounded-3xl p-4 flex flex-col max-h-[80vh] shadow-[0_8px_30px_rgba(0,0,0,0.02)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.15)] transition-all duration-300 hover:bg-white/60 dark:hover:bg-slate-900/60";
 
         // Admin section edit controls
         let adminHeaderControls = '';
@@ -609,6 +674,11 @@ function initWall() {
           }
         }
 
+        // Section write permission
+        const isRestrictedBoard = wall.maxUsers > 0;
+        const isMySection = myJoined && sec.name === `${myJoined.number}번`;
+        const canWrite = sec.id === 'notice-section' ? isBoardAdmin() : (!isRestrictedBoard || isMySection || isBoardAdmin());
+
         // Make the header title look like a premium badge / header
         let headerTitleHTML = '';
         if (sec.id === 'notice-section') {
@@ -632,21 +702,27 @@ function initWall() {
         }
 
         const headerHTML = `
-          <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100 dark:border-slate-800/80 flex-shrink-0">
-            ${headerTitleHTML}
-            ${adminHeaderControls}
+          <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-200/50 dark:border-slate-800/80 flex-shrink-0">
+            <div class="flex items-center gap-1.5 min-w-0">
+              ${headerTitleHTML}
+              <span class="px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800/85 text-[9px] font-black text-slate-500 dark:text-slate-400 select-none">${secCards.length}</span>
+            </div>
+            <div class="flex items-center gap-0.5">
+              ${canWrite ? `
+              <button onclick="openCardModalForSection('${sec.id}')" class="w-7 h-7 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 flex items-center justify-center text-slate-500 hover:text-clay-purple transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-800" title="카드 추가">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+              </button>
+              ` : ''}
+              ${adminHeaderControls}
+            </div>
           </div>
         `;
 
         // Section add card button or restricted warning
         let addCardBtnHTML = '';
-        const isRestrictedBoard = wall.maxUsers > 0;
-        const isMySection = myJoined && sec.name === `${myJoined.number}번`;
-        const canWrite = sec.id === 'notice-section' ? isBoardAdmin() : (!isRestrictedBoard || isMySection || isBoardAdmin());
-
         if (canWrite) {
           addCardBtnHTML = `
-            <button onclick="openCardModalForSection('${sec.id}')" class="w-full py-3 mb-4 bg-slate-50/50 dark:bg-slate-900/50 border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-clay-purple/60 dark:hover:border-clay-purple/60 hover:bg-clay-purple/[0.04] dark:hover:bg-clay-purple/[0.04] rounded-2xl text-[11px] font-black text-slate-500 dark:text-slate-400 hover:text-clay-purple dark:hover:text-clay-purple transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer flex-shrink-0 hover:scale-[1.01] shadow-sm hover:shadow-md">
+            <button onclick="openCardModalForSection('${sec.id}')" class="w-full py-3 mb-4 bg-white/40 dark:bg-slate-900/30 border border-dashed border-slate-350 dark:border-slate-750 hover:border-clay-purple hover:bg-clay-purple/[0.04] rounded-2xl text-[11px] font-black text-slate-500 dark:text-slate-400 hover:text-clay-purple dark:hover:text-clay-purple transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer flex-shrink-0 shadow-sm hover:scale-[1.01]">
               <i data-lucide="plus" class="w-4 h-4"></i>
               <span>카드 추가</span>
             </button>
@@ -654,7 +730,7 @@ function initWall() {
         } else {
           const lockText = sec.id === 'notice-section' ? '교사(관리자) 작성 전용' : `${escapeHTML(sec.name)} 전용 컬럼`;
           addCardBtnHTML = `
-            <div class="w-full py-3 mb-4 bg-slate-100/40 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-2xl text-[10px] font-bold text-slate-450 dark:text-slate-500 flex items-center justify-center gap-1.5 cursor-not-allowed flex-shrink-0 select-none" title="${escapeHTML(sec.name)} 전용 컬럼입니다.">
+            <div class="w-full py-3 mb-4 bg-slate-150/40 dark:bg-slate-900/20 border border-slate-200 dark:border-slate-800 rounded-2xl text-[10px] font-bold text-slate-400 dark:text-slate-500 flex items-center justify-center gap-1.5 cursor-not-allowed flex-shrink-0 select-none" title="${escapeHTML(sec.name)} 전용 컬럼입니다.">
               <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-400 dark:text-slate-600"></i>
               <span>🔒 ${lockText}</span>
             </div>
@@ -691,7 +767,7 @@ function initWall() {
       // Render "Add Section" Column if Admin
       if (isBoardAdmin()) {
         const addColDiv = document.createElement('div');
-        addColDiv.className = "flex-shrink-0 w-48 bg-white/40 dark:bg-slate-950/5 border-4 border-dashed border-slate-300 dark:border-slate-800 rounded-3xl p-4 flex flex-col justify-center items-center shadow-sm h-32 hover:border-clay-purple hover:bg-white/60 transition-all duration-150";
+        addColDiv.className = "flex-shrink-0 w-72 bg-white/45 dark:bg-slate-950/5 border-4 border-dashed border-slate-300 dark:border-slate-800 rounded-3xl p-4 flex flex-col justify-center items-center shadow-sm h-32 hover:border-clay-purple hover:bg-white/60 transition-all duration-150";
         addColDiv.id = "add-section-col-trigger";
         addColDiv.innerHTML = `
           <button onclick="showAddSectionForm()" class="flex flex-col items-center gap-1.5 text-slate-400 hover:text-clay-purple font-black text-xs transition-colors cursor-pointer w-full h-full justify-center">
@@ -774,20 +850,20 @@ function initWall() {
       
       if (member) {
         // Occupied slot
-        btn.className = "flex flex-col items-center justify-center p-4 rounded-2xl border-4 border-slate-200 dark:border-slate-800 bg-slate-150 dark:bg-slate-900 opacity-60 cursor-not-allowed select-none transition-all shadow-sm";
+        btn.className = "flex flex-col items-center justify-center p-2 rounded-2xl border-4 border-slate-200 dark:border-slate-800 bg-slate-150 dark:bg-slate-900 opacity-60 cursor-not-allowed select-none transition-all shadow-sm aspect-square overflow-hidden";
         btn.disabled = true;
         btn.innerHTML = `
-          <span class="text-[10px] font-black text-slate-400 dark:text-slate-500">${i}번</span>
-          <span class="text-2xl my-1 select-none">${member.emoji}</span>
-          <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 truncate max-w-full" title="${escapeHTML(member.name)}">${escapeHTML(member.name)}</span>
+          <span class="text-[9px] font-black text-slate-400 dark:text-slate-500">${i}번</span>
+          <span class="text-xl my-0.5 select-none">${member.emoji}</span>
+          <span class="text-[9px] font-black text-slate-500 dark:text-slate-400 truncate max-w-full" title="${escapeHTML(member.name)}">${escapeHTML(member.name)}</span>
         `;
       } else {
         // Free slot
-        btn.className = "flex flex-col items-center justify-center p-4 rounded-2xl border-4 border-violet-200 dark:border-slate-800 bg-white dark:bg-clay-cardDark hover:border-clay-purple hover:scale-105 active:scale-95 cursor-pointer transition-all shadow-clay-flat-sm";
+        btn.className = "flex flex-col items-center justify-center p-2 rounded-2xl border-4 border-violet-200 dark:border-slate-800 bg-white dark:bg-clay-cardDark hover:border-clay-purple hover:scale-105 active:scale-95 cursor-pointer transition-all shadow-clay-flat-sm aspect-square overflow-hidden";
         btn.innerHTML = `
-          <span class="text-[10px] font-black text-slate-550 dark:text-slate-400">${i}번</span>
-          <span class="text-2xl my-1 text-slate-350 dark:text-slate-650 select-none">❓</span>
-          <span class="text-[9px] font-bold text-slate-400 dark:text-slate-550">선택 가능</span>
+          <span class="text-[9px] font-black text-slate-550 dark:text-slate-400">${i}번</span>
+          <span class="text-xl my-0.5 text-slate-350 dark:text-slate-650 select-none">❓</span>
+          <span class="text-[8px] font-bold text-slate-400 dark:text-slate-550 truncate max-w-full">선택 가능</span>
         `;
         btn.onclick = () => {
           openRegisterModal(i);
@@ -914,7 +990,31 @@ function initWall() {
     if (isNotice) {
       extraClasses += ' !border-slate-800 dark:!border-slate-200 border-4 shadow-lg scale-[1.01]';
     }
-    cardDiv.className = `clay-card border-4 rounded-3xl p-5 shadow-clay-flat transition-all flex flex-col justify-between text-left cursor-pointer relative ${card.bgColor || 'bg-pastel-pink'}${extraClasses}`;
+
+    const isColumns = currentWall && currentWall.layout === 'columns';
+    const isDefaultGrid = !currentWall || !currentWall.layout || currentWall.layout === 'grid';
+    
+    let cardPadding = '';
+    let cardLayoutClass = '';
+    
+    if (isDefaultGrid) {
+      cardPadding = 'p-3.5 rounded-2xl aspect-square overflow-hidden min-h-0 w-full';
+      cardLayoutClass = `clay-card border-4 shadow-clay-flat transition-all ${card.bgColor || 'bg-pastel-pink'}`;
+    } else if (isColumns) {
+      cardPadding = 'p-4 rounded-2xl w-full mb-3';
+      
+      // Override background colors to be modern & clean
+      if (card.bgColor && card.bgColor !== 'bg-pastel-pink') {
+        cardLayoutClass = `transition-all duration-300 border border-slate-200/60 dark:border-slate-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_16px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 ${card.bgColor}`;
+      } else {
+        cardLayoutClass = `transition-all duration-300 border border-slate-200/60 dark:border-slate-800 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_16px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 bg-white dark:bg-slate-900/90`;
+      }
+    } else {
+      cardPadding = 'p-5 rounded-3xl';
+      cardLayoutClass = `clay-card border-4 shadow-clay-flat transition-all ${card.bgColor || 'bg-pastel-pink'}`;
+    }
+
+    cardDiv.className = `flex flex-col justify-between text-left cursor-pointer relative ${cardLayoutClass}${extraClasses} ${cardPadding}`;
 
     cardDiv.addEventListener('click', (e) => {
       // If clicking inside a button, input, textarea, or a child of these, do not trigger detail view
@@ -935,7 +1035,9 @@ function initWall() {
           </div>
         `;
       } else {
-        imgHTML = `<img src="${escapeHTML(card.image)}" alt="card-img" class="w-full h-32 object-cover rounded-xl border-2 border-slate-950/20 mb-3 shadow-sm hover:opacity-90 transition-opacity cursor-zoom-in" onclick="event.stopPropagation(); openLightbox('${card.image}')" onerror="this.remove()">`;
+        const imgHeight = isDefaultGrid ? 'h-14' : 'h-32';
+        const imgMargin = isDefaultGrid ? 'mb-1.5' : 'mb-3';
+        imgHTML = `<img src="${escapeHTML(card.image)}" alt="card-img" class="w-full ${imgHeight} object-cover rounded-xl border-2 border-slate-950/20 ${imgMargin} shadow-sm hover:opacity-90 transition-opacity cursor-zoom-in" onclick="event.stopPropagation(); openLightbox('${card.image}')" onerror="this.remove()">`;
       }
     }
 
@@ -1009,6 +1111,11 @@ function initWall() {
     const heartIconFill = hasLiked ? 'fill-rose-500 text-rose-500' : 'text-slate-800 dark:text-slate-100';
     const heartBgClass = hasLiked ? 'bg-rose-50 border-rose-300 dark:bg-rose-950/20 dark:border-rose-800' : 'bg-white/40 hover:bg-white/60 dark:bg-black/20 dark:hover:bg-black/35';
 
+    const btnPadding = isDefaultGrid ? 'px-1.5 py-1 text-[9px]' : 'px-2.5 py-1.5 text-xs';
+    const iconSize = isDefaultGrid ? 'w-3 h-3' : 'w-3.5 h-3.5';
+    const btnSize = isDefaultGrid ? 'w-6 h-6' : 'w-8 h-8';
+    const actionIconSize = isDefaultGrid ? 'w-3.5 h-3.5' : 'w-4 h-4';
+
     cardDiv.innerHTML = `
       ${crownHTML}
       <div>
@@ -1019,45 +1126,57 @@ function initWall() {
         ` : ''}
         ${imgHTML}
         <!-- Author / Time -->
-        <div class="flex justify-between items-center text-[10px] font-black opacity-60 mb-2">
+        ${isColumns ? `
+        <div class="flex items-center gap-2 mb-2.5">
+          <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-clay-purple to-clay-sky text-white flex items-center justify-center font-black text-[10px] shadow-sm select-none flex-shrink-0">
+            ${escapeHTML((card.author || '익').substring(0, 1).toUpperCase())}
+          </div>
+          <div class="flex flex-col leading-tight min-w-0">
+            <span class="text-[10px] font-black text-slate-800 dark:text-slate-200 truncate">${escapeHTML(card.author)}</span>
+            <span class="text-[8px] text-slate-400 dark:text-slate-500 font-bold">${formatDate(card.createdAt)}</span>
+          </div>
+        </div>
+        ` : `
+        <div class="flex justify-between items-center ${isDefaultGrid ? 'text-[8px] mb-1' : 'text-[10px] mb-2'} font-black opacity-60">
           <span>👑 ${escapeHTML(card.author)}</span>
           <span>${formatDate(card.createdAt)}</span>
         </div>
+        `}
         <!-- Card Title -->
-        ${card.title ? `<h3 class="text-sm font-black tracking-tight mb-2 break-words">${escapeHTML(card.title)}</h3>` : ''}
+        ${card.title ? `<h3 class="${isDefaultGrid ? 'text-[11px] mb-1' : 'text-sm mb-2'} font-black tracking-tight break-words">${escapeHTML(card.title)}</h3>` : ''}
         <!-- Card Content -->
-        <p class="text-xs font-bold leading-relaxed whitespace-pre-wrap break-words mb-4">${renderContentWithLinks(card.content)}</p>
+        <p class="${isDefaultGrid ? 'text-[9px] line-clamp-3 mb-2' : 'text-xs mb-4'} font-bold leading-relaxed whitespace-pre-wrap break-words">${renderContentWithLinks(card.content)}</p>
         ${previewHTML}
         ${attachmentHTML}
       </div>
       
       <!-- Footer actions (Like, Comment Toggle, Delete) -->
-      <div class="border-t-2 border-slate-900/10 dark:border-white/15 pt-3.5 mt-2 space-y-3 flex-shrink-0">
+      <div class="border-t border-slate-900/10 dark:border-white/15 ${isDefaultGrid ? 'pt-2 mt-1' : 'pt-3.5 mt-2'} flex-shrink-0">
         <div class="flex justify-between items-center">
-          <div class="flex gap-2">
+          <div class="flex gap-1">
             <!-- Heart button -->
-            <button onclick="likeCard('${card.id}')" class="px-2.5 py-1.5 rounded-lg ${heartBgClass} text-xs font-black border border-slate-950/15 flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95">
-              <i data-lucide="heart" class="w-3.5 h-3.5 ${heartIconFill}"></i>
+            <button onclick="likeCard('${card.id}')" class="${btnPadding} rounded-lg ${heartBgClass} font-black border border-slate-950/15 flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95">
+              <i data-lucide="heart" class="${iconSize} ${heartIconFill}"></i>
               <span>${card.likes || 0}</span>
             </button>
             <!-- Comments Toggle button -->
-            <button onclick="toggleComments('${card.id}')" class="px-2.5 py-1.5 rounded-lg bg-white/40 hover:bg-white/60 dark:bg-black/20 dark:hover:bg-black/35 text-xs font-black border border-slate-950/15 flex items-center gap-1 cursor-pointer transition-all">
-              <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+            <button onclick="toggleComments('${card.id}')" class="${btnPadding} rounded-lg bg-white/40 hover:bg-white/60 dark:bg-black/20 dark:hover:bg-black/35 font-black border border-slate-950/15 flex items-center gap-1 cursor-pointer transition-all">
+              <i data-lucide="message-square" class="${iconSize}"></i>
               <span>${(card.comments || []).length}</span>
             </button>
           </div>
           <!-- Delete & Pin buttons -->
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-0.5">
             ${isBoardAdmin() ? `
-            <button onclick="toggleNoticePin(event, '${card.id}')" class="w-8 h-8 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-slate-100 flex items-center justify-center cursor-pointer transition-colors" title="${isNotice ? '공지 해제' : '공지 고정'}">
-              <i data-lucide="pin" class="w-4 h-4 ${isNotice ? 'text-amber-500 fill-amber-500' : 'text-slate-400'}"></i>
+            <button onclick="toggleNoticePin(event, '${card.id}')" class="${btnSize} rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-slate-100 flex items-center justify-center cursor-pointer transition-colors" title="${isNotice ? '공지 해제' : '공지 고정'}">
+              <i data-lucide="pin" class="${actionIconSize} ${isNotice ? 'text-amber-500 fill-amber-500' : 'text-slate-400'}"></i>
             </button>
             ` : ''}
-            <button onclick="editCard(event, '${card.id}')" class="w-8 h-8 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-slate-100 flex items-center justify-center cursor-pointer transition-colors" title="카드 수정">
-              <i data-lucide="edit-2" class="w-4 h-4 text-slate-500"></i>
+            <button onclick="editCard(event, '${card.id}')" class="${btnSize} rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-slate-100 flex items-center justify-center cursor-pointer transition-colors" title="카드 수정">
+              <i data-lucide="edit-2" class="${actionIconSize} text-slate-500"></i>
             </button>
-            <button onclick="deleteCard('${card.id}')" class="w-8 h-8 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-slate-100 flex items-center justify-center cursor-pointer transition-colors" title="카드 삭제">
-              <i data-lucide="trash-2" class="w-4 h-4 text-red-500"></i>
+            <button onclick="deleteCard('${card.id}')" class="${btnSize} rounded-lg hover:bg-black/10 dark:hover:bg-white/10 text-slate-800 dark:text-slate-100 flex items-center justify-center cursor-pointer transition-colors" title="카드 삭제">
+              <i data-lucide="trash-2" class="${actionIconSize} text-red-500"></i>
             </button>
           </div>
         </div>
@@ -1143,7 +1262,7 @@ function initWall() {
       const res = await fetch(`/api/wall/${boardId}/cards/${cardId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ author, text })
+        body: JSON.stringify({ author, text, clientUuid })
       });
       if (!res.ok) throw new Error('댓글 작성 실패');
       
@@ -1556,7 +1675,7 @@ function initWall() {
           const res = await fetch(`/api/wall/${boardId}/cards/${card.id}/comments`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ author, text })
+            body: JSON.stringify({ author, text, clientUuid })
           });
           if (!res.ok) throw new Error('댓글 작성 실패');
           
@@ -2247,6 +2366,514 @@ function initWall() {
   if (btnLoginSidebar) {
     btnLoginSidebar.addEventListener('click', () => {
       window.location.href = '/?login=true';
+    });
+  }
+
+  // --- CHAT LAYOUT LOGIC AND EVENT LISTENERS ---
+  function getUserChatNickname() {
+    if (currentWall && currentWall.maxUsers > 0) {
+      const myJoined = getMyJoinedMember(currentWall);
+      if (myJoined) {
+        return `${myJoined.emoji} ${myJoined.number}번 ${myJoined.name}`;
+      }
+    }
+    const currentNumber = localStorage.getItem('kfcman_wall_member_number');
+    if (currentNumber) {
+      return `${currentNumber}번 회원`;
+    }
+    const chatNicknameInput = document.getElementById('chat-nickname-input');
+    if (chatNicknameInput && chatNicknameInput.value.trim()) {
+      return chatNicknameInput.value.trim();
+    }
+    const authorInput = document.getElementById('card-author');
+    if (authorInput && authorInput.value.trim()) {
+      return authorInput.value.trim();
+    }
+    return '익명';
+  }
+
+  function initChatNicknameField(wall) {
+    const chatNicknameInput = document.getElementById('chat-nickname-input');
+    if (!chatNicknameInput) return;
+    
+    let loggedInName = '';
+    let isDisabled = false;
+    
+    if (wall && wall.maxUsers > 0) {
+      const myJoined = getMyJoinedMember(wall);
+      if (myJoined) {
+        loggedInName = `${myJoined.emoji} ${myJoined.number}번 ${myJoined.name}`;
+        isDisabled = true;
+      }
+    }
+    
+    if (!loggedInName) {
+      const currentNumber = localStorage.getItem('kfcman_wall_member_number');
+      if (currentNumber) {
+        loggedInName = `${currentNumber}번 회원`;
+        isDisabled = true;
+      }
+    }
+    
+    if (isDisabled) {
+      chatNicknameInput.value = loggedInName;
+      chatNicknameInput.readOnly = true;
+      chatNicknameInput.classList.add('bg-slate-150', 'dark:bg-slate-900/60', 'cursor-not-allowed', 'opacity-70');
+    } else {
+      chatNicknameInput.readOnly = false;
+      chatNicknameInput.classList.remove('bg-slate-150', 'dark:bg-slate-900/60', 'cursor-not-allowed', 'opacity-70');
+      
+      if (document.activeElement !== chatNicknameInput) {
+        chatNicknameInput.value = localStorage.getItem('kfcman_chat_nickname') || '';
+      }
+    }
+    
+    if (!chatNicknameInput.dataset.listenerBound) {
+      chatNicknameInput.addEventListener('input', (e) => {
+        localStorage.setItem('kfcman_chat_nickname', e.target.value.trim());
+      });
+      chatNicknameInput.dataset.listenerBound = 'true';
+    }
+  }
+
+  function extractTopic(text) {
+    if (!text) return '잡담';
+    
+    // 1. Look for hashtags
+    const hashMatch = text.match(/#([a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣-_]+)/);
+    if (hashMatch && hashMatch[1]) {
+      return hashMatch[1].trim();
+    }
+    
+    // 2. Look for predefined common keywords
+    const keywords = [
+      '코딩', '파이썬', '공부', '맛집', '점심', '저녁', '식사', '치킨', '피자', '돈까스', 
+      '게임', '롤', '잡담', '일상', '운동', '헬스', '축구', '음악', '노래', '질문', '고민', 
+      '영화', '드라마', '여행', '날씨'
+    ];
+    for (const kw of keywords) {
+      if (text.includes(kw)) {
+        return kw;
+      }
+    }
+    
+    // 3. Fallback to the first word (cleansed)
+    const words = text.trim().split(/\s+/).map(w => w.replace(/[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣-_]/g, '')).filter(Boolean);
+    if (words.length > 0 && words[0].length <= 10) {
+      return words[0];
+    }
+    
+    return '일상';
+  }
+
+  function renderChatLayout(wall) {
+    const chatRoomsList = document.getElementById('chat-rooms-list');
+    const chatRoomsCount = document.getElementById('chat-rooms-count');
+    const btnChatCreateRoom = document.getElementById('btn-chat-create-room');
+    
+    if (btnChatCreateRoom) {
+      if (isBoardAdmin()) {
+        btnChatCreateRoom.classList.remove('hidden');
+      } else {
+        btnChatCreateRoom.classList.add('hidden');
+      }
+    }
+    
+    if (!chatRoomsList || !chatRoomsCount) return;
+    
+    initChatNicknameField(wall);
+    
+    const rooms = Object.values(wall.cards || {});
+    
+    // Sort rooms by:
+    // 1. notices first
+    // 2. popularity score (likes + comment count) descending
+    // 3. latest comment/creation date descending
+    rooms.sort((a, b) => {
+      const aNotice = !!a.isNotice;
+      const bNotice = !!b.isNotice;
+      if (aNotice && !bNotice) return -1;
+      if (!aNotice && bNotice) return 1;
+      
+      const aScore = (a.likes || 0) + (a.comments || []).length;
+      const bScore = (b.likes || 0) + (b.comments || []).length;
+      if (bScore !== aScore) {
+        return bScore - aScore;
+      }
+      
+      const aLastTime = a.comments && a.comments.length > 0 
+        ? new Date(a.comments[a.comments.length - 1].createdAt).getTime()
+        : new Date(a.createdAt).getTime();
+      const bLastTime = b.comments && b.comments.length > 0
+        ? new Date(b.comments[b.comments.length - 1].createdAt).getTime()
+        : new Date(b.createdAt).getTime();
+        
+      return bLastTime - aLastTime;
+    });
+
+    chatRoomsCount.textContent = rooms.length;
+    chatRoomsList.innerHTML = '';
+    
+    if (rooms.length === 0) {
+      chatRoomsList.innerHTML = `
+        <div class="py-12 text-center text-slate-400 dark:text-slate-500 select-none">
+          <i data-lucide="message-square" class="w-8 h-8 mx-auto mb-2 text-slate-350 dark:text-slate-650"></i>
+          <p class="text-[10px] font-bold">생성된 대화방이 없습니다.</p>
+          <p class="text-[8px] text-slate-400/80 dark:text-slate-550/80 mt-0.5">아래 입력창에 첫 이야기를 적어보세요!</p>
+        </div>
+      `;
+    } else {
+      rooms.forEach(room => {
+        const isActive = activeChatRoomCardId === room.id;
+        const msgCount = (room.comments || []).length;
+        const latestMsg = msgCount > 0 ? room.comments[msgCount - 1] : null;
+        
+        let lastMsgText = '대화가 아직 없습니다.';
+        let lastMsgTime = '';
+        if (latestMsg) {
+          lastMsgText = latestMsg.text;
+          lastMsgTime = formatDateChat(latestMsg.createdAt);
+        } else {
+          lastMsgTime = formatDateChat(room.createdAt);
+        }
+        
+        const roomDiv = document.createElement('div');
+        roomDiv.className = `p-3 rounded-2xl border-2 transition-all cursor-pointer flex gap-3 shadow-sm select-none ${
+          isActive 
+            ? 'bg-yellow-50/70 border-yellow-400 dark:bg-yellow-950/20 dark:border-yellow-600' 
+            : 'bg-slate-50 dark:bg-slate-900 border-slate-200/60 dark:border-slate-800/80 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+        }`;
+        
+        roomDiv.innerHTML = `
+          <!-- Avatar -->
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-yellow-400 to-amber-500 text-slate-900 font-black flex items-center justify-center text-sm flex-shrink-0 shadow-sm">
+            #
+          </div>
+          <!-- Details -->
+          <div class="flex-grow min-w-0 flex flex-col justify-between py-0.5 text-left">
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-black text-slate-800 dark:text-slate-100 truncate pr-1">#${escapeHTML(room.title)}</span>
+              <span class="text-[8px] font-bold text-slate-400 dark:text-slate-500 whitespace-nowrap">${lastMsgTime}</span>
+            </div>
+            <p class="text-[10px] font-bold text-slate-500 dark:text-slate-450 truncate mt-0.5 leading-tight">${escapeHTML(lastMsgText)}</p>
+            <div class="flex gap-2 items-center mt-1">
+              <span class="inline-flex items-center text-[8px] font-black text-slate-400 dark:text-slate-500 gap-0.5">
+                <i data-lucide="message-square" class="w-2.5 h-2.5"></i> ${msgCount}
+              </span>
+              <span class="inline-flex items-center text-[8px] font-black text-rose-400 dark:text-rose-500 gap-0.5">
+                <i data-lucide="heart" class="w-2.5 h-2.5 fill-rose-400"></i> ${room.likes || 0}
+              </span>
+            </div>
+          </div>
+        `;
+        
+        roomDiv.onclick = () => {
+          activeChatRoomCardId = room.id;
+          renderChatLayout(wall);
+        };
+        
+        chatRoomsList.appendChild(roomDiv);
+      });
+    }
+
+    // Render active conversation
+    const activeRoom = activeChatRoomCardId ? wall.cards[activeChatRoomCardId] : null;
+    
+    const chatActiveRoomTitle = document.getElementById('chat-active-room-title');
+    const chatActiveRoomTag = document.getElementById('chat-active-room-tag');
+    const chatActiveRoomDesc = document.getElementById('chat-active-room-desc');
+    const chatActiveRoomLikeBtn = document.getElementById('chat-active-room-like-btn');
+    const chatActiveRoomLikes = document.getElementById('chat-active-room-likes');
+    const chatConversationEmpty = document.getElementById('chat-conversation-empty');
+    const chatMessagesArea = document.getElementById('chat-messages-area');
+    const chatMessageInputContainer = document.getElementById('chat-message-input-container');
+    
+    if (!activeRoom) {
+      if (chatConversationEmpty) chatConversationEmpty.classList.remove('hidden');
+      if (chatMessagesArea) chatMessagesArea.classList.add('hidden');
+      if (chatMessageInputContainer) chatMessageInputContainer.classList.add('hidden');
+      if (chatActiveRoomTag) chatActiveRoomTag.classList.add('hidden');
+      if (chatActiveRoomLikeBtn) chatActiveRoomLikeBtn.classList.add('hidden');
+      if (chatActiveRoomTitle) chatActiveRoomTitle.textContent = "톡방을 선택하거나 메시지를 남겨보세요";
+      if (chatActiveRoomDesc) chatActiveRoomDesc.textContent = "주제 톡방을 클릭하면 대화에 참여할 수 있습니다.";
+    } else {
+      if (chatConversationEmpty) chatConversationEmpty.classList.add('hidden');
+      if (chatMessagesArea) chatMessagesArea.classList.remove('hidden');
+      if (chatMessageInputContainer) chatMessageInputContainer.classList.remove('hidden');
+      if (chatActiveRoomTag) {
+        chatActiveRoomTag.classList.remove('hidden');
+        chatActiveRoomTag.textContent = `#${activeRoom.title}`;
+      }
+      if (chatActiveRoomLikeBtn) {
+        chatActiveRoomLikeBtn.classList.remove('hidden');
+        chatActiveRoomLikes.textContent = activeRoom.likes || 0;
+        
+        chatActiveRoomLikeBtn.onclick = async () => {
+          try {
+            const res = await fetch(`/api/wall/${wall.id}/cards/${activeRoom.id}/like`, { method: 'POST' });
+            if (!res.ok) throw new Error('좋아요 반영 실패');
+            const updatedCard = await res.json();
+            chatActiveRoomLikes.textContent = updatedCard.likes || 0;
+          } catch (err) {
+            console.error(err.message);
+          }
+        };
+      }
+      if (chatActiveRoomTitle) chatActiveRoomTitle.textContent = `#${activeRoom.title} 주제 톡방`;
+      if (chatActiveRoomDesc) chatActiveRoomDesc.textContent = activeRoom.content || `${activeRoom.title}에 대해 자유롭게 이야기 나누는 공간입니다.`;
+      
+      // Render messages
+      if (chatMessagesArea) {
+        chatMessagesArea.innerHTML = '';
+        const comments = (activeRoom.comments || []).slice().sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        
+        const myName = getUserChatNickname();
+
+        if (comments.length === 0) {
+          chatMessagesArea.innerHTML = `
+            <div class="py-12 text-center text-slate-500/80 dark:text-slate-400 select-none">
+              <p class="text-xs font-black">이 방의 대화가 비어 있습니다.</p>
+              <p class="text-[10px] mt-0.5">첫 마디를 나누며 대화를 시작해 보세요!</p>
+            </div>
+          `;
+        } else {
+          comments.forEach(comment => {
+            const isSelf = comment.author === myName;
+            
+            const msgRow = document.createElement('div');
+            msgRow.className = `flex gap-2.5 ${isSelf ? 'justify-end' : 'justify-start'}`;
+            
+            let avatarContent = escapeHTML(comment.author.substring(0, 1).toUpperCase());
+            const emojiMatch = comment.author.match(/^([\uD800-\uDBFF][\uDC00-\uDFFF])/);
+            if (emojiMatch) {
+              avatarContent = emojiMatch[1];
+            }
+            
+            const formattedTime = formatTimeChat(comment.createdAt);
+            
+            if (isSelf) {
+              msgRow.innerHTML = `
+                <div class="flex flex-col items-end max-w-[70%] text-right">
+                  <span class="text-[9px] font-black text-slate-650 dark:text-slate-400 mb-0.5 select-none">${escapeHTML(comment.author)}</span>
+                  <div class="flex items-end gap-1.5">
+                    <button onclick="likeComment('${activeRoom.id}', '${comment.id}')" class="text-[9px] font-black text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 border border-rose-250 dark:border-rose-900 px-1.5 py-0.5 rounded-lg flex items-center gap-0.5 cursor-pointer shadow-sm active:scale-90">
+                      <i data-lucide="heart" class="w-2.5 h-2.5 fill-rose-500"></i>
+                      <span>${comment.likes || 0}</span>
+                    </button>
+                    <span class="text-[8px] font-bold text-slate-500/60 dark:text-slate-500/40 whitespace-nowrap select-none">${formattedTime}</span>
+                    <div class="bg-[#fef01b] dark:bg-yellow-400 text-slate-900 px-3 py-2 rounded-2xl rounded-tr-none text-xs font-bold leading-relaxed break-all shadow-sm">
+                      ${renderContentWithLinks(escapeHTML(comment.text))}
+                    </div>
+                  </div>
+                </div>
+                <div class="w-9 h-9 rounded-xl bg-yellow-100 dark:bg-yellow-950/50 border border-yellow-300 dark:border-yellow-800 flex items-center justify-center text-sm font-black text-slate-700 dark:text-yellow-300 shadow-sm flex-shrink-0 select-none">
+                  ${avatarContent}
+                </div>
+              `;
+            } else {
+              msgRow.innerHTML = `
+                <div class="w-9 h-9 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-sm font-black text-slate-600 dark:text-slate-300 shadow-sm flex-shrink-0 select-none">
+                  ${avatarContent}
+                </div>
+                <div class="flex flex-col items-start max-w-[70%] text-left">
+                  <span class="text-[9px] font-black text-slate-600 dark:text-slate-400 mb-0.5 select-none">${escapeHTML(comment.author)}</span>
+                  <div class="flex items-end gap-1.5">
+                    <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 px-3 py-2 rounded-2xl rounded-tl-none text-xs font-bold leading-relaxed break-all shadow-sm border border-slate-200/50 dark:border-slate-800/80">
+                      ${renderContentWithLinks(escapeHTML(comment.text))}
+                    </div>
+                    <span class="text-[8px] font-bold text-slate-500/60 dark:text-slate-500/40 whitespace-nowrap select-none">${formattedTime}</span>
+                    <button onclick="likeComment('${activeRoom.id}', '${comment.id}')" class="text-[9px] font-black text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 border border-rose-250 dark:border-rose-900 px-1.5 py-0.5 rounded-lg flex items-center gap-0.5 cursor-pointer shadow-sm active:scale-90">
+                      <i data-lucide="heart" class="w-2.5 h-2.5 fill-rose-500"></i>
+                      <span>${comment.likes || 0}</span>
+                    </button>
+                  </div>
+                </div>
+              `;
+            }
+            
+            chatMessagesArea.appendChild(msgRow);
+          });
+          
+          setTimeout(() => {
+            chatMessagesArea.scrollTop = chatMessagesArea.scrollHeight;
+          }, 50);
+        }
+      }
+    }
+    
+    updateIcons();
+  }
+
+  window.likeComment = async function(cardId, commentId) {
+    if (!currentWall) return;
+    try {
+      const res = await fetch(`/api/wall/${currentWall.id}/cards/${cardId}/comments/${commentId}/like`, { method: 'POST' });
+      if (!res.ok) throw new Error('댓글 공감 실패');
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
+
+  function formatDateChat(isoStr) {
+    if (!isoStr) return '';
+    const date = new Date(isoStr);
+    const now = new Date();
+    
+    if (date.toDateString() === now.toDateString()) {
+      return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+    return `${date.getMonth() + 1}/${date.getDate()}`;
+  }
+
+  function formatTimeChat(isoStr) {
+    if (!isoStr) return '';
+    const date = new Date(isoStr);
+    return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+
+  const btnChatCreateRoom = document.getElementById('btn-chat-create-room');
+  if (btnChatCreateRoom) {
+    btnChatCreateRoom.addEventListener('click', () => {
+      // Clear modal fields first
+      const titleInput = document.getElementById('card-title');
+      const contentInput = document.getElementById('card-content');
+      const imageUrlInput = document.getElementById('card-image-url');
+      const modalTitle = document.getElementById('card-modal-title-text');
+      const submitBtn = document.getElementById('card-submit-btn-text');
+      
+      if (titleInput) titleInput.value = '';
+      if (contentInput) contentInput.value = '';
+      if (imageUrlInput) imageUrlInput.value = '';
+      if (modalTitle) modalTitle.textContent = '새 주제 톡방 개설하기';
+      if (submitBtn) submitBtn.textContent = '주제 톡방 개설하기';
+      activeCardSectionId = ''; // Reset section
+      
+      // Open card creation modal
+      if (cardModal) {
+        cardModal.classList.remove('hidden');
+        setTimeout(() => {
+          if (cardModalContent) {
+            cardModalContent.classList.remove('translate-y-4', 'opacity-0');
+            cardModalContent.classList.add('translate-y-0', 'opacity-100');
+          }
+        }, 50);
+      }
+    });
+  }
+
+  const chatGlobalInputForm = document.getElementById('chat-global-input-form');
+  const chatGlobalInput = document.getElementById('chat-global-input');
+  const chatRoomInputForm = document.getElementById('chat-room-input-form');
+  const chatRoomInput = document.getElementById('chat-room-input');
+  
+  if (chatGlobalInputForm) {
+    chatGlobalInputForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = chatGlobalInput.value.trim();
+      if (!text) return;
+      
+      const author = getUserChatNickname();
+      if (author === '익명' || !author.trim()) {
+        alert('📢 톡방 개설 및 메시지 전송을 위해 대화명(별명)을 지정해 주세요! 상단의 대화명 입력란을 채우시면 됩니다. 🌸');
+        const nickInput = document.getElementById('chat-nickname-input');
+        if (nickInput) nickInput.focus();
+        return;
+      }
+
+      if (containsProfanity(text) || containsProfanity(author)) {
+        alert('부적절한 표현(욕설, 비하, 성적 표현 등)이 감지되어 메시지를 보낼 수 없습니다. 서로 배려하는 예쁜 언어를 사용해 주세요! 🌸');
+        return;
+      }
+
+      const topic = extractTopic(text);
+      
+      try {
+        const rooms = Object.values(currentWall.cards || {});
+        let targetRoom = rooms.find(r => r.title.toLowerCase() === topic.toLowerCase());
+        
+        if (!targetRoom) {
+          if (!isBoardAdmin()) {
+            alert('📢 새로운 주제 톡방은 관리자(교사)만 개설할 수 있습니다. 이미 개설되어 있는 주제 톡방을 이용해 주세요! 🌸');
+            return;
+          }
+          const desc = `${topic}에 대해 함께 이야기를 나누는 주제 톡방입니다.`;
+          const createRes = await fetch(`/api/wall/${currentWall.id}/cards`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              author: author,
+              title: topic,
+              content: desc,
+              bgColor: 'bg-pastel-pink',
+              clientUuid: clientUuid
+            })
+          });
+          if (!createRes.ok) {
+            const errData = await createRes.json();
+            throw new Error(errData.error || '주제 톡방 개설 실패');
+          }
+          targetRoom = await createRes.json();
+        }
+        
+        const commentRes = await fetch(`/api/wall/${currentWall.id}/cards/${targetRoom.id}/comments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            author: author,
+            text: text,
+            clientUuid: clientUuid
+          })
+        });
+        if (!commentRes.ok) {
+          const errData = await commentRes.json();
+          throw new Error(errData.error || '메시지 전송 실패');
+        }
+        
+        activeChatRoomCardId = targetRoom.id;
+        chatGlobalInput.value = '';
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  }
+  
+  if (chatRoomInputForm) {
+    chatRoomInputForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = chatRoomInput.value.trim();
+      if (!text || !activeChatRoomCardId) return;
+
+      const author = getUserChatNickname();
+      if (author === '익명' || !author.trim()) {
+        alert('📢 메시지 전송을 위해 대화명(별명)을 지정해 주세요! 상단의 대화명 입력란을 채우시면 됩니다. 🌸');
+        const nickInput = document.getElementById('chat-nickname-input');
+        if (nickInput) nickInput.focus();
+        return;
+      }
+      
+      if (containsProfanity(text) || containsProfanity(author)) {
+        alert('부적절한 표현(욕설, 비하, 성적 표현 등)이 감지되어 메시지를 보낼 수 없습니다. 서로 배려하는 예쁜 언어를 사용해 주세요! 🌸');
+        return;
+      }
+      
+      try {
+        const commentRes = await fetch(`/api/wall/${currentWall.id}/cards/${activeChatRoomCardId}/comments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            author: author,
+            text: text,
+            clientUuid: clientUuid
+          })
+        });
+        if (!commentRes.ok) {
+          const errData = await commentRes.json();
+          throw new Error(errData.error || '메시지 전송 실패');
+        }
+        chatRoomInput.value = '';
+      } catch (err) {
+        alert(err.message);
+      }
     });
   }
 }

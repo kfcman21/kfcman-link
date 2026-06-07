@@ -2,6 +2,23 @@
 // kfcman.link URL Shortener Frontend Controller (With Multi-User Auth & Stats)
 // ==========================================================================
 
+// Global Resilient CDN Fallbacks
+(function() {
+  if (typeof window.lucide === 'undefined') {
+    window.lucide = {
+      createIcons: function() {
+        console.warn('Lucide icon library not available (CDN blocked/failed to load).');
+      }
+    };
+  }
+  if (typeof window.QRious === 'undefined') {
+    window.QRious = function() {
+      this.set = function() {};
+      console.warn('QRious library not available (CDN blocked/failed to load).');
+    };
+  }
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
   // Helper to get or create a unique guest ID stored in localStorage to distinguish voters on the same IP
   function getOrCreateGuestId() {
@@ -102,11 +119,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- State Variables ---
   let generatedCode = '';
   let activeQrUrl = '';
+  let cachedLinks = [];
 
   // --- 1. Theme Module (Light / Dark Mode Option) ---
+  function updateThemeRadioState(isLight) {
+    const lightRadio = document.querySelector('input[name="theme-preference"][value="light"]');
+    const darkRadio = document.querySelector('input[name="theme-preference"][value="dark"]');
+    if (lightRadio && darkRadio) {
+      if (isLight) {
+        lightRadio.checked = true;
+      } else {
+        darkRadio.checked = true;
+      }
+    }
+  }
+
   function initTheme() {
     const savedTheme = localStorage.getItem('kfcman_theme');
-    if (savedTheme === 'light') {
+    const isLight = savedTheme === 'light';
+    if (isLight) {
       document.body.classList.add('light-theme');
       document.documentElement.classList.remove('dark');
     } else {
@@ -114,9 +145,10 @@ document.addEventListener('DOMContentLoaded', () => {
       document.documentElement.classList.add('dark');
     }
     lucide.createIcons();
+    updateThemeRadioState(isLight);
   }
 
-  themeToggleBtn.addEventListener('click', () => {
+  window.toggleThemeAction = function() {
     document.body.classList.toggle('light-theme');
     const isLight = document.body.classList.contains('light-theme');
     if (isLight) {
@@ -126,14 +158,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     localStorage.setItem('kfcman_theme', isLight ? 'light' : 'dark');
     lucide.createIcons();
+    updateThemeRadioState(isLight);
     showToast(
       isLight ? '화이트 테마 활성화' : '블랙 테마 활성화',
       isLight ? '눈이 편안한 밝은 화이트 모드로 전환되었습니다.' : '세련되고 깊이 있는 다크 모드로 전환되었습니다.',
       'info'
     );
-  });
+  };
+
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      window.toggleThemeAction();
+    });
+  }
 
   initTheme();
+
+  // Theme settings radio change listeners
+  document.addEventListener('change', (e) => {
+    if (e.target && e.target.name === 'theme-preference') {
+      const selectedTheme = e.target.value;
+      const isCurrentlyLight = document.body.classList.contains('light-theme');
+      
+      if ((selectedTheme === 'light' && !isCurrentlyLight) || (selectedTheme === 'dark' && isCurrentlyLight)) {
+        window.toggleThemeAction(); // Trigger the helper directly!
+      }
+    }
+  });
 
   // --- 2. Security Auth Module (Login / Logout Control) ---
   function getAuthToken() {
@@ -162,6 +213,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Authenticated successfully
         userWelcomeName.textContent = data.username;
         localStorage.setItem('kfcman_user_role', data.role || 'user');
+
+        const sidebarProfileCircle = document.getElementById('sidebar-profile-circle');
+        if (sidebarProfileCircle && data.username) {
+          sidebarProfileCircle.textContent = data.username.charAt(0).toUpperCase();
+        }
+        const sidebarProfileGroup = document.getElementById('sidebar-profile-group');
+        const sidebarGuestGroup = document.getElementById('sidebar-guest-group');
+        if (sidebarProfileGroup) sidebarProfileGroup.classList.remove('hidden');
+        if (sidebarGuestGroup) sidebarGuestGroup.classList.add('hidden');
         
         userWelcomeTag.classList.remove('hidden');
         headerNav.style.display = 'flex';
@@ -234,6 +294,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (navItemDocs) navItemDocs.style.display = 'flex';
         if (mobileNavDocs) mobileNavDocs.style.display = 'flex';
 
+        // Hide/Show Wall mobile bottom nav item based on user role (Restricted to VIP, Manager, Admin)
+        const mobileNavWall = document.getElementById('mobile-nav-wall');
+        if (mobileNavWall) {
+          if (data.role === 'vip' || data.role === 'manager' || data.role === 'admin') {
+            mobileNavWall.style.display = 'flex';
+          } else {
+            mobileNavWall.style.display = 'none';
+          }
+        }
+
+        // Toggle HWP shared storage header button and landing welcome hero button based on login status
+        const docsHeaderBtn = document.getElementById('nav-item-docs-header');
+        const docsHeroBtn = document.getElementById('nav-item-docs-hero');
+        if (docsHeaderBtn) docsHeaderBtn.classList.remove('hidden');
+        if (docsHeroBtn) docsHeroBtn.classList.remove('hidden');
+
         // Hide/Show settings navigation items based on user role (Hide completely for general 'user')
         const navItemSettings = document.getElementById('nav-item-settings');
         const mNavSettings = document.getElementById('mobile-nav-settings');
@@ -275,6 +351,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showGuestState() {
+    const sidebarProfileGroup = document.getElementById('sidebar-profile-group');
+    const sidebarGuestGroup = document.getElementById('sidebar-guest-group');
+    if (sidebarProfileGroup) sidebarProfileGroup.classList.add('hidden');
+    if (sidebarGuestGroup) sidebarGuestGroup.classList.remove('hidden');
+
     userWelcomeTag.classList.add('hidden');
     headerNav.style.display = 'none';
     logoutBtn.style.display = 'none';
@@ -285,7 +366,19 @@ document.addEventListener('DOMContentLoaded', () => {
     guestContent.classList.remove('hidden');
     memberContent.classList.add('hidden');
     adminApprovalSection.classList.add('hidden');
-    
+
+    // Hide HWP shared storage header button and landing welcome hero button when logged out
+    const docsHeaderBtn = document.getElementById('nav-item-docs-header');
+    const docsHeroBtn = document.getElementById('nav-item-docs-hero');
+    if (docsHeaderBtn) docsHeaderBtn.classList.add('hidden');
+    if (docsHeroBtn) docsHeroBtn.classList.add('hidden');
+
+    // Hide mobile docs and wall items when logged out
+    const mNavDocs = document.getElementById('mobile-nav-docs');
+    const mNavWall = document.getElementById('mobile-nav-wall');
+    if (mNavDocs) mNavDocs.style.display = 'none';
+    if (mNavWall) mNavWall.style.display = 'none';
+
     // 학급 전용 섹션들 일괄 숨김 처리
     const classroomSection = document.getElementById('classroom-section');
     const gradebookSection = document.getElementById('gradebook-section');
@@ -356,9 +449,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- 4. Modal Triggers & Tab Switching ---
   function openAuthModal(mode = 'login') {
+    console.log('TRACE: openAuthModal called', { mode, authModalExists: !!authModal });
     if (authModal) {
       authModal.querySelectorAll('input').forEach(inp => inp.removeAttribute('disabled'));
       authModal.classList.remove('hidden');
+      console.log('TRACE: Removed hidden class from authModal. Current classes:', authModal.className);
+    } else {
+      console.error('TRACE: authModal element not found!');
     }
     switchAuthTab(mode);
   }
@@ -386,14 +483,44 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  btnLoginTrigger.addEventListener('click', () => openAuthModal('login'));
-  btnRegisterTrigger.addEventListener('click', () => openAuthModal('register'));
-  btnHeroStart.addEventListener('click', () => openAuthModal('register'));
+  console.log('TRACE: Binding auth button click listeners');
+  btnLoginTrigger.addEventListener('click', () => {
+    console.log('TRACE: btnLoginTrigger clicked');
+    openAuthModal('login');
+  });
+  btnRegisterTrigger.addEventListener('click', () => {
+    console.log('TRACE: btnRegisterTrigger clicked');
+    openAuthModal('register');
+  });
+  btnHeroStart.addEventListener('click', () => {
+    console.log('TRACE: btnHeroStart clicked');
+    openAuthModal('register');
+  });
   
   const btnHeroLogin = document.getElementById('btn-hero-login');
   if (btnHeroLogin) {
-    btnHeroLogin.addEventListener('click', () => openAuthModal('login'));
+    console.log('TRACE: btnHeroLogin exists, binding click listener');
+    btnHeroLogin.addEventListener('click', () => {
+      console.log('TRACE: btnHeroLogin clicked');
+      openAuthModal('login');
+    });
+  } else {
+    console.warn('TRACE: btnHeroLogin element not found in DOM!');
   }
+
+  // Intercept Kanban and Docs links when guest (not logged in) to open login modal
+  document.addEventListener('click', (e) => {
+    const anchor = e.target.closest('a');
+    if (anchor) {
+      const href = anchor.getAttribute('href');
+      if (href && (href === '/wall' || href === '/docs')) {
+        if (!getAuthToken()) {
+          e.preventDefault();
+          openAuthModal('login');
+        }
+      }
+    }
+  });
   
   btnAuthModalClose.addEventListener('click', () => {
     closeAuthModal();
@@ -793,7 +920,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- 10. Dashboard Rendering ---
+  // --- 10. Dashboard Rendering ---
   async function renderDashboard() {
+    if (!getAuthToken()) return;
     try {
       const response = await secureFetch('/api/links');
 
@@ -802,12 +931,47 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const { links } = await response.json();
+      cachedLinks = links || [];
 
-      updateUsageLimitTracker(links.length);
+      updateUsageLimitTracker(cachedLinks.length);
 
-      if (links.length === 0) {
+      // Canva View Mode Switching
+      const viewMode = localStorage.getItem('canva_view_mode') || 'grid';
+      const recentGrid = document.getElementById('canva-recent-grid');
+      const btnViewGrid = document.getElementById('btn-view-grid');
+      const btnViewList = document.getElementById('btn-view-list');
+
+      if (viewMode === 'grid') {
+        if (recentGrid) recentGrid.classList.remove('hidden');
+        if (linksTableWrapper) linksTableWrapper.classList.add('hidden');
+        if (btnViewGrid) {
+          btnViewGrid.classList.add('text-purple-600', 'dark:text-purple-400', 'bg-slate-100', 'dark:bg-slate-800');
+          btnViewGrid.classList.remove('text-slate-400', 'dark:text-slate-500', 'bg-transparent');
+        }
+        if (btnViewList) {
+          btnViewList.classList.remove('text-purple-600', 'dark:text-purple-400', 'bg-slate-100', 'dark:bg-slate-800');
+          btnViewList.classList.add('text-slate-400', 'dark:text-slate-500', 'bg-transparent');
+        }
+      } else {
+        if (recentGrid) recentGrid.classList.add('hidden');
+        if (linksTableWrapper) linksTableWrapper.classList.remove('hidden');
+        if (btnViewList) {
+          btnViewList.classList.add('text-purple-600', 'dark:text-purple-400', 'bg-slate-100', 'dark:bg-slate-800');
+          btnViewList.classList.remove('text-slate-400', 'dark:text-slate-500', 'bg-transparent');
+        }
+        if (btnViewGrid) {
+          btnViewGrid.classList.remove('text-purple-600', 'dark:text-purple-400', 'bg-slate-100', 'dark:bg-slate-800');
+          btnViewGrid.classList.add('text-slate-400', 'dark:text-slate-500', 'bg-transparent');
+        }
+      }
+
+      await renderRecentItemsGrid(cachedLinks);
+
+      if (cachedLinks.length === 0) {
         listEmptyState.classList.remove('hidden');
-        linksTableWrapper.classList.add('hidden');
+        if (viewMode === 'list') {
+          linksTableWrapper.classList.add('hidden');
+        }
         btnClearHistory.classList.add('hidden');
         
         statTotalLinks.textContent = '0';
@@ -817,10 +981,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      links.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      cachedLinks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-      const totalLinksCount = links.length;
-      const totalClicksSum = links.reduce((sum, link) => sum + (link.clicks || 0), 0);
+      const totalLinksCount = cachedLinks.length;
+      const totalClicksSum = cachedLinks.reduce((sum, link) => sum + (link.clicks || 0), 0);
       const avgClicksRate = totalLinksCount > 0 ? (totalClicksSum / totalLinksCount).toFixed(1) : '0.0';
 
       statTotalLinks.textContent = totalLinksCount;
@@ -831,7 +995,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       linksTableBody.innerHTML = '';
       
-      links.forEach(link => {
+      cachedLinks.forEach(link => {
         const row = document.createElement('tr');
         
         const localLinkUrl = `${window.location.origin}/${link.code}`;
@@ -886,7 +1050,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       listEmptyState.classList.add('hidden');
-      linksTableWrapper.classList.remove('hidden');
+      if (viewMode === 'list') {
+        linksTableWrapper.classList.remove('hidden');
+      }
       btnClearHistory.classList.remove('hidden');
 
       lucide.createIcons();
@@ -1109,6 +1275,31 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (err) {
       console.error('Failed to load system metrics:', err);
+    }
+
+    // Fetch Tetris server statistics
+    try {
+      const tetrisResponse = await secureFetch('/api/tetris/stats');
+      if (tetrisResponse.ok) {
+        const tetrisData = await tetrisResponse.json();
+        const playersEl = document.getElementById('monitor-tetris-players');
+        const spectatorsEl = document.getElementById('monitor-tetris-spectators');
+        const socketsEl = document.getElementById('monitor-tetris-sockets');
+        const stateEl = document.getElementById('monitor-tetris-state');
+        
+        if (playersEl) playersEl.textContent = (tetrisData.activePlayers || 0) + '명';
+        if (spectatorsEl) spectatorsEl.textContent = (tetrisData.spectators || 0) + '명';
+        if (socketsEl) socketsEl.textContent = (tetrisData.totalConnections || 0) + '개';
+        if (stateEl) {
+          let stateText = '대기실 (lobby)';
+          if (tetrisData.gameState === 'countdown') stateText = '카운트다운 (countdown)';
+          else if (tetrisData.gameState === 'playing') stateText = '대결 중 (playing)';
+          else if (tetrisData.gameState === 'finished') stateText = '종료 (finished)';
+          stateEl.textContent = stateText;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load Tetris stats:', err);
     }
 
     // 2. Fetch pending approvals list
@@ -1643,6 +1834,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const pollModalTotalVotes = document.getElementById('poll-modal-total-votes');
   const pollVotedNotice = document.getElementById('poll-voted-notice');
 
+  window.editingPollId = null;
+
   // Visualization View Tabs
   const btnPollViewBar = document.getElementById('btn-poll-view-bar');
   const btnPollViewDonut = document.getElementById('btn-poll-view-donut');
@@ -1717,6 +1910,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentUserClicks = 0;
 
   // --- 4-Tab Structure Unified Switcher & Settings Config ---
+  // --- 4-Tab Structure Unified Switcher & Settings Config ---
   window.switchMainTab = function(tabId) {
     const hasPollsUnlock = currentUserRole === 'admin' || currentUserRole === 'manager' || currentUserRole === 'vip';
     const hasClassroomUnlock = currentUserRole === 'admin' || currentUserRole === 'manager' || currentUserRole === 'vip';
@@ -1742,18 +1936,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const pollSec = document.getElementById('polls-section');
     const eusseukSec = document.getElementById('eusseuk-section');
     const settingsSec = document.getElementById('settings-section');
+    const dashSummary = document.getElementById('dashboard-summary-panel');
+    const vipPromo = document.getElementById('vip-promotion-card');
     
     const navShortener = document.getElementById('nav-item-shortener');
     const navPolls = document.getElementById('nav-item-polls');
     const navClassroom = document.getElementById('nav-item-classroom');
     const navSettings = document.getElementById('nav-item-settings');
     
+    // Sidebar nav elements
+    const sideShortener = document.getElementById('nav-item-shortener-side');
+    const sideClassroom = document.getElementById('nav-item-classroom-side');
+    const sideProjects = document.getElementById('nav-item-projects-side');
+    const sideSettings = document.getElementById('nav-item-settings-side');
+
     const mNavShortener = document.getElementById('mobile-nav-shortener-member');
     const mNavPolls = document.getElementById('mobile-nav-polls-member');
     const mNavClassroom = document.getElementById('mobile-nav-classroom');
     const mNavSettings = document.getElementById('mobile-nav-settings');
 
-    // Hide all
+    const canvaBanner = document.getElementById('canva-banner');
+    const canvaCategories = document.getElementById('canva-categories');
+    const canvaHighlights = document.getElementById('canva-highlights');
+
+    // Hide all main sections
     if (shortenerSec) shortenerSec.classList.add('hidden');
     if (dashSec) dashSec.classList.add('hidden');
     if (pollSec) pollSec.classList.add('hidden');
@@ -1762,6 +1968,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Remove active styles from desktop header
     [navShortener, navPolls, navClassroom, navSettings].forEach(el => {
+      if (el) el.classList.remove('active');
+    });
+    // Remove active styles from sidebar nav elements
+    [sideShortener, sideClassroom, sideProjects, sideSettings].forEach(el => {
       if (el) el.classList.remove('active');
     });
     // Remove active styles from mobile navigation bar
@@ -1775,12 +1985,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (tabId === 'shortener') {
       if (shortenerSec) shortenerSec.classList.remove('hidden');
       if (dashSec) dashSec.classList.remove('hidden');
+      if (canvaBanner) canvaBanner.classList.remove('hidden');
+      if (canvaCategories) canvaCategories.classList.remove('hidden');
+      if (canvaHighlights) canvaHighlights.classList.remove('hidden');
+      
       if (navShortener) navShortener.classList.add('active');
+      if (sideShortener) sideShortener.classList.add('active');
       if (mNavShortener) {
         mNavShortener.classList.add('active-mobile-nav');
         mNavShortener.classList.remove('text-slate-400', 'dark:text-slate-500');
       }
       stopLivePollInterval();
+    } else if (tabId === 'projects') {
+      // In projects tab, we display the recent grid under shortener section, but hide banner, categories, and highlights.
+      if (shortenerSec) shortenerSec.classList.remove('hidden');
+      if (canvaBanner) canvaBanner.classList.add('hidden');
+      if (canvaCategories) canvaCategories.classList.add('hidden');
+      if (canvaHighlights) canvaHighlights.classList.add('hidden');
+      
+      if (sideProjects) sideProjects.classList.add('active');
+      stopLivePollInterval();
+      renderDashboard(); // Triggers recent grid rendering
     } else if (tabId === 'polls') {
       if (pollSec) pollSec.classList.remove('hidden');
       if (navPolls) navPolls.classList.add('active');
@@ -1792,6 +2017,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (tabId === 'classroom') {
       if (eusseukSec) eusseukSec.classList.remove('hidden');
       if (navClassroom) navClassroom.classList.add('active');
+      if (sideClassroom) sideClassroom.classList.add('active');
       if (mNavClassroom) {
         mNavClassroom.classList.add('active-mobile-nav');
         mNavClassroom.classList.remove('text-slate-400', 'dark:text-slate-500');
@@ -1802,6 +2028,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (tabId === 'settings') {
       if (settingsSec) settingsSec.classList.remove('hidden');
       if (navSettings) navSettings.classList.add('active');
+      if (sideSettings) sideSettings.classList.add('active');
       if (mNavSettings) {
         mNavSettings.classList.add('active-mobile-nav');
         mNavSettings.classList.remove('text-slate-400', 'dark:text-slate-500');
@@ -1984,6 +2211,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnClosePollCreate) {
     btnClosePollCreate.addEventListener('click', () => {
       if (createPollCard) createPollCard.classList.add('hidden');
+      resetPollForm();
     });
   }
 
@@ -2092,6 +2320,155 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Reset Poll Form helper
+  function resetPollForm() {
+    window.editingPollId = null;
+    
+    const modeTitle = document.getElementById('poll-card-mode-title');
+    if (modeTitle) modeTitle.textContent = 'New kfcman-on';
+    
+    const submitBtn = document.getElementById('btn-create-poll-submit');
+    if (submitBtn) {
+      const btnSpan = submitBtn.querySelector('span');
+      if (btnSpan) btnSpan.textContent = '게시하기';
+      submitBtn.disabled = false;
+    }
+    
+    document.getElementById('poll-title-input').value = '';
+    
+    if (boardTypeCards && hiddenBoardTypeInput) {
+      boardTypeCards.forEach(c => c.classList.remove('active'));
+      const defaultCard = document.querySelector('.board-type-card[data-value="bar"]');
+      if (defaultCard) defaultCard.classList.add('active');
+      hiddenBoardTypeInput.value = 'bar';
+    }
+    
+    const builderContainer = document.getElementById('poll-options-builder-container');
+    if (builderContainer) builderContainer.classList.remove('hidden');
+
+    const quizSettingsContainer = document.getElementById('quiz-settings-container');
+    if (quizSettingsContainer) quizSettingsContainer.classList.add('hidden');
+    
+    pollOptionsContainer.innerHTML = `
+      <div class="poll-option-row flex gap-3 items-center">
+        <div class="flex-grow flex items-center bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-4 py-2.5 gap-2 shadow-clay-flat">
+          <i data-lucide="circle-dot" class="w-4 h-4 text-slate-400"></i>
+          <input type="text" class="poll-option-input w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400" placeholder="문항 1 입력" required autocomplete="off">
+        </div>
+        <div class="w-8"></div>
+      </div>
+      <div class="poll-option-row flex gap-3 items-center">
+        <div class="flex-grow flex items-center bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-4 py-2.5 gap-2 shadow-clay-flat">
+          <i data-lucide="circle-dot" class="w-4 h-4 text-slate-400"></i>
+          <input type="text" class="poll-option-input w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400" placeholder="문항 2 입력" required autocomplete="off">
+        </div>
+        <div class="w-8"></div>
+      </div>
+    `;
+    optionCount = 2;
+    document.getElementById('poll-duration-input').value = 10;
+    
+    const dupModeSelect = document.getElementById('poll-dup-mode-input');
+    if (dupModeSelect) dupModeSelect.value = 'once';
+    
+    const multipleCheckbox = document.getElementById('poll-multiple-input');
+    if (multipleCheckbox) multipleCheckbox.checked = false;
+
+    const quizDurationInput = document.getElementById('poll-quiz-duration-input');
+    if (quizDurationInput) quizDurationInput.value = 30;
+
+    lucide.createIcons();
+  }
+
+  // Start editing poll helper
+  function startEditingPoll(pollId) {
+    const poll = pollsData.find(p => p.id === pollId);
+    if (!poll) return;
+
+    window.editingPollId = poll.id;
+
+    // 1. Change Form Title and Button text
+    const modeTitle = document.getElementById('poll-card-mode-title');
+    if (modeTitle) modeTitle.textContent = '설문 수정하기';
+
+    const submitBtn = document.getElementById('btn-create-poll-submit');
+    if (submitBtn) {
+      const btnSpan = submitBtn.querySelector('span');
+      if (btnSpan) btnSpan.textContent = '수정 완료';
+    }
+
+    // 2. Open form card
+    if (createPollCard) {
+      createPollCard.classList.remove('hidden');
+      createPollCard.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 3. Fill form values
+    document.getElementById('poll-title-input').value = poll.title;
+    
+    // Trigger card selection click
+    const targetCard = document.querySelector(`.board-type-card[data-value="${poll.boardType}"]`);
+    if (targetCard) {
+      targetCard.click();
+    } else {
+      const hiddenBoardTypeInput = document.getElementById('poll-board-type-input');
+      if (hiddenBoardTypeInput) hiddenBoardTypeInput.value = poll.boardType;
+    }
+
+    // Options list setup
+    if (poll.options && poll.options.length > 0) {
+      pollOptionsContainer.innerHTML = '';
+      poll.options.forEach((opt, idx) => {
+        const row = document.createElement('div');
+        row.className = 'poll-option-row animate-fade-in flex gap-3 items-center';
+        
+        const isDeleteAllowed = idx >= 2;
+        row.innerHTML = `
+          <div class="flex-grow flex items-center bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-4 py-2.5 gap-2 shadow-clay-flat">
+            <i data-lucide="circle-dot" class="w-4 h-4 text-slate-400"></i>
+            <input type="text" class="poll-option-input w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400" placeholder="문항 ${idx + 1} 입력" required autocomplete="off" value="${opt.text}">
+          </div>
+          ${isDeleteAllowed 
+            ? `<button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center border border-red-500/20 hover:bg-red-500/10 text-red-400 btn-delete-option active:scale-95 transition-all flex-shrink-0">
+                 <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+               </button>`
+            : `<div class="w-8"></div>`
+          }
+        `;
+        pollOptionsContainer.appendChild(row);
+
+        if (isDeleteAllowed) {
+          row.querySelector('.btn-delete-option').addEventListener('click', () => {
+            row.remove();
+            renumberOptions();
+          });
+        }
+      });
+      optionCount = poll.options.length;
+      lucide.createIcons();
+    }
+
+    // Calculate original duration in minutes
+    const durationMinutes = Math.round((new Date(poll.expiresAt) - new Date(poll.createdAt)) / 60000);
+    document.getElementById('poll-duration-input').value = durationMinutes;
+
+    const dupModeSelect = document.getElementById('poll-dup-mode-input');
+    if (dupModeSelect) dupModeSelect.value = poll.dupMode || 'once';
+
+    const multipleCheckbox = document.getElementById('poll-multiple-input');
+    if (multipleCheckbox) multipleCheckbox.checked = !!poll.allowMultiple;
+
+    // Quiz configurations
+    if (poll.boardType === 'quiz') {
+      const quizDurationInput = document.getElementById('poll-quiz-duration-input');
+      if (quizDurationInput) quizDurationInput.value = poll.quizDuration || 30;
+      
+      renumberOptions(); // Re-populate correct option dropdown
+      const quizCorrectSelect = document.getElementById('poll-quiz-correct-input');
+      if (quizCorrectSelect) quizCorrectSelect.value = String(poll.quizCorrectIndex || 0);
+    }
+  }
+
   // Poll Form Submit Handler
   if (createPollForm) {
     createPollForm.addEventListener('submit', async (e) => {
@@ -2111,82 +2488,61 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
   
+      const isEditing = !!window.editingPollId;
+      const url = isEditing ? `/api/polls/${window.editingPollId}` : '/api/polls';
+      const method = isEditing ? 'PUT' : 'POST';
+
       const submitBtn = document.getElementById('btn-create-poll-submit');
       const btnSpan = submitBtn.querySelector('span');
       submitBtn.disabled = true;
-      btnSpan.textContent = '게시글 업로드 중...';
+      btnSpan.textContent = isEditing ? '수정 사항 저장 중...' : '게시글 업로드 중...';
       
       const quizCorrectIndex = boardType === 'quiz' ? parseInt(document.getElementById('poll-quiz-correct-input').value) : null;
       const quizDuration = boardType === 'quiz' ? parseInt(document.getElementById('poll-quiz-duration-input').value) || 30 : null;
   
       try {
-        const response = await secureFetch('/api/polls', {
-          method: 'POST',
+        const response = await secureFetch(url, {
+          method: method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title, options, durationMinutes, allowMultiple, dupMode, boardType, quizCorrectIndex, quizDuration })
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error);
   
-        // Generate Guest-Friendly Shareable URL
-        const shareUrl = `${window.location.origin}/${data.poll.id}`;
+        if (isEditing) {
+          showToast('설문 수정 완료', '선호도 조사가 성공적으로 수정되었습니다.', 'success');
+          resetPollForm();
+          if (createPollCard) createPollCard.classList.add('hidden');
+          fetchAndRenderPolls();
+        } else {
+          // Generate Guest-Friendly Shareable URL
+          const shareUrl = `${window.location.origin}/${data.poll.id}`;
 
-        // Attempt automatic clipboard copy
-        try {
-          await navigator.clipboard.writeText(shareUrl);
-          showToast(
-            '선호도 조사 등록 완료 (복사 완료)',
-            `비로그인 유저도 참여 가능한 단축 공유 주소가 자동으로 복사되었습니다!<br><br><strong style="color:var(--color-cyan); font-size:12.5px; word-break:break-all;">${shareUrl}</strong><br><br>카카오톡, 네이버 밴드 등에 이 주소를 붙여넣어 즉시 투표를 진행해 보세요.`,
-            'success'
-          );
-        } catch (copyErr) {
-          // Fallback if clipboard writing is blocked
-          showToast(
-            '선호도 조사 등록 완료',
-            `비로그인 유저 참여 단축 주소:<br><strong style="color:var(--color-cyan); font-size:12.5px; word-break:break-all;">${shareUrl}</strong><br><br>위 주소를 복사하여 사람들에게 바로 알리세요!`,
-            'success'
-          );
+          // Attempt automatic clipboard copy
+          try {
+            await navigator.clipboard.writeText(shareUrl);
+            showToast(
+              '선호도 조사 등록 완료 (복사 완료)',
+              `비로그인 유저도 참여 가능한 단축 공유 주소가 자동으로 복사되었습니다!<br><br><strong style="color:var(--color-cyan); font-size:12.5px; word-break:break-all;">${shareUrl}</strong><br><br>카카오톡, 네이버 밴드 등에 이 주소를 붙여넣어 즉시 투표를 진행해 보세요.`,
+              'success'
+            );
+          } catch (copyErr) {
+            // Fallback if clipboard writing is blocked
+            showToast(
+              '선호도 조사 등록 완료',
+              `비로그인 유저 참여 단축 주소:<br><strong style="color:var(--color-cyan); font-size:12.5px; word-break:break-all;">${shareUrl}</strong><br><br>위 주소를 복사하여 사람들에게 바로 알리세요!`,
+              'success'
+            );
+          }
+          resetPollForm();
+          if (createPollCard) createPollCard.classList.add('hidden');
+          fetchAndRenderPolls();
         }
-        
-        // Reset Form fields
-        document.getElementById('poll-title-input').value = '';
-        if (boardTypeCards && hiddenBoardTypeInput) {
-          boardTypeCards.forEach(c => c.classList.remove('active'));
-          const defaultCard = document.querySelector('.board-type-card[data-value="bar"]');
-          if (defaultCard) defaultCard.classList.add('active');
-          hiddenBoardTypeInput.value = 'bar';
-        }
-        
-        const builderContainer = document.getElementById('poll-options-builder-container');
-        if (builderContainer) builderContainer.classList.remove('hidden');
-        
-        pollOptionsContainer.innerHTML = `
-          <div class="poll-option-row flex gap-3 items-center">
-            <div class="flex-1 flex items-center bg-slate-900/40 dark:bg-slate-900/40 border border-white/5 focus-within:border-brand-cyan/50 rounded-xl px-4 py-3 gap-3 transition-all">
-              <i data-lucide="circle-dot" class="w-4 h-4 text-slate-400"></i>
-              <input type="text" class="poll-option-input w-full bg-transparent border-none outline-none text-sm text-slate-900 dark:text-white placeholder-slate-500 cursor-text" placeholder="문항 1 입력" required autocomplete="off">
-            </div>
-            <div class="w-8"></div>
-          </div>
-          <div class="poll-option-row flex gap-3 items-center">
-            <div class="flex-1 flex items-center bg-slate-900/40 dark:bg-slate-900/40 border border-white/5 focus-within:border-brand-cyan/50 rounded-xl px-4 py-3 gap-3 transition-all">
-              <i data-lucide="circle-dot" class="w-4 h-4 text-slate-400"></i>
-              <input type="text" class="poll-option-input w-full bg-transparent border-none outline-none text-sm text-slate-900 dark:text-white placeholder-slate-500 cursor-text" placeholder="문항 2 입력" required autocomplete="off">
-            </div>
-            <div class="w-8"></div>
-          </div>
-        `;
-        optionCount = 2;
-        lucide.createIcons();
-  
-        if (createPollCard) createPollCard.classList.add('hidden');
-        fetchAndRenderPolls();
-  
       } catch (err) {
-        showToast('등록 실패', err.message, 'error');
+        showToast(isEditing ? '수정 실패' : '등록 실패', err.message, 'error');
       } finally {
         submitBtn.disabled = false;
-        btnSpan.textContent = '게시하기';
+        btnSpan.textContent = isEditing ? '수정 완료' : '게시하기';
       }
     });
   }
@@ -2312,7 +2668,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       let deleteButtonHtml = '';
+      let editButtonHtml = '';
       if (cleanUser === 'kfcman' || cleanUser === 'admin' || poll.owner === cleanUser) {
+        editButtonHtml = `
+          <button class="w-9 h-9 rounded-lg flex items-center justify-center border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-650 dark:text-slate-350 btn-edit-poll active:scale-95 transition-all flex-shrink-0" data-id="${poll.id}" title="설문 수정">
+            <i data-lucide="edit" class="w-4 h-4"></i>
+          </button>
+        `;
         deleteButtonHtml = `
           <button class="w-9 h-9 rounded-lg flex items-center justify-center border border-red-500/20 hover:bg-red-500/10 text-red-400 btn-delete-poll active:scale-95 transition-all flex-shrink-0" data-id="${poll.id}" title="설문 삭제">
             <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -2351,6 +2713,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <button class="w-9 h-9 rounded-lg flex items-center justify-center border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 btn-share-poll active:scale-95 transition-all flex-shrink-0" data-id="${poll.id}" title="주소 공유">
             <i data-lucide="share-2" class="w-4 h-4"></i>
           </button>
+          ${editButtonHtml}
           ${deleteButtonHtml}
         </div>
       `;
@@ -2458,6 +2821,12 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('삭제 실패', err.message, 'error');
           }
         }
+      });
+    });
+    document.querySelectorAll('.btn-edit-poll').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        startEditingPoll(id);
       });
     });
   }
@@ -3293,7 +3662,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const themeToggleBtnMobile = document.getElementById('theme-toggle-btn-mobile');
   if (themeToggleBtnMobile) {
     themeToggleBtnMobile.addEventListener('click', () => {
-      themeToggleBtn.click(); // Forward click to the original theme toggle
+      if (themeToggleBtn) themeToggleBtn.click(); else window.toggleThemeAction();
     });
   }
 
@@ -4789,6 +5158,515 @@ document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
   });
 
+  // --- Canva Dashboard Integrations ---
+
+  // 1. Modal opening/closing
+  window.openShortenerModal = () => {
+    const modal = document.getElementById('shortener-modal');
+    const inputContainer = document.getElementById('input-container');
+    const resultContainer = document.getElementById('result-container');
+    if (modal) modal.classList.remove('hidden');
+    if (inputContainer) inputContainer.classList.remove('hidden');
+    if (resultContainer) resultContainer.classList.add('hidden');
+  };
+
+  window.closeShortenerModal = () => {
+    const modal = document.getElementById('shortener-modal');
+    if (modal) modal.classList.add('hidden');
+  };
+
+  const btnShortenerModalClose = document.getElementById('btn-shortener-modal-close');
+  if (btnShortenerModalClose) {
+    btnShortenerModalClose.addEventListener('click', window.closeShortenerModal);
+  }
+
+  // 2. Sidebar Dropdown / Popover
+  const btnSidebarCreate = document.getElementById('btn-sidebar-create');
+  const createPopover = document.getElementById('create-popover');
+  if (btnSidebarCreate && createPopover) {
+    btnSidebarCreate.addEventListener('click', (e) => {
+      e.stopPropagation();
+      createPopover.classList.toggle('hidden');
+    });
+    document.addEventListener('click', (e) => {
+      if (!createPopover.classList.contains('hidden') && !createPopover.contains(e.target) && e.target !== btnSidebarCreate) {
+        createPopover.classList.add('hidden');
+      }
+    });
+  }
+
+  // 3. Sidebar Shortcut Bindings
+  const themeToggleBtnSidebar = document.getElementById('theme-toggle-btn-sidebar');
+  if (themeToggleBtnSidebar && themeToggleBtn) {
+    themeToggleBtnSidebar.addEventListener('click', () => { if (themeToggleBtn) themeToggleBtn.click(); else window.toggleThemeAction(); });
+  }
+
+  const btnLogoutSidebar = document.getElementById('btn-logout-sidebar');
+  if (btnLogoutSidebar && logoutBtn) {
+    btnLogoutSidebar.addEventListener('click', () => logoutBtn.click());
+  }
+
+  const btnLoginSidebar = document.getElementById('btn-login-sidebar');
+  if (btnLoginSidebar && btnLoginTrigger) {
+    btnLoginSidebar.addEventListener('click', () => btnLoginTrigger.click());
+  }
+
+  // 4. Grid/List View Switches
+  const btnViewGrid = document.getElementById('btn-view-grid');
+  const btnViewList = document.getElementById('btn-view-list');
+  if (btnViewGrid) {
+    btnViewGrid.addEventListener('click', () => {
+      localStorage.setItem('canva_view_mode', 'grid');
+      renderDashboard();
+    });
+  }
+  if (btnViewList) {
+    btnViewList.addEventListener('click', () => {
+      localStorage.setItem('canva_view_mode', 'list');
+      renderDashboard();
+    });
+  }
+
+  // 5. Poll Creation triggers
+  function openPollCreationForm() {
+    switchMainTab('polls');
+    const createPollCard = document.getElementById('create-poll-card');
+    if (createPollCard) {
+      createPollCard.classList.remove('hidden');
+      createPollCard.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+
+  const btnSidebarCreatePoll = document.getElementById('btn-sidebar-create-poll');
+  const btnCategoryCreatePoll = document.getElementById('btn-category-create-poll');
+  const btnHighlightCreatePoll = document.getElementById('btn-highlight-create-poll');
+
+  if (btnSidebarCreatePoll) {
+    btnSidebarCreatePoll.addEventListener('click', () => {
+      if (createPopover) createPopover.classList.add('hidden');
+      openPollCreationForm();
+    });
+  }
+  if (btnCategoryCreatePoll) btnCategoryCreatePoll.addEventListener('click', openPollCreationForm);
+  if (btnHighlightCreatePoll) btnHighlightCreatePoll.addEventListener('click', openPollCreationForm);
+
+  // 6. Quick QR Category Trigger
+  const btnCategoryQr = document.getElementById('btn-category-qr');
+  if (btnCategoryQr) {
+    btnCategoryQr.addEventListener('click', () => {
+      openShortenerModal();
+      showToast('QR코드 생성', '단축 URL 생성 시 QR코드가 하단에 자동으로 생성 및 표시됩니다.', 'info');
+    });
+  }
+
+  // 7. Recent Items Grid Renderer
+  async function renderRecentItemsGrid(links = []) {
+    const gridContainer = document.getElementById('canva-recent-grid');
+    if (!gridContainer) return;
+
+    // Fetch Walls
+    let walls = [];
+    try {
+      const wallRes = await secureFetch('/api/my-walls');
+      if (wallRes.ok) {
+        walls = await wallRes.json();
+      }
+    } catch (e) {
+      console.error('Error fetching my walls for grid:', e);
+    }
+
+    // Fetch Polls
+    let polls = [];
+    try {
+      const pollsRes = await secureFetch('/api/polls');
+      if (pollsRes.ok) {
+        const data = await pollsRes.json();
+        polls = data.polls || [];
+      }
+    } catch (e) {
+      console.error('Error fetching polls for grid:', e);
+    }
+
+    // Combine items
+    const username = (userWelcomeName.textContent || '').trim() || 'Guest';
+    const currentUsernameClean = username.toLowerCase();
+
+    let combinedItems = [];
+
+    // Map links
+    links.forEach(link => {
+      combinedItems.push({
+        type: 'link',
+        id: link.code,
+        title: link.code,
+        subtitle: link.originalUrl,
+        createdAt: link.createdAt,
+        owner: username,
+        clicks: link.clicks || 0,
+        original: link
+      });
+    });
+
+    // Map walls
+    walls.forEach(wall => {
+      combinedItems.push({
+        type: 'wall',
+        id: wall.id,
+        title: wall.title,
+        subtitle: wall.description || '협업 보드',
+        createdAt: wall.createdAt,
+        owner: wall.creator || '',
+        original: wall
+      });
+    });
+
+    // Map polls
+    polls.forEach(poll => {
+      combinedItems.push({
+        type: 'poll',
+        id: poll.id,
+        title: poll.title,
+        subtitle: `총 ${poll.voters ? poll.voters.length : 0}명 투표`,
+        createdAt: poll.createdAt,
+        owner: poll.owner || '',
+        original: poll
+      });
+    });
+
+    // Sort by createdAt descending
+    combinedItems.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    // Get filters & search query
+    const searchQuery = document.getElementById('canva-search-input')?.value.trim().toLowerCase() || '';
+    const filterOwner = document.getElementById('canva-filter-owner')?.value || 'all';
+    const filterType = document.getElementById('canva-filter-type')?.value || 'all';
+
+    // Apply filters
+    const filteredItems = combinedItems.filter(item => {
+      // Type Filter
+      if (filterType !== 'all' && item.type !== filterType) return false;
+
+      // Owner Filter
+      if (filterOwner === 'me') {
+        if (item.type === 'link') {
+          // Links are always owned by "me" since they are retrieved from /api/links (user specific)
+        } else if (item.type === 'wall') {
+          // Walls from /api/my-walls are already owned by me
+        } else if (item.type === 'poll') {
+          if (item.owner.toLowerCase() !== currentUsernameClean) return false;
+        }
+      }
+
+      // Search Query Filter
+      if (searchQuery) {
+        const matchesTitle = item.title.toLowerCase().includes(searchQuery);
+        const matchesSubtitle = item.subtitle.toLowerCase().includes(searchQuery);
+        const matchesId = item.id.toLowerCase().includes(searchQuery);
+        const matchesOwner = item.owner.toLowerCase().includes(searchQuery);
+        if (!matchesTitle && !matchesSubtitle && !matchesId && !matchesOwner) return false;
+      }
+
+      return true;
+    });
+
+    // Render grid
+    gridContainer.innerHTML = '';
+
+    if (filteredItems.length === 0) {
+      gridContainer.innerHTML = `
+        <div class="col-span-full py-12 text-center text-slate-400 dark:text-slate-500 font-bold text-xs">
+          <i data-lucide="folder-open" class="w-12 h-12 mx-auto mb-3 text-slate-350 dark:text-slate-600"></i>
+          검색 및 필터 조건에 부합하는 최근 프로젝트 항목이 없습니다.
+        </div>
+      `;
+      lucide.createIcons();
+      return;
+    }
+
+    filteredItems.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'canva-card bg-white dark:bg-[#161b26] border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col h-[280px] relative group';
+
+      let topHtml = '';
+      let bottomHtml = '';
+
+      if (item.type === 'link') {
+        const localLinkUrl = `${window.location.origin}/${item.id}`;
+        const visualBrandUrl = `http://kfcman.link/${item.id}`;
+        const originalUrlClean = item.subtitle.replace(/^https?:\/\/(www\.)?/, '');
+        
+        topHtml = `
+          <div class="h-36 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-4 relative overflow-hidden">
+            <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
+              <button onclick="event.stopPropagation(); window.copyTextToClipboardDirect('${visualBrandUrl}', this)" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer" title="주소 복사">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+              </button>
+              <button onclick="event.stopPropagation(); window.showStatsModalDirect('${item.id}')" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer" title="상세 통계">
+                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+              </button>
+              <button onclick="event.stopPropagation(); window.deleteLinkDirect('${item.id}')" class="w-9 h-9 rounded-xl bg-rose-500 text-white flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer" title="삭제">
+                <i data-lucide="trash" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <!-- Canva Mockup Document Frame -->
+            <div class="bg-white dark:bg-[#161b26] rounded-xl shadow-lg w-full h-full p-3 flex flex-col justify-between border border-white/20 select-none">
+              <div class="flex justify-between items-start gap-1">
+                <div class="flex items-center gap-1 bg-violet-100 dark:bg-violet-950/50 text-violet-750 dark:text-violet-300 text-[8px] font-black px-1.5 py-0.5 rounded">
+                  <i data-lucide="link-2" class="w-2.5 h-2.5"></i> 단축 주소
+                </div>
+                <div class="text-[8px] text-slate-400 font-extrabold">${new Date(item.createdAt).toLocaleDateString('ko-KR', {month:'2-digit', day:'2-digit'})}</div>
+              </div>
+              <div class="flex gap-2.5 items-center mt-1">
+                <canvas class="canva-qr-canvas flex-shrink-0" data-code="${item.id}" data-url="${localLinkUrl}" style="width: 52px; height: 52px;"></canvas>
+                <div class="text-left overflow-hidden flex-grow">
+                  <div class="text-[10px] font-black text-slate-800 dark:text-white truncate">kfcman.link/${item.id}</div>
+                  <div class="text-[8px] text-slate-400 font-semibold truncate mt-0.5" title="${item.subtitle}">${originalUrlClean}</div>
+                </div>
+              </div>
+              <div class="flex justify-between items-center text-[8px] font-black text-slate-400 border-t border-slate-100 dark:border-white/5 pt-1.5">
+                <span>클릭수</span>
+                <span class="text-violet-605 dark:text-violet-400 font-black"><i data-lucide="mouse-pointer-click" class="w-2.5 h-2.5 inline mr-0.5"></i>${item.clicks}</span>
+              </div>
+            </div>
+          </div>
+        `;
+
+        bottomHtml = `
+          <div class="p-4 flex-grow flex flex-col justify-between text-left">
+            <div>
+              <div class="text-xs font-black text-slate-800 dark:text-white truncate">kfcman.link/${item.id}</div>
+              <p class="text-[10px] text-slate-450 dark:text-slate-400 font-bold mt-1 truncate" title="${item.subtitle}">${originalUrlClean}</p>
+            </div>
+            <div class="flex justify-between items-center text-[9px] text-slate-450 dark:text-slate-400 font-black border-t border-slate-50 dark:border-white/5 pt-2">
+              <span class="flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i>${item.owner}</span>
+              <span>단축 URL</span>
+            </div>
+          </div>
+        `;
+      } else if (item.type === 'wall') {
+        topHtml = `
+          <div class="h-36 bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center p-4 relative overflow-hidden">
+            <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
+              <a href="/wall?id=${item.id}" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer" title="게시판 열기">
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+              </a>
+            </div>
+            <!-- Canva Wall Folder Frame -->
+            <div class="bg-white dark:bg-[#161b26] rounded-xl shadow-lg w-full h-full p-3 flex flex-col justify-between border border-white/20 select-none">
+              <div class="flex justify-between items-start gap-1">
+                <div class="flex items-center gap-1 bg-teal-100 dark:bg-teal-950/50 text-teal-750 dark:text-teal-300 text-[8px] font-black px-1.5 py-0.5 rounded">
+                  <i data-lucide="layout-grid" class="w-2.5 h-2.5"></i> 칸반 보드
+                </div>
+                <div class="text-[8px] text-slate-400 font-extrabold">${new Date(item.createdAt).toLocaleDateString('ko-KR', {month:'2-digit', day:'2-digit'})}</div>
+              </div>
+              <div class="text-left mt-2">
+                <div class="text-[11px] font-black text-slate-800 dark:text-white truncate">${item.title}</div>
+                <div class="text-[8px] text-slate-400 font-semibold truncate mt-1">${item.subtitle || '실시간 협업 게시판'}</div>
+              </div>
+              <div class="flex justify-between items-center text-[8px] font-black text-slate-400 border-t border-slate-100 dark:border-white/5 pt-1.5">
+                <span>역할</span>
+                <span class="text-teal-650 dark:text-teal-400 font-black"><i data-lucide="users" class="w-2.5 h-2.5 inline mr-0.5"></i>게시판 개설자</span>
+              </div>
+            </div>
+          </div>
+        `;
+
+        bottomHtml = `
+          <div class="p-4 flex-grow flex flex-col justify-between text-left">
+            <div>
+              <a href="/wall?id=${item.id}" class="text-xs font-black text-slate-800 dark:text-white hover:text-teal-500 truncate block">${item.title}</a>
+              <p class="text-[10px] text-slate-450 dark:text-slate-400 font-bold mt-1 truncate">${item.subtitle || '실시간 협업 게시판'}</p>
+            </div>
+            <div class="flex justify-between items-center text-[9px] text-slate-450 dark:text-slate-400 font-black border-t border-slate-50 dark:border-white/5 pt-2">
+              <span class="flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i>${item.owner}</span>
+              <span>칸반 게시판</span>
+            </div>
+          </div>
+        `;
+      } else if (item.type === 'poll') {
+        const isExpired = new Date() > new Date(item.original.expiresAt);
+        const statusText = isExpired ? '마감됨' : '진행중';
+
+        topHtml = `
+          <div class="h-36 bg-gradient-to-br from-rose-400 to-orange-500 flex items-center justify-center p-4 relative overflow-hidden">
+            <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
+              <button onclick="event.stopPropagation(); window.openPollModal('${item.id}', 'vote')" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer" title="투표하기">
+                <i data-lucide="vote" class="w-4 h-4"></i>
+              </button>
+              <button onclick="event.stopPropagation(); window.openPollModal('${item.id}', 'stats')" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer" title="결과 보기">
+                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <!-- Canva Poll Frame -->
+            <div class="bg-white dark:bg-[#161b26] rounded-xl shadow-lg w-full h-full p-3 flex flex-col justify-between border border-white/20 select-none">
+              <div class="flex justify-between items-start gap-1">
+                <div class="flex items-center gap-1 bg-rose-100 dark:bg-rose-950/50 text-rose-750 dark:text-rose-300 text-[8px] font-black px-1.5 py-0.5 rounded">
+                  <i data-lucide="vote" class="w-2.5 h-2.5"></i> 실시간 설문
+                </div>
+                <div class="text-[8px] text-slate-400 font-extrabold">${new Date(item.createdAt).toLocaleDateString('ko-KR', {month:'2-digit', day:'2-digit'})}</div>
+              </div>
+              <div class="text-left mt-2">
+                <div class="text-[11px] font-black text-slate-800 dark:text-white truncate">${item.title}</div>
+                <span class="text-[8px] font-bold px-1.5 py-0.2 rounded-md ${isExpired ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-green-500/10 text-green-400 border border-green-500/20'} mt-1 inline-block">${statusText}</span>
+              </div>
+              <div class="flex justify-between items-center text-[8px] font-black text-slate-400 border-t border-slate-100 dark:border-white/5 pt-1.5">
+                <span>투표수</span>
+                <span class="text-rose-650 dark:text-rose-450 font-black">${item.subtitle}</span>
+              </div>
+            </div>
+          </div>
+        `;
+
+        bottomHtml = `
+          <div class="p-4 flex-grow flex flex-col justify-between text-left">
+            <div>
+              <div class="text-xs font-black text-slate-800 dark:text-white truncate">${item.title}</div>
+              <p class="text-[10px] text-slate-450 dark:text-slate-400 font-bold mt-1 truncate">소유자: ${item.owner}</p>
+            </div>
+            <div class="flex justify-between items-center text-[9px] text-slate-450 dark:text-slate-400 font-black border-t border-slate-50 dark:border-white/5 pt-2">
+              <span class="flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i>${item.owner}</span>
+              <span>설문 조사</span>
+            </div>
+          </div>
+        `;
+      }
+
+      card.innerHTML = topHtml + bottomHtml;
+      gridContainer.appendChild(card);
+
+      // Render QR code on canvas for links
+      if (item.type === 'link') {
+        const canvas = card.querySelector('.canva-qr-canvas');
+        if (canvas) {
+          new QRious({
+            element: canvas,
+            value: canvas.getAttribute('data-url'),
+            size: 52,
+            foreground: '#0f1422',
+            background: '#ffffff',
+            level: 'M'
+          });
+        }
+      }
+    });
+
+    lucide.createIcons();
+  }
+
+  // 8. Global bindings for dynamic grid action triggers
+  window.showStatsModalDirect = (code) => {
+    showStatsModal(code);
+  };
+
+  window.openPollModal = openPollModal;
+
+  window.copyTextToClipboardDirect = (text, btn) => {
+    copyTextToClipboard(text, btn);
+  };
+
+  window.deleteLinkDirect = async (code) => {
+    if (confirm(`단축 주소 [kfcman.link/${code}]를 영구히 삭제하시겠습니까?\n삭제 시 해당 주소로 접속이 불가능해집니다.`)) {
+      try {
+        const response = await secureFetch(`/api/links/${code}`, {
+          method: 'DELETE'
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error);
+        
+        showToast('삭제 완료', '해당 단축 링크가 안전하게 삭제되었습니다.', 'success');
+        renderDashboard();
+      } catch (err) {
+        showToast('삭제 실패', err.message, 'error');
+      }
+    }
+  };
+
+  // 9. Input & Select Filter Listeners for Canva Dashboard
+  const canvaSearchInput = document.getElementById('canva-search-input');
+  const canvaFilterOwner = document.getElementById('canva-filter-owner');
+  const canvaFilterType = document.getElementById('canva-filter-type');
+
+  if (canvaSearchInput) {
+    canvaSearchInput.addEventListener('input', () => {
+      renderRecentItemsGrid(cachedLinks);
+    });
+  }
+  if (canvaFilterOwner) {
+    canvaFilterOwner.addEventListener('change', () => {
+      renderRecentItemsGrid(cachedLinks);
+    });
+  }
+  if (canvaFilterType) {
+    canvaFilterType.addEventListener('change', () => {
+      renderRecentItemsGrid(cachedLinks);
+    });
+  }
+
+  // --- Collapsible Sidebar Event Listeners & State Restoration ---
+  const leftSidebar = document.getElementById('left-sidebar');
+  const btnSidebarToggle = document.getElementById('btn-sidebar-toggle');
+  
+  function setSidebarCollapsed(collapsed) {
+    const mainContent = document.getElementById('main-content');
+    const toggleIcon = document.getElementById('sidebar-toggle-icon');
+    
+    if (leftSidebar) {
+      if (collapsed) {
+        leftSidebar.classList.add('collapsed');
+        if (mainContent) {
+          mainContent.classList.remove('max-w-7xl', 'mx-auto');
+          mainContent.classList.add('max-w-none', 'px-6', 'md:px-10');
+        }
+        if (toggleIcon) {
+          toggleIcon.classList.remove('lucide-chevron-left');
+          toggleIcon.classList.add('lucide-chevron-right');
+          toggleIcon.setAttribute('data-lucide', 'chevron-right');
+        }
+      } else {
+        leftSidebar.classList.remove('collapsed');
+        if (mainContent) {
+          mainContent.classList.add('max-w-7xl', 'mx-auto');
+          mainContent.classList.remove('max-w-none', 'px-6', 'md:px-10');
+        }
+        if (toggleIcon) {
+          toggleIcon.classList.remove('lucide-chevron-right');
+          toggleIcon.classList.add('lucide-chevron-left');
+          toggleIcon.setAttribute('data-lucide', 'chevron-left');
+        }
+      }
+      localStorage.setItem('sidebarCollapsed', collapsed ? 'true' : 'false');
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    }
+  }
+
+  // Restore state from localStorage
+  const isSidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+  setSidebarCollapsed(isSidebarCollapsed);
+
+  if (btnSidebarToggle) {
+    btnSidebarToggle.addEventListener('click', () => {
+      const currentlyCollapsed = leftSidebar && leftSidebar.classList.contains('collapsed');
+      setSidebarCollapsed(!currentlyCollapsed);
+    });
+  }
+
+  // Bind tab param from URL on load
+  const initUrlParams = new URLSearchParams(window.location.search);
+  const initialTab = initUrlParams.get('tab');
+  if (initialTab) {
+    switchMainTab(initialTab);
+  }
+
+  // Check login query parameter to show auth modal on load
+  if (initUrlParams.get('login') === 'true') {
+    openAuthModal('login');
+    // Clean up query parameter silently without reloading
+    const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+    window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+  }
+
   // Guidance card setup button
   const btnGotoSettingsInit = document.getElementById('btn-goto-settings-init');
   if (btnGotoSettingsInit) {
@@ -4797,4 +5675,6 @@ document.addEventListener('DOMContentLoaded', () => {
       switchSettingsSubTab('classroom');
     });
   }
+  console.log('TRACE: DOMContentLoaded callback completed successfully!');
 });
+console.log('TRACE: app.js loaded and evaluated completely!');

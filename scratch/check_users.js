@@ -1,6 +1,6 @@
 const fs = require('fs');
-
-const dbPath = "C:\\Users\\박찬규\\.gemini\\antigravity\\scratch\\kfcman-link\\data\\db.json";
+const path = require('path');
+const dbPath = path.join(__dirname, '../data/db.json');
 if (fs.existsSync(dbPath)) {
   const content = fs.readFileSync(dbPath, 'utf8');
   try {
@@ -8,7 +8,10 @@ if (fs.existsSync(dbPath)) {
     if (data.users) {
       console.log("Users inside db.json:");
       Object.keys(data.users).forEach(u => {
-        console.log(`Username: ${u}, Role: ${data.users[u].role}, Password Hash: ${data.users[u].password}`);
+        const user = { ...data.users[u] };
+        delete user.salt;
+        delete user.hash;
+        console.log(u, JSON.stringify(user));
       });
     } else {
       console.log("No users table in db.json.");

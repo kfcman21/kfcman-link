@@ -37,6 +37,87 @@ class Database {
       if (!this.cache.polls) this.cache.polls = {};
       if (!this.cache.classrooms) this.cache.classrooms = {};
       if (!this.cache.walls) this.cache.walls = {};
+      if (!this.cache.walls['TALK']) {
+        const initialTopics = [
+          {
+            title: "교무 행정 자동화 아이디어",
+            desc: "AI(바이브 코딩)를 활용해 엑셀 대량 정산이나 문서 취합 등 행정 업무를 자동화하는 아이디어와 경험을 나눕니다.",
+            welcome: "엑셀 매크로(VBA)나 파이썬 스크립트 작성을 AI에게 시켜 교무 업무 시간을 획기적으로 줄여본 경험이나 아이디어가 있으신가요?"
+          },
+          {
+            title: "나만의 수업 보조 웹앱 만들기",
+            desc: "개발 지식 없이 바이브 코딩으로 수업용 타이머, 영어 단어 카드, 퀴즈 앱 등 교실용 도구를 직접 제작한 후기를 공유합니다.",
+            welcome: "학생들과 직접 수업시간에 쓸 수 있는 단어 매칭 게임이나 랜덤 자리 배치 웹을 1시간 만에 뚝딱 빌드해보셨나요? 팁을 공유해 주세요!"
+          },
+          {
+            title: "생활지도 및 상담 기록 관리",
+            desc: "학생들의 일일 태도 관찰이나 개별 민감 상담을 간편하게 기록하고 통계낼 수 있는 커스텀 기록 도구 아이디어를 교환합니다.",
+            welcome: "구글 스프레드시트와 Apps Script를 바이브 코딩으로 엮어서 학생 맞춤형 상담 일지를 구축해본 노하우나 궁금한 점을 적어주세요."
+          },
+          {
+            title: "행사 일정 및 시간표 자동 매칭",
+            desc: "조건이 까다로운 동아리 선점 신청, 방과후 수업 시수 배정, 체육대회 대진표를 AI로 푸는 자동 매칭 알고리즘 도전을 나눕니다.",
+            welcome: "해마다 복잡하게 얽히는 동아리 배정이나 다목적 행사 시간표 배치를 코딩 초보자로서 AI와 함께 해결해보려 했던 시도가 있으신가요?"
+          },
+          {
+            title: "초보 교사의 바이브 코딩 궁금증",
+            desc: "코딩을 아예 모르는 선생님들이 AI 도구를 활용해 원하는 프로그램을 만들 때 겪는 에러, 한계, 유용한 프롬프트 작성 팁을 묻고 답합니다.",
+            welcome: "AI가 준 코드에 에러가 났을 때 대처법이나, 프롬프트를 어떻게 작성해야 내가 원하는 수업용 도구를 정확히 만들어줄지 편하게 질문해 주세요!"
+          },
+          {
+            title: "학생들과 함께하는 AI/SW 프로젝트",
+            desc: "학생들에게 복잡한 언어 문법 대신 바이브 코딩 개념을 접목하여 스스로 교내 문제를 해결하는 동아리/자율 프로젝트 운영 팁을 공유합니다.",
+            welcome: "학생들이 AI 도구를 활용해 학교 식단 확인기나 학급 건의함 웹페이지를 직접 기획하고 제작하는 프로젝트 사례가 있다면 소개해주세요."
+          }
+        ];
+
+        const cards = {};
+        initialTopics.forEach((topic, idx) => {
+          const cardId = crypto.randomUUID();
+          cards[cardId] = {
+            id: cardId,
+            author: '📢 안내 로봇',
+            title: topic.title,
+            content: topic.desc,
+            bgColor: ['bg-pastel-pink', 'bg-pastel-yellow', 'bg-pastel-blue', 'bg-pastel-green', 'bg-pastel-purple'][idx % 5],
+            image: '',
+            previewUrl: '',
+            previewTitle: '',
+            previewDesc: '',
+            previewImage: '',
+            likes: 0,
+            comments: [
+              {
+                id: crypto.randomUUID(),
+                author: '📢 안내 로봇',
+                text: topic.welcome,
+                likes: 3,
+                createdAt: new Date(Date.now() - 3600000 * (idx + 1)).toISOString()
+              }
+            ],
+            isNotice: false,
+            sectionId: '',
+            attachmentName: '',
+            attachmentData: '',
+            createdAt: new Date(Date.now() - 3600000 * (idx + 2)).toISOString()
+          };
+        });
+
+        this.cache.walls['TALK'] = {
+          id: 'TALK',
+          title: '주제별 광장 톡방',
+          topic: '모두가 함께 의견을 나누는 주제별 소통 광장입니다.',
+          description: '자유롭게 메시지를 보내 공통주제 톡방에 참여해 보세요!',
+          creator: 'system',
+          maxUsers: 0,
+          layout: 'chat',
+          sections: [],
+          createdAt: new Date().toISOString(),
+          cards: cards,
+          members: {}
+        };
+        this.save();
+      }
       if (!this.cache.docs) this.cache.docs = {};
       
       // Initialize default notification settings if missing
@@ -858,7 +939,7 @@ class Database {
 
   // --- COLLABORATIVE WALL MODULE (kfcman-wall) ---
 
-  async createWall(title, description, creator, maxUsers, layout) {
+  async createWall(title, topic, description, creator, maxUsers, layout) {
     if (!this.cache.walls) {
       this.cache.walls = {};
     }
@@ -886,15 +967,7 @@ class Database {
     const maxUsersVal = typeof maxUsers === 'number' ? maxUsers : parseInt(maxUsers) || 0;
     const sections = [];
     if (layout === 'columns') {
-      if (maxUsersVal > 0) {
-        for (let i = 1; i <= maxUsersVal; i++) {
-          sections.push({
-            id: crypto.randomUUID(),
-            name: `${i}번`,
-            createdAt: new Date().toISOString()
-          });
-        }
-      } else {
+      if (maxUsersVal === 0) {
         sections.push({
           id: crypto.randomUUID(),
           name: '섹션 1',
@@ -906,13 +979,15 @@ class Database {
     const newWall = {
       id: wallId,
       title: title || '우리들의 실시간 알림 보드',
+      topic: topic || '',
       description: description || '자유롭게 생각과 피드백을 나눠주세요!',
       creator: creator ? creator.trim().toLowerCase() : 'system',
       maxUsers: maxUsersVal,
-      layout: ['columns', 'rows', 'timeline'].includes(layout) ? layout : 'grid',
+      layout: ['columns', 'rows', 'timeline', 'chat'].includes(layout) ? layout : 'grid',
       sections: sections,
       createdAt: new Date().toISOString(),
-      cards: {}
+      cards: {},
+      members: {}
     };
 
     this.cache.walls[wallId] = newWall;
@@ -925,7 +1000,11 @@ class Database {
       this.cache.walls = {};
     }
     const cleanId = wallId.trim().toUpperCase();
-    return this.cache.walls[cleanId] || null;
+    const wall = this.cache.walls[cleanId] || null;
+    if (wall && !wall.members) {
+      wall.members = {};
+    }
+    return wall;
   }
 
   // --- SECTION CRUD METHODS FOR COLUMNS LAYOUT ---
@@ -1076,11 +1155,143 @@ class Database {
     return true;
   }
 
+  async editWallCard(wallId, cardId, author, title, content, bgColor, image, previewUrl, previewTitle, previewDesc, previewImage, isNotice, sectionId, attachmentName, attachmentData) {
+    const wall = await this.getWall(wallId);
+    if (!wall) throw new Error('존재하지 않는 게시판입니다.');
+
+    const card = wall.cards[cardId];
+    if (!card) throw new Error('존재하지 않는 카드입니다.');
+
+    card.author = (author && author.trim()) ? author.trim() : card.author;
+    card.title = title !== undefined ? String(title || '').trim() : card.title;
+    card.content = content !== undefined ? String(content || '').trim() : card.content;
+    if (bgColor !== undefined) card.bgColor = bgColor;
+    if (image !== undefined) card.image = image;
+    if (previewUrl !== undefined) card.previewUrl = previewUrl;
+    if (previewTitle !== undefined) card.previewTitle = previewTitle;
+    if (previewDesc !== undefined) card.previewDesc = previewDesc;
+    if (previewImage !== undefined) card.previewImage = previewImage;
+    if (isNotice !== undefined) card.isNotice = !!isNotice;
+    if (sectionId !== undefined) card.sectionId = sectionId;
+    if (attachmentName !== undefined) card.attachmentName = attachmentName;
+    if (attachmentData !== undefined) card.attachmentData = attachmentData;
+    
+    card.updatedAt = new Date().toISOString();
+
+    await this.save();
+    return card;
+  }
+
   async clearWall(wallId) {
     const wall = await this.getWall(wallId);
     if (!wall) throw new Error('존재하지 않는 게시판입니다.');
     wall.cards = {};
+    wall.members = {};
+    if (wall.layout === 'columns' && wall.maxUsers > 0) {
+      wall.sections = [];
+    }
     await this.save();
+    return wall;
+  }
+
+  async joinWall(wallId, number, name, emoji, clientUuid) {
+    const wall = await this.getWall(wallId);
+    if (!wall) throw new Error('존재하지 않는 게시판입니다.');
+
+    if (!wall.members) {
+      wall.members = {};
+    }
+
+    const existing = wall.members[number];
+    if (existing && existing.clientUuid !== clientUuid) {
+      throw new Error(`이미 다른 사용자가 선택한 번호(${number}번)입니다.`);
+    }
+
+    for (const num in wall.members) {
+      if (wall.members[num].clientUuid === clientUuid) {
+        const oldNumber = parseInt(num, 10);
+        if (wall.layout === 'columns' && wall.maxUsers > 0) {
+          const sectionName = `${oldNumber}번`;
+          if (wall.sections) {
+            const targetSection = wall.sections.find(s => s.name === sectionName);
+            if (targetSection) {
+              const sectionId = targetSection.id;
+              wall.sections = wall.sections.filter(s => s.id !== sectionId);
+              if (wall.cards) {
+                for (const cardId in wall.cards) {
+                  if (wall.cards[cardId].sectionId === sectionId) {
+                    delete wall.cards[cardId];
+                  }
+                }
+              }
+            }
+          }
+        }
+        delete wall.members[num];
+      }
+    }
+
+    wall.members[number] = {
+      name: (name && name.trim()) ? name.trim() : '이름 없음',
+      emoji: emoji || '😃',
+      clientUuid: clientUuid,
+      joinedAt: new Date().toISOString()
+    };
+
+    if (wall.layout === 'columns' && wall.maxUsers > 0) {
+      const sectionName = `${number}번`;
+      if (!wall.sections) wall.sections = [];
+      let exists = wall.sections.some(s => s.name === sectionName);
+      if (!exists) {
+        wall.sections.push({
+          id: crypto.randomUUID(),
+          name: sectionName,
+          createdAt: new Date().toISOString()
+        });
+        // Sort wall.sections by slot number
+        wall.sections.sort((a, b) => {
+          const matchA = a.name.match(/^(\d+)번$/);
+          const matchB = b.name.match(/^(\d+)번$/);
+          const numA = matchA ? parseInt(matchA[1], 10) : 99999;
+          const numB = matchB ? parseInt(matchB[1], 10) : 99999;
+          return numA - numB;
+        });
+      }
+    }
+
+    await this.save();
+    return wall;
+  }
+
+  async leaveWall(wallId, number, clientUuid) {
+    const wall = await this.getWall(wallId);
+    if (!wall) return null;
+
+    if (wall.members && wall.members[number]) {
+      if (wall.members[number].clientUuid === clientUuid) {
+        delete wall.members[number];
+        
+        if (wall.layout === 'columns' && wall.maxUsers > 0) {
+          const sectionName = `${number}번`;
+          if (wall.sections) {
+            const targetSection = wall.sections.find(s => s.name === sectionName);
+            if (targetSection) {
+              const sectionId = targetSection.id;
+              wall.sections = wall.sections.filter(s => s.id !== sectionId);
+              if (wall.cards) {
+                for (const cardId in wall.cards) {
+                  if (wall.cards[cardId].sectionId === sectionId) {
+                    delete wall.cards[cardId];
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        await this.save();
+      }
+    }
     return wall;
   }
 

@@ -5,6 +5,27 @@ let currentDocData = null;
 let autoSaveTimer = null;
 let localDocPassword = '';
 
+function updateSidebarProfile(username, role) {
+  const sidebarProfileGroup = document.getElementById('sidebar-profile-group');
+  const sidebarGuestGroup = document.getElementById('sidebar-guest-group');
+  const sidebarProfileName = document.getElementById('sidebar-profile-name');
+  const sidebarProfileCircle = document.getElementById('sidebar-profile-circle');
+  
+  if (username) {
+    if (sidebarProfileGroup) sidebarProfileGroup.classList.remove('hidden');
+    if (sidebarGuestGroup) sidebarGuestGroup.classList.add('hidden');
+    if (sidebarProfileName) {
+      sidebarProfileName.textContent = username;
+    }
+    if (sidebarProfileCircle) {
+      sidebarProfileCircle.textContent = username.substring(0, 1).toUpperCase();
+    }
+  } else {
+    if (sidebarProfileGroup) sidebarProfileGroup.classList.add('hidden');
+    if (sidebarGuestGroup) sidebarGuestGroup.classList.remove('hidden');
+  }
+}
+
 // Check URL on startup to see if we should load a specific document
 window.addEventListener('load', () => {
   const pathParts = window.location.pathname.split('/');
@@ -24,11 +45,128 @@ window.addEventListener('load', () => {
   } else {
     document.documentElement.classList.remove('dark');
   }
+
+  // Drag and Drop folder-sharing listeners on Grid
+  const dropZone = document.getElementById('docs-list-grid');
+  const overlay = document.getElementById('drag-drop-overlay');
+
+  if (dropZone) {
+    window.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      if (overlay) {
+        overlay.classList.remove('opacity-0', 'pointer-events-none');
+        overlay.classList.add('opacity-100');
+      }
+    });
+
+    if (overlay) {
+      overlay.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        overlay.classList.add('opacity-0', 'pointer-events-none');
+        overlay.classList.remove('opacity-100');
+      });
+
+      overlay.addEventListener('drop', (e) => {
+        e.preventDefault();
+        overlay.classList.add('opacity-0', 'pointer-events-none');
+        overlay.classList.remove('opacity-100');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          const fakeEvent = { target: { files: files } };
+          handleHwpUpload(fakeEvent);
+        }
+      });
+    }
+  }
+
+  // --- Collapsible Sidebar Event Listeners & State Restoration ---
+  const leftSidebar = document.getElementById('left-sidebar');
+  const btnSidebarToggle = document.getElementById('btn-sidebar-toggle');
+  
+  function setSidebarCollapsed(collapsed) {
+    const mainContent = document.getElementById('main-content');
+    const toggleIcon = document.getElementById('sidebar-toggle-icon');
+    
+    if (leftSidebar) {
+      if (collapsed) {
+        leftSidebar.classList.add('collapsed');
+        if (mainContent) {
+          mainContent.classList.remove('max-w-7xl', 'mx-auto');
+          mainContent.classList.add('max-w-none', 'px-6', 'md:px-10');
+        }
+        if (toggleIcon) {
+          toggleIcon.classList.remove('lucide-chevron-left');
+          toggleIcon.classList.add('lucide-chevron-right');
+          toggleIcon.setAttribute('data-lucide', 'chevron-right');
+        }
+      } else {
+        leftSidebar.classList.remove('collapsed');
+        if (mainContent) {
+          mainContent.classList.add('max-w-7xl', 'mx-auto');
+          mainContent.classList.remove('max-w-none', 'px-6', 'md:px-10');
+        }
+        if (toggleIcon) {
+          toggleIcon.classList.remove('lucide-chevron-right');
+          toggleIcon.classList.add('lucide-chevron-left');
+          toggleIcon.setAttribute('data-lucide', 'chevron-left');
+        }
+      }
+      localStorage.setItem('sidebarCollapsed', collapsed ? 'true' : 'false');
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    }
+  }
+
+  // Restore state from localStorage
+  const isSidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+  setSidebarCollapsed(isSidebarCollapsed);
+
+  if (btnSidebarToggle) {
+    btnSidebarToggle.addEventListener('click', () => {
+      const currentlyCollapsed = leftSidebar && leftSidebar.classList.contains('collapsed');
+      setSidebarCollapsed(!currentlyCollapsed);
+    });
+  }
+
+  // Theme check / toggle from sidebar
+  const themeToggleSidebar = document.getElementById('theme-toggle-btn-sidebar');
+  if (themeToggleSidebar) {
+    themeToggleSidebar.addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+      localStorage.setItem('darkMode', document.documentElement.classList.contains('dark') ? 'enabled' : 'disabled');
+    });
+  }
+
+  // Login / logout sidebar event listeners
+  const btnLogoutSidebar = document.getElementById('btn-logout-sidebar');
+  if (btnLogoutSidebar) {
+    btnLogoutSidebar.addEventListener('click', () => {
+      localStorage.removeItem('kfcman_auth_token');
+      localStorage.removeItem('kfcman_user_role');
+      window.location.href = '/';
+    });
+  }
+
+  const btnLoginSidebar = document.getElementById('btn-login-sidebar');
+  if (btnLoginSidebar) {
+    btnLoginSidebar.addEventListener('click', () => {
+      window.location.href = '/?login=true';
+    });
+  }
 });
 
 // --------------------------------------------------------------------------
 // 🗂️ 1. EXPLORER / SHARE STORAGE MODULE
 // --------------------------------------------------------------------------
+
+// Global state for explorer layout and categories
+let explorerLayout = 'grid'; // 'grid' or 'list'
+let explorerCategory = 'all'; // 'all', 'hwp', 'doc'
+let explorerSearchQuery = '';
+let explorerCurrentFolder = 'KFC_MAN_Sync';
+let allDocumentsCache = [];
 
 // Fetch document list and render
 async function loadExplorer() {
@@ -38,10 +176,9 @@ async function loadExplorer() {
   
   document.getElementById('docs-explorer').classList.remove('hidden');
   document.getElementById('docs-workspace').classList.add('hidden');
-  document.getElementById('docs-limit-banner').classList.remove('hidden');
   
   // Update header and document title
-  document.title = 'KFC MAN-DOCS - 실시간 한글 문서 공유 및 편집 공간';
+  document.title = 'KFCMAN.CLOUD - 실시간 한글 문서 공유 및 동기화 저장소';
   
   const token = localStorage.getItem('kfcman_auth_token') || '';
   const headers = { 'Content-Type': 'application/json' };
@@ -61,14 +198,19 @@ async function loadExplorer() {
         
         // Ensure local storage role is synchronized
         localStorage.setItem('kfcman_user_role', meData.role || 'user');
+        
+        // Update sidebar profile
+        updateSidebarProfile(meData.username, meData.role);
       }
     } else {
       document.getElementById('docs-user-welcome').classList.add('hidden');
+      updateSidebarProfile(null);
     }
     
     if (res.ok) {
-      renderDocsGrid(data.docs);
-      updateLimitProgress(data.docs);
+      allDocumentsCache = data.docs || [];
+      renderExplorer();
+      updateLimitProgress(allDocumentsCache);
     } else {
       showToast('error', data.error || '문서 목록을 불러오지 못했습니다.');
     }
@@ -79,38 +221,150 @@ async function loadExplorer() {
 }
 
 function updateLimitProgress(docs) {
-  const token = localStorage.getItem('kfcman_auth_token');
-  const myDocsCount = docs.filter(d => d.creator === (document.getElementById('docs-username').textContent.replace(' 👑', '').trim().toLowerCase())).length;
+  const usernameElement = document.getElementById('docs-username');
+  const rawUsername = usernameElement ? usernameElement.textContent.replace(' 👑', '').trim().toLowerCase() : '';
+  const myDocsCount = docs.filter(d => d.creator === rawUsername).length;
   
-  document.getElementById('limit-current').textContent = myDocsCount;
-  
-  const progressPercent = Math.min((myDocsCount / 10) * 100, 100);
-  document.getElementById('limit-progress-bar').style.width = `${progressPercent}%`;
+  const usedText = document.getElementById('explorer-used-text');
+  const progress = document.getElementById('explorer-used-progress');
+  if (usedText) usedText.textContent = `사용 중: ${myDocsCount} / 10개`;
+  if (progress) {
+    const percent = Math.min((myDocsCount / 10) * 100, 100);
+    progress.style.width = `${percent}%`;
+  }
 }
 
-function renderDocsGrid(docs) {
-  const grid = document.getElementById('docs-list-grid');
-  const empty = document.getElementById('docs-empty-state');
-  grid.innerHTML = '';
+// Sidebar Category click handlers
+function filterExplorerCategory(cat) {
+  explorerCategory = cat;
   
-  if (!docs || docs.length === 0) {
-    grid.classList.add('hidden');
-    empty.classList.remove('hidden');
+  // Highlight sidebar menus
+  ['all', 'hwp', 'doc'].forEach(c => {
+    const el = document.getElementById(`menu-cat-${c}`);
+    if (el) {
+      if (c === cat) {
+        el.className = 'w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-white/10 text-xs font-black text-slate-955 dark:text-white transition-all text-left';
+      } else {
+        el.className = 'w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-black text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-950 dark:hover:text-white transition-all text-left';
+      }
+    }
+  });
+
+  renderExplorer();
+}
+
+// Tree view Folder select handler
+function changeExplorerFolder(folderName) {
+  explorerCurrentFolder = folderName;
+  const folderDisplay = document.getElementById('current-folder-path-display');
+  if (folderDisplay) folderDisplay.textContent = folderName;
+  
+  showToast('info', `'${folderName}' 폴더 공간으로 성공적으로 이동했습니다.`);
+  renderExplorer();
+}
+
+// Grid vs List Layout Switchers
+function toggleExplorerLayout(mode) {
+  explorerLayout = mode;
+  
+  const gridBtn = document.getElementById('btn-layout-grid');
+  const listBtn = document.getElementById('btn-layout-list');
+  
+  if (mode === 'grid') {
+    gridBtn.className = 'w-8 h-8 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm';
+    listBtn.className = 'w-8 h-8 rounded-lg text-slate-500 dark:text-slate-400 flex items-center justify-center transition-all cursor-pointer';
+  } else {
+    listBtn.className = 'w-8 h-8 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm';
+    gridBtn.className = 'w-8 h-8 rounded-lg text-slate-500 dark:text-slate-400 flex items-center justify-center transition-all cursor-pointer';
+  }
+  
+  renderExplorer();
+}
+
+// Search dynamic keyboard inputs
+function handleExplorerSearch() {
+  const searchInput = document.getElementById('explorer-search-input');
+  explorerSearchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
+  renderExplorer();
+}
+
+// Core Rendering Hub
+function renderExplorer() {
+  // 1. Apply category counts on sidebar indicators
+  const countAll = allDocumentsCache.length;
+  const countHwp = allDocumentsCache.filter(d => d.hasHwpData).length;
+  const countDoc = allDocumentsCache.filter(d => !d.hasHwpData).length;
+  
+  if (document.getElementById('cat-count-all')) document.getElementById('cat-count-all').textContent = countAll;
+  if (document.getElementById('cat-count-hwp')) document.getElementById('cat-count-hwp').textContent = countHwp;
+  if (document.getElementById('cat-count-doc')) document.getElementById('cat-count-doc').textContent = countDoc;
+
+  // 2. Filter cached items based on Category, Folder prefix mockups, and Search text queries
+  let filteredDocs = [...allDocumentsCache];
+  
+  if (explorerCategory === 'hwp') {
+    filteredDocs = filteredDocs.filter(d => d.hasHwpData);
+  } else if (explorerCategory === 'doc') {
+    filteredDocs = filteredDocs.filter(d => !d.hasHwpData);
+  }
+  
+  if (explorerSearchQuery) {
+    filteredDocs = filteredDocs.filter(d => 
+      d.title.toLowerCase().includes(explorerSearchQuery) || 
+      d.creator.toLowerCase().includes(explorerSearchQuery)
+    );
+  }
+
+  // 3. Render either Grid view layout or Table view layout
+  const gridView = document.getElementById('docs-list-grid');
+  const tableWrapper = document.getElementById('docs-list-table-wrapper');
+  const tableBody = document.getElementById('docs-list-table-body');
+  const emptyState = document.getElementById('docs-empty-state');
+  
+  if (filteredDocs.length === 0) {
+    gridView.classList.add('hidden');
+    tableWrapper.classList.add('hidden');
+    emptyState.classList.remove('hidden');
     return;
   }
   
-  grid.classList.remove('hidden');
-  empty.classList.add('hidden');
+  emptyState.classList.add('hidden');
+
+  if (explorerLayout === 'grid') {
+    gridView.classList.remove('hidden');
+    tableWrapper.classList.add('hidden');
+    renderGrid(filteredDocs);
+  } else {
+    tableWrapper.classList.remove('hidden');
+    gridView.classList.add('hidden');
+    renderTable(filteredDocs);
+  }
+}
+
+function renderGrid(docs) {
+  const grid = document.getElementById('docs-list-grid');
+  grid.innerHTML = `
+    <!-- Drag Drop overlay hint -->
+    <div class="absolute inset-0 bg-clay-purple/10 border-4 border-clay-purple rounded-3xl opacity-0 pointer-events-none transition-all flex items-center justify-center z-30" id="drag-drop-overlay">
+      <div class="text-center p-6 bg-white dark:bg-clay-cardDark rounded-2xl border-2 border-clay-purple shadow-lg">
+        <i data-lucide="cloud-lightning" class="w-10 h-10 text-clay-purple mx-auto animate-bounce"></i>
+        <h4 class="font-black text-sm text-slate-800 dark:text-white mt-2">이곳에 파일을 드롭하여 즉시 업로드</h4>
+      </div>
+    </div>
+  `;
   
+  const welcomeElement = document.getElementById('docs-username');
+  const currentUsername = welcomeElement ? welcomeElement.textContent.replace(' 👑', '').trim().toLowerCase() : '';
+  const currentRole = localStorage.getItem('kfcman_user_role') || 'user';
+
   docs.forEach(doc => {
     const dateStr = new Date(doc.updatedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', dateStyle: 'short', timeStyle: 'short' });
-    const isOwner = doc.creator === (document.getElementById('docs-username').textContent.replace(' 👑', '').trim().toLowerCase());
+    const isOwner = doc.creator === currentUsername;
     const isHwp = doc.hasHwpData;
     
     const card = document.createElement('div');
     card.className = 'bg-white dark:bg-clay-cardDark border border-slate-250 dark:border-white/5 rounded-2xl p-4 shadow-sm hover:shadow-md hover:border-slate-350 dark:hover:border-white/20 transition-all flex flex-col justify-between items-center text-center relative group min-h-[190px]';
     
-    // File / Folder Icon representation
     let iconHtml = '';
     if (isHwp) {
       iconHtml = `
@@ -133,10 +387,11 @@ function renderDocsGrid(docs) {
       <div class="absolute top-2 left-2 flex gap-1 z-10">
         ${doc.hasPassword ? '<span class="text-[8px] font-black px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-850 border border-amber-300 dark:bg-amber-950/50 dark:text-amber-400">🔒</span>' : ''}
         ${doc.isPublic ? '<span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400">공개</span>' : '<span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-400">비공개</span>'}
+        <span class="text-[8px] font-black px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-400 flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span> 실시간 저장됨</span>
       </div>
 
       <!-- File Folder Main click wrapper -->
-      <div class="w-full flex-1 flex flex-col items-center justify-center cursor-pointer mt-4" onclick="${isHwp ? `handleRhwpLaunchClick('${doc.id}', event)` : `openDocEditor('${doc.id}')`}">
+      <div class="w-full flex-1 flex flex-col items-center justify-center cursor-pointer mt-4" onclick="${isHwp ? `triggerHwpDownloadDirect('${doc.id}', event)` : `openDocEditor('${doc.id}')`}">
         ${iconHtml}
         
         <h4 class="font-extrabold text-xs text-slate-800 dark:text-slate-200 line-clamp-2 w-full px-1 text-center mt-3 select-none leading-snug break-all" title="${escapeHtml(doc.title)}">
@@ -160,7 +415,7 @@ function renderDocsGrid(docs) {
           <button onclick="shareDocLink('${doc.id}')" class="w-6 h-6 rounded-md border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-850 flex items-center justify-center text-slate-500 hover:text-clay-purple transition-all" title="공유">
             <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
           </button>
-          ${isOwner || (localStorage.getItem('kfcman_auth_token') && ['admin','manager'].includes(localStorage.getItem('kfcman_user_role'))) ? `
+          ${isOwner || ['admin','manager'].includes(currentRole) ? `
             <button onclick="deleteDocConfirm('${doc.id}', event)" class="w-6 h-6 rounded-md border border-rose-200 dark:border-rose-950/60 hover:bg-rose-50 dark:hover:bg-rose-950/20 flex items-center justify-center text-rose-500 transition-all" title="삭제">
               <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
             </button>
@@ -173,6 +428,71 @@ function renderDocsGrid(docs) {
   
   if (window.lucide) window.lucide.createIcons();
 }
+
+function renderTable(docs) {
+  const body = document.getElementById('docs-list-table-body');
+  body.innerHTML = '';
+  
+  const welcomeElement = document.getElementById('docs-username');
+  const currentUsername = welcomeElement ? welcomeElement.textContent.replace(' 👑', '').trim().toLowerCase() : '';
+  const currentRole = localStorage.getItem('kfcman_user_role') || 'user';
+
+  docs.forEach(doc => {
+    const dateStr = new Date(doc.updatedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', dateStyle: 'short', timeStyle: 'short' });
+    const isOwner = doc.creator === currentUsername;
+    const isHwp = doc.hasHwpData;
+    
+    const row = document.createElement('tr');
+    row.className = 'hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer';
+    row.onclick = () => {
+      if (isHwp) triggerHwpDownloadDirect(doc.id);
+      else openDocEditor(doc.id);
+    };
+
+    let iconHtml = isHwp 
+      ? '<i data-lucide="file-text" class="w-4 h-4 text-sky-500 inline mr-2"></i>'
+      : '<i data-lucide="file-edit" class="w-4 h-4 text-clay-purple inline mr-2"></i>';
+
+    row.innerHTML = `
+      <td class="py-3 px-4 flex items-center gap-1 min-w-[200px]">
+        ${iconHtml}
+        <span class="truncate max-w-sm block" title="${escapeHtml(doc.title)}">${escapeHtml(doc.title)}</span>
+        ${doc.hasPassword ? '<span class="text-[9px]">🔒</span>' : ''}
+      </td>
+      <td class="py-3 px-4 text-slate-500">@${doc.creator}</td>
+      <td class="py-3 px-4 text-slate-400">${dateStr}</td>
+      <td class="py-3 px-4 text-center">
+        ${doc.isPublic 
+          ? '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400 text-[9px] font-black">공개</span>' 
+          : '<span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-400 text-[9px] font-black">비공개</span>'}
+      </td>
+      <td class="py-3 px-4 text-right" onclick="event.stopPropagation();">
+        <div class="flex gap-2 justify-end">
+          <button onclick="triggerHwpOverwrite('${doc.id}', event)" class="p-1 border border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 rounded text-sky-500" title="업로드">
+            <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+          </button>
+          <button onclick="shareDocLink('${doc.id}')" class="p-1 border border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900 rounded text-slate-500" title="공유">
+            <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+          </button>
+          ${isOwner || ['admin','manager'].includes(currentRole) ? `
+            <button onclick="deleteDocConfirm('${doc.id}', event)" class="p-1 border border-slate-200 hover:bg-rose-50 dark:border-slate-800 dark:hover:bg-rose-950/20 rounded text-rose-500" title="삭제">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          ` : ''}
+        </div>
+      </td>
+    `;
+    body.appendChild(row);
+  });
+  
+  if (window.lucide) window.lucide.createIcons();
+}
+
+// Bind to window context
+window.filterExplorerCategory = filterExplorerCategory;
+window.changeExplorerFolder = changeExplorerFolder;
+window.toggleExplorerLayout = toggleExplorerLayout;
+window.handleExplorerSearch = handleExplorerSearch;
 
 // --------------------------------------------------------------------------
 // 📝 2. DOCUMENT CREATION & FILE LOADER MODULE
@@ -252,13 +572,12 @@ function handleHwpUpload(e) {
   
   const token = getTokenHelper();
   if (!token) {
-    showToast('error', '로그인 후 한글 파일을 업로드할 수 있습니다.');
+    showToast('error', '로그인(회원가입) 후 한글 파일을 업로드할 수 있습니다.');
     return;
   }
   
   const cleanTitle = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
-  const isHwpx = /\.hwpx$/i.test(file.name);
-  const isHwp = /\.hwp$/i.test(file.name);
+  const isHwpOrHwpx = /\.hwpx$/i.test(file.name) || /\.hwp$/i.test(file.name);
   
   const reader = new FileReader();
   
@@ -269,65 +588,19 @@ function handleHwpUpload(e) {
     };
     
     let payload = {
-      title: cleanTitle,
+      title: file.name,
       isPublic: true
     };
     
-    if (isHwpx) {
-      showToast('info', 'HWPX 압축 구조를 클라이언트 사이드에서 즉시 해석 및 분석합니다...');
-      try {
-        const zip = await JSZip.loadAsync(evt.target.result); // Read as array buffer
-        const xmlFile = zip.file("Contents/section0.xml");
-        
-        let htmlContent = `<h2 style="text-align: center; font-weight: bold; margin-bottom: 24px;">${cleanTitle}</h2>`;
-        
-        if (xmlFile) {
-          const xmlText = await xmlFile.async("text");
-          const parser = new DOMParser();
-          const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-          
-          // Get all paragraphs
-          const paragraphs = xmlDoc.getElementsByTagName("hp:p");
-          if (paragraphs.length > 0) {
-            for (let i = 0; i < paragraphs.length; i++) {
-              const p = paragraphs[i];
-              let pText = "";
-              const texts = p.getElementsByTagName("hp:t");
-              for (let j = 0; j < texts.length; j++) {
-                pText += texts[j].textContent;
-              }
-              if (pText.trim()) {
-                htmlContent += `<p style="margin: 12px 0; line-height: 1.7; font-size: 15px; text-align: justify;">${escapeHtml(pText.trim())}</p>`;
-              }
-            }
-          } else {
-            // Fallback tags
-            const tags = xmlDoc.getElementsByTagName("p");
-            for (let i = 0; i < tags.length; i++) {
-              htmlContent += `<p style="margin: 12px 0; line-height: 1.7; font-size: 15px; text-align: justify;">${escapeHtml(tags[i].textContent.trim())}</p>`;
-            }
-          }
-        } else {
-          htmlContent += `<p style="color: red; font-weight: bold;">HWPX 파일 분석 오류: Contents/section0.xml을 찾을 수 없습니다.</p>`;
-        }
-        
-        payload.content = htmlContent;
-        payload.hasHwpData = false; 
-        
-      } catch (err) {
-        console.error("HWPX Parser error:", err);
-        showToast('error', 'HWPX 파서 기동 실패. 표준 업로드로 대체합니다.');
-        return;
-      }
-    } else if (isHwp) {
+    if (isHwpOrHwpx) {
       payload.title = file.name;
       payload.content = `<div class="p-6 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl text-center space-y-4 my-8">
         <div class="w-12 h-12 rounded-xl border border-violet-200 dark:border-violet-900 bg-violet-100 dark:bg-violet-950 text-clay-purple flex items-center justify-center mx-auto shadow-sm">
           <i data-lucide="file-text" class="w-6 h-6"></i>
         </div>
-        <h4 class="font-black text-sm text-slate-800 dark:text-white">한글 HWP 바이너리 문서 보관중</h4>
+        <h4 class="font-black text-sm text-slate-800 dark:text-white">실시간 동기화용 한글 HWP 문서</h4>
         <p class="text-[10px] text-slate-500 leading-normal max-w-xs mx-auto">
-          본 파일은 구형 바이너리 HWP 규격입니다. 온라인에서 공동 편집을 원하시면 현대식 <b>HWPX 규격</b>으로 저장하여 올려주시거나, 아래 <b>[새 HWP 버전 덮어쓰기 업로드]</b>로 텍스트/HTML 형식을 입혀 실시간 협업에 참여하세요!
+          본 문서는 내 PC 한글 프로그램과 웹 클라우드 보관함 간 실시간 파일 동기화를 진행하는 바이너리 한글 파일입니다.
         </p>
       </div>`;
       
@@ -335,6 +608,7 @@ function handleHwpUpload(e) {
       base64Reader.onload = async function(bEvt) {
         payload.hwpData = bEvt.target.result;
         payload.hwpName = file.name;
+        payload.hasHwpData = true;
         
         try {
           const res = await fetch('/api/docs', {
@@ -343,19 +617,18 @@ function handleHwpUpload(e) {
             body: JSON.stringify(payload)
           });
           if (res.ok) {
-            showToast('success', `${file.name} 구형 문서를 클라우드 보관함에 성공적으로 백업 완료했습니다!`);
+            showToast('success', `${file.name} 한글 문서를 클라우드 보관함에 성공적으로 동기화 업로드했습니다!`);
             loadExplorer();
+          } else {
+            const errData = await res.json();
+            showToast('error', errData.error || '업로드 실패');
           }
         } catch (err) {
           showToast('error', '업로드 실패');
         }
       };
       
-      const fileReaderForHwp = new FileReader();
-      fileReaderForHwp.onload = function(hEvt) {
-        base64Reader.readAsDataURL(file);
-      };
-      fileReaderForHwp.readAsArrayBuffer(file);
+      base64Reader.readAsDataURL(file);
       return;
     } else {
       const contentText = evt.target.result;
@@ -377,7 +650,7 @@ function handleHwpUpload(e) {
       });
       const data = await res.json();
       if (res.ok) {
-        showToast('success', `${file.name} 파일을 해석하여 실시간 공유 협업 한글 문서로 완벽하게 변환 및 로드했습니다!`);
+        showToast('success', `${file.name} 텍스트 파일을 변환 및 로드했습니다!`);
         openDocEditor(data.id);
       } else {
         showToast('error', data.error || '문서 생성 실패');
@@ -387,9 +660,7 @@ function handleHwpUpload(e) {
     }
   };
   
-  if (isHwpx) {
-    reader.readAsArrayBuffer(file);
-  } else if (isHwp) {
+  if (isHwpOrHwpx) {
     reader.readAsArrayBuffer(file);
   } else {
     reader.readAsText(file);
@@ -448,7 +719,6 @@ async function fetchAndLoadDoc() {
         hwpIframe.classList.add('hidden');
         hwpIframe.src = '';
       }
-      }
       
       // Load title and content
       document.getElementById('doc-title-input').value = data.title;
@@ -477,7 +747,7 @@ async function fetchAndLoadDoc() {
       buildHistoryList(data.history || []);
       
       // Document title updates
-      document.title = `${data.title} | KFC MAN-DOCS`;
+      document.title = `${data.title} | KFCMAN.CLOUD`;
       
       // Setup Auto-save interval (every 5 seconds)
       if (autoSaveTimer) clearInterval(autoSaveTimer);
@@ -634,7 +904,7 @@ async function saveCurrentDoc() {
       }
       
       // Update global title
-      document.title = `${data.title} | KFC MAN-DOCS`;
+      document.title = `${data.title} | KFCMAN.CLOUD`;
     } else {
       const errData = await res.json();
       showToast('error', errData.error || '문서 저장 실패');
@@ -945,15 +1215,17 @@ function triggerHwpDownload(docId, event) {
   showToast('success', '온라인 한글 웹에디터로 문서를 즉시 엽니다. (저장 팝업 없음)');
 }
 
+function triggerHwpDownloadDirect(docId, event) {
+  if (event) event.stopPropagation();
+  const token = getTokenHelper();
+  window.location.href = `/api/docs/${docId}/download?token=${token}`;
+  showToast('success', '클라우드 한글 바이너리 파일을 즉시 로컬로 내려받습니다.');
+}
+
 async function triggerHwpOverwrite(docId, event) {
   if (event) event.stopPropagation();
   
   const token = getTokenHelper();
-  if (!token) {
-    showToast('error', '로그인 후 문서를 업데이트할 수 있습니다.');
-    return;
-  }
-  
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = '.hwp,.hwpx';
@@ -967,14 +1239,15 @@ async function triggerHwpOverwrite(docId, event) {
     const reader = new FileReader();
     reader.onload = async (evt) => {
       const base64Data = evt.target.result;
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (token) headers['x-kfcman-auth'] = token;
       
       try {
         const res = await fetch(`/api/docs/${docId}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-kfcman-auth': token
-          },
+          headers,
           body: JSON.stringify({
             title: file.name,
             hwpData: base64Data,
@@ -1010,6 +1283,7 @@ async function triggerHwpOverwrite(docId, event) {
 }
 
 // Bind to window context
+window.triggerHwpDownloadDirect = triggerHwpDownloadDirect;
 window.triggerHwpDownload = triggerHwpDownload;
 window.triggerHwpOverwrite = triggerHwpOverwrite;
 window.handleRhwpLaunchClick = handleRhwpLaunchClick;
