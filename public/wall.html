@@ -788,6 +788,9 @@
               </h3>
             </div>
             <div class="flex items-center gap-1.5 flex-shrink-0">
+              <button id="btn-chat-ai-rooms" class="w-7 h-7 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 flex items-center justify-center text-slate-500 hover:text-purple-650 dark:hover:text-purple-400 transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-850 hidden" title="AI로 주제 자동 추천/개설">
+                <i data-lucide="sparkles" class="w-4 h-4 text-purple-500"></i>
+              </button>
               <button id="btn-chat-create-room" class="w-7 h-7 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 flex items-center justify-center text-slate-500 hover:text-yellow-650 dark:hover:text-yellow-400 transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-850" title="수동으로 주제 톡방 개설">
                 <i data-lucide="plus" class="w-4 h-4"></i>
               </button>
@@ -1074,6 +1077,41 @@
         <button type="submit" class="w-full btn py-3 text-base font-black border-2 border-slate-900 dark:border-white rounded-2xl bg-clay-purple text-white hover:bg-violet-600 shadow-clay-flat transition-all cursor-pointer flex items-center justify-center gap-1.5">
           <i data-lucide="check-circle" class="w-5 h-5"></i>
           <span>입장하기</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- AI Topic Generation Modal -->
+  <div id="ai-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-clay-cardDark border-4 border-purple-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-clay-flat-lg transform transition-all duration-300 scale-95 opacity-0 text-left" id="ai-modal-content">
+      <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-slate-800 pb-3 mb-4 flex-shrink-0">
+        <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-1.5"><i data-lucide="sparkles" class="text-purple-500"></i> <span>AI 주제 톡방 자동 생성</span></h3>
+        <button id="btn-close-ai-modal" class="w-8 h-8 rounded-lg border-2 border-slate-300 hover:border-slate-900 dark:border-slate-700 dark:hover:border-white flex items-center justify-center text-slate-400 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="ai-generate-form" class="space-y-4">
+        <!-- Gemini API Key configuration field -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-black text-slate-500 dark:text-slate-400">Gemini API Key 등록 (최초 1회)</label>
+          <div class="flex gap-2">
+            <input type="password" id="ai-api-key-input" placeholder="Google Gemini API Key 입력" class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-805 dark:text-white focus:outline-none">
+            <button type="button" id="btn-save-api-key" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border-2 border-slate-200 dark:border-slate-800 rounded-xl text-xs font-black transition-colors cursor-pointer whitespace-nowrap">저장</button>
+          </div>
+          <p class="text-[9px] font-bold text-slate-400 mt-1">🔑 API 키가 없으시면 Google AI Studio에서 무료로 발급받으실 수 있습니다.</p>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-xs font-black text-slate-500 dark:text-slate-400">AI에게 요청할 대주제 (프롬프트)</label>
+          <textarea id="ai-prompt-input" rows="3" required placeholder="예시: 학교에서 교사에게 발생하는 업무 중에서 여러가지 주제를 제시해줘" class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-805 dark:text-white focus:outline-none resize-none"></textarea>
+          <p class="text-[9px] font-bold text-slate-400 mt-1">💡 작성해주신 문맥을 바탕으로 AI가 대표적인 톡방 주제들(이모지, 설명 포함)을 자동 설계하여 바로 개설해 줍니다.</p>
+        </div>
+
+        <button type="submit" id="btn-ai-generate-submit" class="w-full btn py-3 text-sm font-black border-2 border-slate-900 dark:border-white rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-clay-flat transition-all cursor-pointer flex items-center justify-center gap-1.5">
+          <i data-lucide="sparkles" class="w-5 h-5 animate-pulse"></i>
+          <span>주제 생성 및 개설하기</span>
         </button>
       </form>
     </div>

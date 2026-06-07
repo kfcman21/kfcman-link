@@ -694,6 +694,184 @@ app.post('/api/admin/notifications/test', authenticate, requireAdmin, async (req
   }
 });
 
+// Endpoint: Check Gemini API Key configuration status (Admin Only)
+app.get('/api/admin/config/gemini', authenticate, requireAdmin, (req, res) => {
+  try {
+    const configPath = path.join(__dirname, 'config.json');
+    let hasKey = false;
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (config.geminiApiKey) {
+        hasKey = true;
+      }
+    }
+    return res.status(200).json({ hasKey });
+  } catch (err) {
+    console.error('Error reading Gemini API key config:', err);
+    return res.status(500).json({ error: 'Gemini API 키 설정을 확인하는 데 실패했습니다.' });
+  }
+});
+
+// Endpoint: Update Gemini API Key (Admin Only)
+app.post('/api/admin/config/gemini', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const { apiKey } = req.body;
+    if (!apiKey || apiKey.trim() === '') {
+      return res.status(400).json({ error: '올바른 API Key를 입력해 주세요.' });
+    }
+
+    const configPath = path.join(__dirname, 'config.json');
+    let config = {};
+    if (fs.existsSync(configPath)) {
+      config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    }
+    config.geminiApiKey = apiKey.trim();
+    fs.writeFileSync(configPath, JSON.stringify(config), 'utf8');
+
+    return res.status(200).json({ message: 'Gemini API Key가 안전하게 저장되었습니다.' });
+  } catch (err) {
+    console.error('Error saving Gemini API key:', err);
+    return res.status(500).json({ error: 'Gemini API 키를 저장하는 데 실패했습니다.' });
+  }
+});
+
+// Endpoint: Generate AI topics using Google Gemini API (Admin Only)
+app.post('/api/admin/generate-topics', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const { wallId, prompt } = req.body;
+    if (!wallId || !prompt || prompt.trim() === '') {
+      return res.status(400).json({ error: '게시판 ID와 프롬프트 내용을 모두 입력해 주세요.' });
+    }
+
+    // 1. Get stored API key
+    const configPath = path.join(__dirname, 'config.json');
+    let apiKey = '';
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (config.geminiApiKey) {
+        apiKey = config.geminiApiKey;
+      }
+    }
+
+    if (!apiKey) {
+      return res.status(400).json({ error: 'Gemini API Key가 등록되지 않았습니다. 먼저 API Key를 등록해 주세요.' });
+    }
+
+    // 2. Build Gemini API Call
+    const https = require('https');
+    
+    // System instruction prompt to enforce clean JSON output
+    const systemPrompt = `You are a teacher's professional AI brainstorming assistant.
+Your goal is to help brainstorm topic chatrooms for a school board based on this request: "${prompt}".
+Please generate exactly 5-6 distinct topic chatroom ideas.
+For each topic, provide:
+1. "title": A very short title in Korean (under 8 characters, e.g. "행정업무", "생활지도", "수업혁신", "동아리").
+2. "description": A short explanation of the room's purpose in Korean (1-2 sentences).
+3. "emoji": A single representative emoji (e.g. 📝, 🏫, 🎨).
+
+Return ONLY a valid JSON object matching this exact schema:
+{
+  "topics": [
+    {
+      "title": "...",
+      "description": "...",
+      "emoji": "..."
+    }
+  ]
+}
+
+Ensure the response contains absolutely NO markdown, NO code fences (like \`\`\`json), NO leading/trailing text, and is pure parseable JSON.`;
+
+    const requestBody = JSON.stringify({
+      contents: [{
+        parts: [{ text: systemPrompt }]
+      }]
+    });
+
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+    const callGemini = () => {
+      return new Promise((resolve, reject) => {
+        const reqObj = https.request(geminiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(requestBody)
+          }
+        }, (resp) => {
+          let data = '';
+          resp.on('data', chunk => data += chunk);
+          resp.on('end', () => {
+            if (resp.statusCode >= 200 && resp.statusCode < 300) {
+              resolve(data);
+            } else {
+              reject(new Error(`Gemini API returned status ${resp.statusCode}: ${data}`));
+            }
+          });
+        });
+        
+        reqObj.on('error', reject);
+        reqObj.write(requestBody);
+        reqObj.end();
+      });
+    };
+
+    const apiResponse = await callGemini();
+    const parsedResponse = JSON.parse(apiResponse);
+    
+    let textResponse = '';
+    if (parsedResponse.candidates && parsedResponse.candidates[0] && parsedResponse.candidates[0].content && parsedResponse.candidates[0].content.parts[0]) {
+      textResponse = parsedResponse.candidates[0].content.parts[0].text.trim();
+    }
+    
+    if (!textResponse) {
+      throw new Error('Gemini API returned an empty response.');
+    }
+
+    // Clean JSON response (strip markdown fences if Gemini ignored system prompt)
+    let jsonText = textResponse;
+    if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/^```json\s*/, '').replace(/```$/, '').trim();
+    }
+
+    const resultObj = JSON.parse(jsonText);
+    if (!resultObj.topics || !Array.isArray(resultObj.topics)) {
+      throw new Error('Invalid JSON format returned from Gemini.');
+    }
+
+    // 3. Create cards automatically in database
+    const createdCards = [];
+    for (const t of resultObj.topics) {
+      const title = `${t.emoji || '💬'} ${t.title}`;
+      const content = t.description;
+      const card = await db.addWallCard(
+        wallId, 
+        'AI추천✨', 
+        title, 
+        content, 
+        'bg-pastel-blue', 
+        '', '', '', '', '', 
+        false, 
+        ''
+      );
+      createdCards.push(card);
+    }
+
+    // 4. Send SSE update
+    broadcastWallUpdate(wallId);
+
+    return res.status(200).json({
+      message: `${createdCards.length}개의 주제 톡방이 생성되었습니다.`,
+      topics: createdCards
+    });
+
+  } catch (err) {
+    console.error('Error generating AI topics:', err);
+    return res.status(500).json({ error: `AI 주제 생성 실패: ${err.message}` });
+  }
+});
+
+
 // --------------------------------------------------------------------------
 // URL SHORTENER APIs (Protected by Authenticate Middleware)
 // --------------------------------------------------------------------------

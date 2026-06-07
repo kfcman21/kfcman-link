@@ -2470,12 +2470,21 @@ function initWall() {
     const chatRoomsList = document.getElementById('chat-rooms-list');
     const chatRoomsCount = document.getElementById('chat-rooms-count');
     const btnChatCreateRoom = document.getElementById('btn-chat-create-room');
+    const btnChatAiRooms = document.getElementById('btn-chat-ai-rooms');
     
+    const isAdmin = isBoardAdmin();
     if (btnChatCreateRoom) {
-      if (isBoardAdmin()) {
+      if (isAdmin) {
         btnChatCreateRoom.classList.remove('hidden');
       } else {
         btnChatCreateRoom.classList.add('hidden');
+      }
+    }
+    if (btnChatAiRooms) {
+      if (isAdmin) {
+        btnChatAiRooms.classList.remove('hidden');
+      } else {
+        btnChatAiRooms.classList.add('hidden');
       }
     }
     
@@ -2876,6 +2885,145 @@ function initWall() {
       }
     });
   }
+
+  // --- AI Sparkle Modal handlers ---
+  const btnChatAiRooms = document.getElementById('btn-chat-ai-rooms');
+  const aiModal = document.getElementById('ai-modal');
+  const aiModalContent = document.getElementById('ai-modal-content');
+  const btnCloseAiModal = document.getElementById('btn-close-ai-modal');
+  const aiGenerateForm = document.getElementById('ai-generate-form');
+  const aiApiKeyInput = document.getElementById('ai-api-key-input');
+  const btnSaveApiKey = document.getElementById('btn-save-api-key');
+  const aiPromptInput = document.getElementById('ai-prompt-input');
+  const btnAiGenerateSubmit = document.getElementById('btn-ai-generate-submit');
+
+  const closeAiModal = () => {
+    if (aiModal) {
+      if (aiModalContent) {
+        aiModalContent.classList.add('scale-95', 'opacity-0');
+        aiModalContent.classList.remove('scale-100', 'opacity-100');
+      }
+      setTimeout(() => {
+        aiModal.classList.add('hidden');
+      }, 150);
+    }
+  };
+
+  if (btnChatAiRooms && aiModal) {
+    btnChatAiRooms.addEventListener('click', async () => {
+      // Open AI Modal
+      aiModal.classList.remove('hidden');
+      setTimeout(() => {
+        if (aiModalContent) {
+          aiModalContent.classList.remove('scale-95', 'opacity-0');
+          aiModalContent.classList.add('scale-100', 'opacity-100');
+        }
+      }, 50);
+
+      // Check key configuration status on server
+      try {
+        const token = localStorage.getItem('kfcman_auth_token');
+        const headers = {};
+        if (token) headers['X-KFCMan-Auth'] = token;
+        
+        const res = await fetch('/api/admin/config/gemini', { headers });
+        if (res.ok) {
+          const status = await res.json();
+          if (status.hasKey) {
+            aiApiKeyInput.placeholder = '🔑 API Key가 이미 등록되어 있습니다.';
+            aiApiKeyInput.value = '';
+          } else {
+            aiApiKeyInput.placeholder = 'Google Gemini API Key 입력';
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch Gemini API status', e);
+      }
+    });
+  }
+
+  if (btnCloseAiModal) {
+    btnCloseAiModal.addEventListener('click', closeAiModal);
+  }
+
+  if (btnSaveApiKey && aiApiKeyInput) {
+    btnSaveApiKey.addEventListener('click', async () => {
+      const apiKey = aiApiKeyInput.value.trim();
+      if (!apiKey) {
+        alert('API Key를 입력해 주세요.');
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('kfcman_auth_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['X-KFCMan-Auth'] = token;
+
+        const res = await fetch('/api/admin/config/gemini', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({ apiKey })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'API Key 저장 실패');
+        }
+
+        alert('Gemini API Key가 성공적으로 저장되었습니다!');
+        aiApiKeyInput.value = '';
+        aiApiKeyInput.placeholder = '🔑 API Key가 이미 등록되어 있습니다.';
+      } catch (e) {
+        alert(e.message);
+      }
+    });
+  }
+
+  if (aiGenerateForm) {
+    aiGenerateForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const prompt = aiPromptInput.value.trim();
+      if (!prompt) return;
+
+      const originalBtnHtml = btnAiGenerateSubmit.innerHTML;
+      btnAiGenerateSubmit.disabled = true;
+      btnAiGenerateSubmit.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> <span>주제 분석 및 톡방 생성 중...</span>`;
+      if (window.lucide) window.lucide.createIcons();
+
+      try {
+        const token = localStorage.getItem('kfcman_auth_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['X-KFCMan-Auth'] = token;
+
+        const res = await fetch('/api/admin/generate-topics', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({
+            wallId: boardId,
+            prompt: prompt
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || '주제 생성 실패');
+        }
+
+        const data = await res.json();
+        alert(data.message || 'AI 주제 톡방이 생성되었습니다.');
+        closeAiModal();
+        aiPromptInput.value = '';
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btnAiGenerateSubmit.disabled = false;
+        btnAiGenerateSubmit.innerHTML = originalBtnHtml;
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
+  }
+}
 }
 
 // Robust, race-condition-free initialization
