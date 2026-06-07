@@ -2894,8 +2894,42 @@ function initWall() {
   const aiGenerateForm = document.getElementById('ai-generate-form');
   const aiApiKeyInput = document.getElementById('ai-api-key-input');
   const btnSaveApiKey = document.getElementById('btn-save-api-key');
+  const btnTestApiKey = document.getElementById('btn-test-api-key');
   const aiPromptInput = document.getElementById('ai-prompt-input');
   const btnAiGenerateSubmit = document.getElementById('btn-ai-generate-submit');
+
+  if (btnTestApiKey && aiApiKeyInput) {
+    btnTestApiKey.addEventListener('click', async () => {
+      const apiKey = aiApiKeyInput.value.trim();
+      
+      const originalText = btnTestApiKey.textContent;
+      btnTestApiKey.disabled = true;
+      btnTestApiKey.textContent = '테스트 중...';
+
+      try {
+        const token = localStorage.getItem('kfcman_auth_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['X-KFCMan-Auth'] = token;
+
+        const res = await fetch('/api/admin/config/gemini/test', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({ apiKey })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || '연결 실패');
+        }
+        alert(data.message || '연결 성공! Gemini API 키가 유효합니다.');
+      } catch (e) {
+        alert(e.message);
+      } finally {
+        btnTestApiKey.disabled = false;
+        btnTestApiKey.textContent = originalText;
+      }
+    });
+  }
 
   const closeAiModal = () => {
     if (aiModal) {

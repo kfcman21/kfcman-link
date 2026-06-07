@@ -1,0 +1,8 @@
+const fs = require('fs');
+const content = fs.readFileSync('C:\\Users\\박찬규\\.gemini\\antigravity\\scratch\\kfcman-link\\www\\index.html', 'utf8');
+const lines = content.split('\n');
+lines.forEach((line, idx) => {
+  if (line.includes('modal-overlay') || line.includes('fixed inset-0')) {
+    console.log(`${idx+1}: ${line.trim()}`);
+  }
+});

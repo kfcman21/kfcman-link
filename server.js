@@ -735,6 +735,72 @@ app.post('/api/admin/config/gemini', authenticate, requireAdmin, async (req, res
   }
 });
 
+// Endpoint: Test Gemini API Key connection (Admin Only)
+app.post('/api/admin/config/gemini/test', authenticate, requireAdmin, async (req, res) => {
+  try {
+    let { apiKey } = req.body;
+    
+    // If apiKey is not provided in body, fall back to saved key
+    if (!apiKey || apiKey.trim() === '') {
+      const configPath = path.join(__dirname, 'config.json');
+      if (fs.existsSync(configPath)) {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        if (config.geminiApiKey) {
+          apiKey = config.geminiApiKey;
+        }
+      }
+    }
+
+    if (!apiKey || apiKey.trim() === '') {
+      return res.status(400).json({ error: 'API 키가 입력되지 않았거나 저장되어 있지 않습니다.' });
+    }
+
+    apiKey = apiKey.trim();
+
+    const https = require('https');
+    const requestBody = JSON.stringify({
+      contents: [{
+        parts: [{ text: 'Return only the word "OK".' }]
+      }]
+    });
+
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+    const testCall = () => {
+      return new Promise((resolve, reject) => {
+        const reqObj = https.request(geminiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(requestBody)
+          }
+        }, (resp) => {
+          let data = '';
+          resp.on('data', chunk => data += chunk);
+          resp.on('end', () => {
+            if (resp.statusCode >= 200 && resp.statusCode < 300) {
+              resolve(data);
+            } else {
+              reject(new Error(`API Error (Status ${resp.statusCode}): ${data}`));
+            }
+          });
+        });
+        
+        reqObj.on('error', reject);
+        reqObj.write(requestBody);
+        reqObj.end();
+      });
+    };
+
+    await testCall();
+    return res.status(200).json({ message: '연결 성공! Gemini API 키가 유효합니다.' });
+  } catch (err) {
+    console.error('Error testing Gemini API key:', err);
+    return res.status(500).json({ error: `연결 실패: ${err.message}` });
+  }
+});
+
+
 // Endpoint: Generate AI topics using Google Gemini API (Admin Only)
 app.post('/api/admin/generate-topics', authenticate, requireAdmin, async (req, res) => {
   try {

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>테트리스 배틀로얄 - 50인 멀티플레이어</title>
+  <!-- Google Fonts for premium retro-futuristic styling -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Neon Background Grid -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <!-- ========================================== -->
+  <!-- 0. LOGIN SCREEN (로그인 화면)              -->
+  <!-- ========================================== -->
+  <div class="login-container" id="login-screen">
+    <div class="login-card glass-panel-neon">
+      <div class="login-header">
+        <h1>TETRIS <span class="highlight">BATTLE</span></h1>
+        <div class="subtitle">50인 실시간 멀티플레이어 아레나</div>
+      </div>
+      
+      <div class="login-tabs">
+        <button id="tab-participant" class="tab-btn active">참가자 접속</button>
+        <button id="tab-admin" class="tab-btn">관리자 로그인</button>
+      </div>
+
+      <!-- Participant Login Form -->
+      <form id="participant-login-form" class="login-form">
+        <div class="form-group">
+          <label for="nickname-input-login">닉네임</label>
+          <input type="text" id="nickname-input-login" placeholder="게임에서 사용할 닉네임 입력..." maxlength="12" required />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">아레나 입장하기</button>
+      </form>
+
+      <!-- Admin Login Form -->
+      <form id="admin-login-form" class="login-form hidden">
+        <div class="form-group">
+          <label for="admin-username-login">관리자 ID</label>
+          <input type="text" id="admin-username-login" placeholder="관리자 ID 입력..." maxlength="15" />
+        </div>
+        <div class="form-group">
+          <label for="admin-password-login">비밀번호</label>
+          <div class="password-input-wrap" style="position: relative; display: flex; width: 100%;">
+            <input type="password" id="admin-password-login" placeholder="비밀번호 입력..." style="width: 100%; padding-right: 46px;" />
+            <button type="button" id="toggle-pw-btn" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.15rem; padding: 4px 8px; line-height: 1;">👁️</button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-spectate btn-block">관리자 권한 로그인</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 1. PARTICIPANT VIEW (참가자 화면)          -->
+  <!-- ========================================== -->
+  <div class="app-container hidden" id="participant-view">
+    <!-- Header -->
+    <header>
+      <div class="logo">
+        <h1>TETRIS <span class="highlight">BATTLE</span></h1>
+        <div class="subtitle">50인 실시간 멀티플레이어 아레나</div>
+      </div>
+      <div class="game-status">
+        <span class="status-badge" id="status-badge">대기실</span>
+        <span class="player-count">
+          <span id="online-count">0</span>명 접속 중 
+          (<span id="spectators-count">0</span>명 관전 중)
+        </span>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <!-- Left Column: Lobby / Ready / Nickname -->
+      <aside class="sidebar-left">
+        <div class="panel glass-panel" id="lobby-panel">
+          <h2 class="panel-title">내 정보</h2>
+          <div class="identity-settings" style="flex-direction: column; gap: 8px;">
+            <div class="profile-display" style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 4px 0;">
+              <span style="color: var(--text-muted); font-size: 0.9rem;">내 닉네임:</span>
+              <span id="my-nickname-display" style="color: #fff; font-weight: 700; font-family: 'Orbitron', sans-serif; font-size: 1.05rem;">-</span>
+            </div>
+          </div>
+          <div class="ready-container" style="display: flex; flex-direction: column; gap: 8px; padding: 12px 15px 12px 15px; border-top: 1px solid rgba(255,255,255,0.04);">
+            <button id="ready-btn" class="btn btn-ready">게임 준비 완료</button>
+          </div>
+        </div>
+
+        <!-- Real-time Leaderboard -->
+        <div class="panel glass-panel">
+          <h2 class="panel-title">실시간 순위표</h2>
+          <div class="leaderboard-list" id="leaderboard-list">
+            <div class="empty-state">진행된 경기 결과가 없습니다.</div>
+          </div>
+        </div>
+
+        <!-- Chat Panel -->
+        <div class="panel glass-panel chat-panel">
+          <h2 class="panel-title">대기실 채팅</h2>
+          <div class="chat-messages" id="chat-messages"></div>
+          <form id="chat-form" class="chat-form">
+            <input type="text" id="chat-input" placeholder="메시지 입력..." maxlength="80" autocomplete="off" />
+            <button type="submit" class="btn btn-send">전송</button>
+          </form>
+        </div>
+      </aside>
+
+      <!-- Center Column: Primary Gameplay Arena -->
+      <main class="game-area">
+        <!-- Big Game Over/Finished overlay -->
+        <div class="overlay hidden" id="game-overlay">
+          <div class="overlay-content">
+            <h2 id="overlay-title">게임 오버</h2>
+            <p id="overlay-subtitle">다음 라운드가 시작될 때까지 기다려 주세요...</p>
+            <div id="overlay-stats"></div>
+          </div>
+        </div>
+
+        <div class="arena-grid" id="arena-grid">
+          <!-- Hold Piece Container -->
+          <div class="hold-container">
+            <div class="panel-header-sub">보관 (HOLD)</div>
+            <div class="hold-box glass-panel-dark">
+              <canvas id="hold-canvas" width="80" height="80"></canvas>
+            </div>
+            
+            <div class="stats-box glass-panel-dark">
+              <div class="stat-group">
+                <span class="stat-label">점수 (SCORE)</span>
+                <span class="stat-value" id="score-val">000,000</span>
+              </div>
+              <div class="stat-group">
+                <span class="stat-label">제거한 줄 (LINES)</span>
+                <span class="stat-value" id="lines-val">0</span>
+              </div>
+              <div class="stat-group">
+                <span class="stat-label">레벨 (LEVEL)</span>
+                <span class="stat-value" id="level-val">1</span>
+              </div>
+              <div class="stat-group">
+                <span class="stat-label">KO 횟수 (KOs)</span>
+                <span class="stat-value highlight" id="kos-val">0</span>
+              </div>
+            </div>
+
+            <!-- Controls Help Panel -->
+            <div class="controls-panel glass-panel-dark">
+              <div class="controls-title">조작 방법</div>
+              <div class="control-row"><span>← / →</span><span>이동</span></div>
+              <div class="control-row"><span>↑ / X</span><span>시계 회전</span></div>
+              <div class="control-row"><span>Z</span><span>반시계 회전</span></div>
+              <div class="control-row"><span>↓</span><span>소프트 드롭</span></div>
+              <div class="control-row"><span>Space</span><span>하드 드롭</span></div>
+              <div class="control-row"><span>C / Shift</span><span>블록 보관</span></div>
+            </div>
+          </div>
+
+          <!-- Main Canvas Viewport -->
+          <div class="viewport-container" style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+            <div style="display: flex; gap: 12px;">
+              <div class="garbage-gauge-wrapper">
+                <div class="garbage-gauge" id="garbage-gauge"></div>
+              </div>
+              <div class="canvas-wrapper glass-panel-neon">
+                <canvas id="tetris-canvas" width="300" height="600"></canvas>
+              </div>
+            </div>
+
+            <!-- Mobile Gamepad Touch Controls -->
+            <div id="mobile-gamepad" class="mobile-gamepad-container">
+              <div class="gamepad-row">
+                <button id="btn-touch-left" class="gamepad-btn">◀</button>
+                <button id="btn-touch-softdrop" class="gamepad-btn">▼</button>
+                <button id="btn-touch-right" class="gamepad-btn">▶</button>
+              </div>
+              <div class="gamepad-row" style="margin-top: 10px;">
+                <button id="btn-touch-ccw" class="gamepad-btn">↺</button>
+                <button id="btn-touch-cw" class="gamepad-btn">↻</button>
+                <button id="btn-touch-harddrop" class="gamepad-btn">⏬</button>
+                <button id="btn-touch-hold" class="gamepad-btn">⇄</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Next Queue Preview Column -->
+          <div class="next-container">
+            <div class="panel-header-sub">다음 블록 (NEXT)</div>
+            <div class="next-box glass-panel-dark">
+              <canvas id="next-canvas" width="80" height="240"></canvas>
+            </div>
+
+            <!-- Audio control panel -->
+            <div class="audio-panel glass-panel-dark">
+              <button id="sound-btn" class="btn btn-audio">🔊 소리 켬</button>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Right Column: Opponents Mini-Boards & Battle Log -->
+      <aside class="sidebar-right">
+        <!-- Live Battle Log -->
+        <div class="panel glass-panel battle-log-panel">
+          <h2 class="panel-title">실시간 배틀 로그</h2>
+          <div class="battle-log" id="battle-log">
+            <div class="log-message system-msg">아레나 대기실이 생성되었습니다. 플레이어 접속 대기 중...</div>
+          </div>
+        </div>
+
+        <!-- Live Opponents Board Monitor -->
+        <div class="panel glass-panel opponents-panel" id="opponents-panel-sidebar">
+          <h2 class="panel-title">생존한 상대 플레이어 (<span id="opponents-active-count">0</span>)</h2>
+          <div class="opponents-grid" id="opponents-grid">
+            <!-- Dynamically populated with active players grids -->
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 2. ADMINISTRATOR VIEW (관리자 관전 화면)   -->
+  <!-- ========================================== -->
+  <div class="admin-container hidden" id="admin-view">
+    <!-- Top Telemetry Command HUD -->
+    <header class="admin-hud">
+      <div class="admin-logo">
+        <div class="pulse-indicator"></div>
+        <h1>TACTICAL CONTROL HUD <span class="highlight">SPECTATOR MODE</span></h1>
+        <div class="subtitle">50인 실시간 테트리스 배틀 아레나 관제 타워</div>
+      </div>
+      
+      <!-- Live Metrics Dashboard -->
+      <div class="admin-metrics">
+        <div class="metric-card">
+          <div class="metric-lbl">아레나 상태</div>
+          <div class="metric-val" id="admin-state-badge">LOBBY</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-lbl">참가인원 (PLAYERS)</div>
+          <div class="metric-val text-cyan" id="admin-players-count">0</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-lbl">관전인원 (OBSERVERS)</div>
+          <div class="metric-val text-amber" id="admin-spectators-count">0</div>
+        </div>
+        
+        <!-- Host manual trigger -->
+        <div class="admin-actions" style="display: flex; gap: 8px; align-items: center;">
+          <button id="admin-reset-players-btn" class="btn btn-spectate" style="background: rgba(255, 0, 127, 0.08); border: 1px solid rgba(255, 0, 127, 0.2); color: var(--neon-magenta); font-size: 0.85rem; padding: 9px 12px;">참가자 초기화</button>
+          <button id="admin-start-game-btn" class="btn btn-admin-start hidden">🎮 게임 시작</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="admin-layout-grid">
+      <!-- Left: Expanded 50-Player Live Grid Monitor -->
+      <main class="admin-main-monitor">
+        <div class="admin-monitor-header">
+          <span class="terminal-prompt">&gt;</span> 실시간 배틀 그리드 모니터 (50인 라이브 스크린)
+        </div>
+        <div class="admin-pool-grid" id="admin-pool-grid">
+          <div class="empty-state">대기실에 플레이어가 없습니다.</div>
+        </div>
+        <!-- Cloud Telemetry Panel -->
+        <div class="admin-cloud-telemetry-panel telemetry-border-top" style="margin-top: 15px; padding-top: 15px;">
+          <div class="admin-monitor-header" style="margin-bottom: 8px;">
+            <span class="terminal-prompt">&gt;</span> ☁️ 클라우드 자원 사용량 및 월간 예상 비용 모니터링
+          </div>
+          <div class="telemetry-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 15px;">
+            <div class="telemetry-card" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(0, 255, 102, 0.08); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column;">
+              <span class="telemetry-lbl" style="font-size: 0.55rem; color: var(--text-muted); letter-spacing: 0.5px;">서버 가동 시간 (UPTIME)</span>
+              <span class="telemetry-val" id="cloud-uptime" style="font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700; color: #fff; margin-top: 4px;">00:00:00</span>
+            </div>
+            <div class="telemetry-card" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(0, 255, 102, 0.08); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column;">
+              <span class="telemetry-lbl" style="font-size: 0.55rem; color: var(--text-muted); letter-spacing: 0.5px;">CPU 사용률 (CPU LOAD)</span>
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                <span class="telemetry-val" id="cloud-cpu" style="font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700; color: #fff;">0.0%</span>
+                <div class="telemetry-progress-bg" style="flex: 1; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;"><div class="telemetry-progress-bar" id="cloud-cpu-bar" style="width: 0%; height: 100%; background: var(--admin-green); border-radius: 3px; transition: width 0.3s ease;"></div></div>
+              </div>
+            </div>
+            <div class="telemetry-card" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(0, 255, 102, 0.08); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column;">
+              <span class="telemetry-lbl" style="font-size: 0.55rem; color: var(--text-muted); letter-spacing: 0.5px;">메모리 할당량 (RSS MEMORY)</span>
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                <span class="telemetry-val" id="cloud-memory" style="font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700; color: #fff;">0.0 MB</span>
+                <div class="telemetry-progress-bg" style="flex: 1; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden;"><div class="telemetry-progress-bar" id="cloud-memory-bar" style="width: 0%; height: 100%; background: var(--admin-green); border-radius: 3px; transition: width 0.3s ease;"></div></div>
+              </div>
+            </div>
+            <div class="telemetry-card" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(0, 255, 102, 0.08); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column;">
+              <span class="telemetry-lbl" style="font-size: 0.55rem; color: var(--text-muted); letter-spacing: 0.5px;">누적 웹소켓 메시지 (WS MESSAGES)</span>
+              <span class="telemetry-val text-cyan" id="cloud-messages" style="font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700; color: var(--neon-cyan); margin-top: 4px;">0건</span>
+            </div>
+          </div>
+          <div class="cost-breakdown-card" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(0, 255, 102, 0.08); border-radius: 8px; padding: 12px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 6px;">
+              <span style="font-weight: 700; font-size: 0.8rem; color: var(--admin-green);">Cloud Run 월간 예상 사용 요금 산정 (실시간 추정)</span>
+              <span style="font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 1rem; color: var(--admin-green);" id="cloud-total-cost">₩0 (무료 제공량 충족)</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 0.75rem; color: var(--text-muted);">
+              <div>CPU 시간 요금: <span id="cloud-cost-cpu" style="color: #fff; font-weight: 600;">₩0</span> (월 무료 180,000 vCPU-초)</div>
+              <div>메모리 시간 요금: <span id="cloud-cost-memory" style="color: #fff; font-weight: 600;">₩0</span> (월 무료 360,000 GiB-초)</div>
+              <div>요청 수 요금: <span id="cloud-cost-requests" style="color: #fff; font-weight: 600;">₩0</span> (월 무료 2,000,000회)</div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Right: Administrative Logs and Chats -->
+      <aside class="admin-telemetry-sidebar">
+        <!-- Live Leaderboard -->
+        <div class="panel admin-panel">
+          <h2 class="panel-title telemetry-border-bottom">🏆 실시간 랭킹 순위표</h2>
+          <div class="leaderboard-list" id="admin-leaderboard-list">
+            <div class="empty-state">진행된 경기 결과가 없습니다.</div>
+          </div>
+        </div>
+
+        <!-- Admin Settings Panel -->
+        <div class="panel admin-panel">
+          <h2 class="panel-title telemetry-border-bottom">⚙️ 관리자 환경 설정</h2>
+          <div style="padding: 14px 18px; display: flex; flex-direction: column; gap: 10px;">
+            <span style="font-size: 0.75rem; color: var(--text-muted);">관리자 접속 비밀번호 변경</span>
+            <div style="display: flex; gap: 8px;">
+              <div class="password-input-wrap" style="position: relative; display: flex; flex: 1;">
+                <input type="password" id="admin-new-pw-input" placeholder="새 비밀번호..." style="width: 100%; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); color: white; padding: 8px 12px; padding-right: 36px; border-radius: 8px; outline: none; font-size: 0.8rem;" />
+                <button type="button" id="toggle-new-pw-btn" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.95rem; padding: 4px; line-height: 1;">👁️</button>
+              </div>
+              <button id="admin-change-pw-btn" class="btn btn-primary" style="padding: 8px 14px; font-size: 0.8rem; background: var(--admin-green); color: #040508; border-radius: 8px;">변경</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Telemetry Logs -->
+        <div class="panel admin-panel flex-2">
+          <h2 class="panel-title telemetry-border-bottom">💬 대기실 및 관리자 실시간 로그</h2>
+          <div class="admin-log-chat-wrapper">
+            <div class="chat-messages" id="admin-chat-messages"></div>
+            <div class="battle-log" id="admin-battle-log"></div>
+          </div>
+          <form id="admin-chat-form" class="chat-form telemetry-border-top">
+            <input type="text" id="admin-chat-input" placeholder="관리자 공지 사항 입력..." maxlength="80" autocomplete="off" />
+            <button type="submit" class="btn btn-send">전송</button>
+          </form>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,2437 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>kfcman.link | 초고속 프리미엄 미니어처 단축 주소 서비스</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="kfcman.link는 길고 복잡한 URL을 아기자기하고 귀여운 미니어처 디오라마 테마로 단축해 주는 프리미엄 서비스입니다. 실시간 통계 분석, QR 코드 생성 및 사용자 지정 커스텀 주소를 제공합니다.">
+  <meta name="keywords" content="URL 단축, 주소 줄이기, 링크 단축, kfcman, 단축 URL 통계, QR코드 생성, 커스텀 링크, 미니어처 테마, 디오라마 디자인">
+  <meta name="author" content="kfcman.link">
+  
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="http://kfcman.link/">
+  <meta property="og:title" content="kfcman.link | 초고속 프리미엄 미니어처 단축 주소 서비스">
+  <meta property="og:description" content="아기자기한 디오라마 세상에 나만의 단축 주소를 올려보세요. 정밀한 클릭 통계와 QR코드, 실시간 투표 보드 제공!">
+  <meta property="og:image" content="https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=1200&auto=format&fit=crop">
+
+  <!-- Fonts & Core Utilities -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- QRious & Lucide Icons -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Tailwind config for Miniature World Clay aesthetic -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            clay: {
+              sand: '#f5efe6',
+              grass: '#2ec4b6',
+              mint: '#a7ffd5',
+              toy: '#ff9f1c',
+              purple: '#7209b7',
+              red: '#ff0054',
+              sky: '#3a86c8',
+              night: '#0e111a',
+              card: '#161b26'
+            },
+            brand: {
+              primary: '#070a13',
+              secondary: '#0c1122',
+              purple: '#7209b7',
+              cyan: '#06b6d4',
+              green: '#2ec4b6',
+              red: '#ff0054',
+              yellow: '#ff9f1c',
+            }
+          },
+          fontFamily: {
+            title: ['Outfit', 'Pretendard', '-apple-system', 'sans-serif'],
+            body: ['Pretendard', '-apple-system', 'sans-serif'],
+          },
+          boxShadow: {
+            'clay-flat': 'none',
+            'clay-flat-hover': 'none',
+            'clay-flat-lg': 'none',
+            'clay-3d': 'none',
+            'clay-light': 'none'
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Isometric Diorama Custom Micro-Animations -->
+  <style>
+
+    html {
+      font-size: 17.2px; /* Overall font size scaled up for premium legibility */
+    }
+    body {
+      transition: background-color 0.4s ease, color 0.4s ease;
+    }
+    /* Toy-like claymorphic card effects */
+    .clay-card {
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .clay-card:hover {
+      transform: translateY(-5px) scale(1.01);
+    }
+    /* Decorative glowing orbs in dark mode */
+    .glow-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(130px);
+      z-index: -1;
+      opacity: 0.22;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+    .dark .glow-orb {
+      opacity: 0.45;
+    }
+    @keyframes bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .bobbing {
+      animation: bob 4s ease-in-out infinite;
+    }
+    /* Toast styles */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 420px;
+      width: calc(100% - 48px);
+    }
+    .toast {
+      background: rgba(22, 27, 38, 0.95);
+      border: 3px solid #ffffff;
+      border-radius: 16px;
+      box-shadow: none;
+      padding: 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      color: #ffffff;
+      animation: slideIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      transition: all 0.25s ease;
+    }
+    .light-theme .toast {
+      background: #ffffff;
+      color: #1e293b;
+    }
+    .toast-success { border-color: #2ec4b6; box-shadow: 4px 4px 0px 0px #2ec4b6; }
+    .toast-error { border-color: #ff0054; box-shadow: 4px 4px 0px 0px #ff0054; }
+    .toast-info { border-color: #ff9f1c; box-shadow: 4px 4px 0px 0px #ff9f1c; }
+    
+    @keyframes slideIn {
+      from { transform: translateX(120%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    /* Switch toggle custom styling */
+    .switch-container input:checked ~ .switch-dot {
+      transform: translateX(18px);
+    }
+    .switch-dot {
+      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    /* Active tabs highlight */
+    #tab-login-trigger.active, #tab-register-trigger.active {
+      color: #000000 !important;
+      border-bottom: 3px solid #7209b7;
+    }
+    .dark #tab-login-trigger.active, .dark #tab-register-trigger.active {
+      color: #ffffff !important;
+      border-bottom: 3px solid #a7ffd5;
+    }
+
+    /* Mobile nav active color mappings */
+    #mobile-nav-shortener.active-mobile-nav,
+    #mobile-nav-dashboard.active-mobile-nav,
+    #mobile-nav-polls.active-mobile-nav {
+      color: #7209b7 !important;
+    }
+    .dark #mobile-nav-shortener.active-mobile-nav,
+    .dark #mobile-nav-dashboard.active-mobile-nav,
+    .dark #mobile-nav-polls.active-mobile-nav {
+      color: #a7ffd5 !important;
+    }
+
+    /* Active header navigation highlights */
+    #header-nav a.active {
+      background-color: #7209b7 !important;
+      color: #ffffff !important;
+    }
+    .dark #header-nav a.active {
+      background-color: #a7ffd5 !important;
+      color: #070a13 !important;
+    }
+
+    /* Premium Soft Thin Borders & Differentiated Button Backgrounds in Dark Mode */
+    .dark .border-white,
+    .dark .border-2,
+    .dark .border-4,
+    .dark [class*="border-2"],
+    .dark [class*="border-4"] {
+      border-color: rgba(255, 255, 255, 0.12) !important;
+      border-width: 1px !important;
+    }
+    .dark .bg-clay-sand {
+      background-color: #131824 !important; /* Differentiated button background (slightly lighter than #080a10) */
+      color: #cbd5e1 !important; /* Soft white/gray text */
+    }
+    .dark .bg-clay-sand i {
+      color: #cbd5e1 !important; /* Soft white/gray icons */
+    }
+    .dark .bg-clay-sand:hover {
+      background-color: #1b2233 !important;
+    }
+    .dark .toast {
+      border-color: rgba(255, 255, 255, 0.12) !important;
+      border-width: 1px !important;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 dark:bg-[#080a10] text-slate-800 dark:text-slate-100 font-body min-h-screen flex flex-col relative overflow-x-hidden transition-colors pb-20 lg:pb-0">
+
+  <!-- 3D Toy-like Background Glow Orbs -->
+  <div class="glow-orb hidden w-[40vw] h-[40vw] bg-clay-purple top-[-10%] left-[-10%] bobbing"></div>
+  <div class="glow-orb hidden w-[35vw] h-[35vw] bg-clay-grass bottom-[10%] right-[-5%] animation-delay-2000 bobbing" style="animation-delay: 2s;"></div>
+
+  <!-- Header -->
+  <header class="h-20 flex items-center border-b-4 border-white bg-white dark:bg-clay-night sticky top-0 z-50 transition-colors shadow-sm px-4 md:px-0">
+    <div class="max-w-7xl mx-auto px-4 md:px-6 w-full flex justify-between items-center">
+      
+      <!-- Brand Logo -->
+      <a href="/" class="font-title text-2xl font-black tracking-tight flex items-center gap-1 cursor-pointer select-none group" id="logo-link">
+        <span class="text-slate-900 dark:text-white group-hover:scale-105 transition-transform duration-200">KFC</span>
+        <span class="bg-gradient-to-r from-clay-purple to-clay-sky text-transparent bg-clip-text font-extrabold">MAN</span>
+        <span class="text-clay-grass">.</span>
+        <span class="text-[12px] font-black border-2 border-white px-1.5 py-0.5 rounded-lg bg-clay-mint text-black shadow-clay-flat group-hover:shadow-clay-flat-hover group-hover:translate-x-0.5 group-hover:translate-y-0.5 transition-all">LINK</span>
+      </a>
+
+      <!-- Navigation & Controls -->
+      <div class="flex items-center gap-6">
+        
+        <!-- Auth status dependent welcome message -->
+        <span class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 border-2 border-white text-xs font-bold text-slate-700 dark:text-slate-300 shadow-clay-flat !hidden" id="user-welcome-tag">
+          <i data-lucide="smile" class="w-4 h-4 text-clay-toy animate-bounce"></i>
+          <span id="user-welcome-name" class="text-clay-purple dark:text-clay-mint font-extrabold">Guest</span>님 환영합니다!
+        </span>
+
+        <!-- Nav menu for Members (Sleek layout-preserving icon buttons) -->
+        <nav class="hidden lg:flex gap-1.5 max-lg:!hidden" id="header-nav">
+          <a href="#shortener-section" class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center justify-center cursor-pointer active" id="nav-item-shortener" title="단축주소 및 통계">
+            <i data-lucide="link-2" class="w-5 h-5"></i>
+          </a>
+          <a href="#polls-section" class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center justify-center cursor-pointer" id="nav-item-polls" title="실시간 설문 광장">
+            <i data-lucide="vote" class="w-5 h-5"></i>
+          </a>
+          <a href="#classroom-section" class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center justify-center cursor-pointer" id="nav-item-classroom" title="으쓱점수 학급 대시보드">
+            <i data-lucide="award" class="w-5 h-5"></i>
+          </a>
+          <a href="#settings-section" class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center justify-center cursor-pointer" id="nav-item-settings" title="통합 설정 및 관리 패널">
+            <i data-lucide="settings" class="w-5 h-5"></i>
+          </a>
+        </nav>
+        
+        <!-- Theme & Buttons Group -->
+        <div class="flex items-center gap-3">
+          
+          <!-- Theme switch button -->
+          <button class="w-10 h-10 border-2 border-white rounded-xl bg-clay-sand dark:bg-white/5 flex items-center justify-center shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-slate-800 dark:text-white" id="theme-toggle-btn" title="테마 변경 (화이트/블랙)" class="max-lg:!hidden" aria-label="테마 변경">
+            <!-- Icon sets (Toggled via CSS dark class) -->
+            <i data-lucide="sun" class="w-5 h-5 block dark:hidden text-clay-toy"></i>
+            <i data-lucide="moon" class="w-5 h-5 hidden dark:block text-clay-mint"></i>
+          </button>
+          
+          <!-- Guest Auth buttons (Sleek layout-preserving icon buttons) -->
+          <div class="flex items-center gap-2 max-lg:!hidden" id="guest-header-buttons">
+            <button class="btn w-10 h-10 border-2 border-white rounded-xl bg-clay-sand dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white shadow-clay-flat flex items-center justify-center cursor-pointer" id="btn-login-trigger" title="로그인">
+              <i data-lucide="log-in" class="w-5 h-5"></i>
+            </button>
+            <button class="btn w-10 h-10 border-2 border-white rounded-xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat flex items-center justify-center cursor-pointer" id="btn-register-trigger" title="회원가입 신청">
+              <i data-lucide="user-plus" class="w-5 h-5"></i>
+            </button>
+          </div>
+
+          <!-- Log out control button -->
+          <button class="btn-control hidden w-10 h-10 border-2 border-white rounded-xl bg-clay-red flex items-center justify-center shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all text-white cursor-pointer" id="btn-logout" title="로그아웃" class="max-lg:!hidden" aria-label="로그아웃">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Global Action Warning Banner -->
+  <div class="hidden max-w-7xl mx-auto px-6 mt-6 w-full animate-bounce" id="user-warning-banner">
+    <div class="bg-red-500/10 border-4 border-white text-red-500 font-black p-4 rounded-2xl flex items-center gap-3 shadow-clay-flat">
+      <i data-lucide="alert-octagon" class="w-6 h-6 text-red-500 animate-pulse flex-shrink-0"></i>
+      <span class="text-sm text-left leading-relaxed text-red-500 dark:text-red-400" id="user-warning-message">중요 안내 사항이 존재합니다.</span>
+    </div>
+  </div>
+
+  <main class="flex-grow max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10 w-full relative">
+    
+    <!-- 1. Guest Landing Welcome Screen -->
+    <div class="flex flex-col items-center justify-center text-center py-10 md:py-20" id="guest-content">
+      
+      <!-- Bobbing Clay Toy Illustration Header -->
+      <div class="w-40 h-40 bg-gradient-to-tr from-clay-purple to-clay-sky rounded-[40px] border-4 border-white shadow-clay-flat-lg flex items-center justify-center bobbing mb-10 text-white relative">
+        <i data-lucide="globe" class="w-20 h-20 text-white animate-spin" style="animation-duration: 10s;"></i>
+        <div class="absolute -right-4 -bottom-4 bg-clay-toy border-4 border-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-clay-flat"><i data-lucide="sparkles" class="w-6 h-6 text-black"></i></div>
+      </div>
+
+      <h1 class="font-title text-4xl md:text-6xl font-black tracking-tight leading-none text-slate-900 dark:text-white max-w-3xl">
+        길고 지저분한 주소는 그만,<br>
+        <span class="bg-gradient-to-r from-clay-purple via-clay-sky to-clay-grass text-transparent bg-clip-text">나만의 토이 월드 링크</span>로 단축하세요!
+      </h1>
+      
+      <p class="mt-6 text-base md:text-lg text-slate-600 dark:text-slate-300 max-w-xl font-bold leading-relaxed text-center">
+        kfcman.link는 아기자기한 미니어처 감성의 단축 URL 플랫폼입니다. 가입 승인 즉시 정밀한 실시간 유입경로 분석 대시보드와 여론 조사 보드가 제공됩니다.
+      </p>
+
+      <div class="mt-10 flex gap-4 justify-center flex-wrap">
+        <button class="btn px-6 py-4 text-sm font-black border-4 border-white rounded-2xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat-lg hover:shadow-clay-flat hover:translate-x-1 hover:translate-y-1 transition-all cursor-pointer" id="btn-hero-start">무료로 가입하고 시작하기</button>
+        <button class="btn px-6 py-4 text-sm font-black border-4 border-white rounded-2xl bg-clay-sand dark:bg-[#131824] hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 transition-all cursor-pointer shadow-clay-flat-lg hover:shadow-clay-flat hover:translate-x-1 hover:translate-y-1" id="btn-hero-login">기존 회원 로그인</button>
+        <button class="btn px-6 py-4 text-sm font-black border-4 border-white rounded-2xl bg-white hover:bg-slate-100 text-black shadow-clay-flat-lg hover:shadow-clay-flat hover:translate-x-1 hover:translate-y-1 transition-all cursor-pointer" onclick="document.getElementById('link-service-intro').click()">기능 둘러보기</button>
+      </div>
+      
+      <div class="mt-4 text-slate-500 font-bold text-xs">kfcman.link SAAS VERSION 3.0</div>
+    </div>
+
+    <!-- 2. Members Area Container -->
+    <div class="hidden space-y-12" id="member-content">
+      
+      <!-- URL Shortener Section -->
+      <section class="shortener-section scroll-mt-24" id="shortener-section">
+        
+        <!-- Input Form Clay Card -->
+        <div class="max-w-3xl mx-auto bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 md:p-8 shadow-clay-flat-lg clay-card transition-colors" id="input-container">
+          <div class="flex items-center gap-3 border-b-4 border-white pb-4 mb-6">
+            <div class="w-10 h-10 rounded-xl border-2 border-white bg-clay-mint flex items-center justify-center shadow-clay-flat text-black"><i data-lucide="link-2" class="w-5 h-5"></i></div>
+            <h2 class="text-xl font-black text-slate-900 dark:text-white text-left">단축 주소 신규 생성</h2>
+          </div>
+
+          <form id="shorten-form" class="space-y-5 text-left">
+            <div class="space-y-2">
+              <label class="block text-xs font-black text-slate-600 dark:text-slate-300">줄이고 싶은 원본 긴 URL 주소 (Destination URL)</label>
+              <div class="flex items-center bg-slate-50 dark:bg-slate-950 border-4 border-white rounded-2xl px-4 py-3.5 gap-3 shadow-clay-flat focus-within:border-clay-sky focus-within:ring-2 focus-within:ring-clay-sky/20 transition-all">
+                <i data-lucide="globe" class="w-5 h-5 text-slate-400"></i>
+                <input type="url" id="url-input" placeholder="https://very-long-example-link.com/path-details..." required autocomplete="off" class="w-full bg-transparent border-none outline-none text-sm font-bold text-slate-800 dark:text-white placeholder-slate-400">
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-xs font-black text-slate-600 dark:text-slate-300">나만의 커스텀 단축 코드 (선택 사항)</label>
+              <div class="flex items-center bg-slate-50 dark:bg-slate-950 border-4 border-white rounded-2xl px-4 py-3.5 gap-3 shadow-clay-flat focus-within:border-clay-sky focus-within:ring-2 focus-within:ring-clay-sky/20 transition-all">
+                <span class="text-xs font-black text-slate-500 border-r-2 border-slate-300 dark:border-slate-800 pr-3 select-none">kfcman.link /</span>
+                <input type="text" id="custom-alias-input" placeholder="custom-name" autocomplete="off" class="w-full bg-transparent border-none outline-none text-sm font-bold text-slate-800 dark:text-white placeholder-slate-400">
+              </div>
+              <p class="text-xs font-black text-slate-600 dark:text-slate-400 mt-1 flex items-center gap-1.5"><i data-lucide="info" class="w-4 h-4 text-clay-sky flex-shrink-0"></i> <span>한글 단축 코드 입력이 가능합니다! 지정하지 않으면 6자리의 영문/숫자 코드가 자동 발급됩니다.</span></p>
+            </div>
+
+            <button type="submit" class="w-full py-4 text-sm font-black border-4 border-white rounded-2xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat-lg hover:shadow-clay-flat hover:translate-x-1 hover:translate-y-1 transition-all flex items-center justify-center gap-2 cursor-pointer" id="shorten-btn">
+              <span>단축 URL 생성하기</span>
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+            </button>
+          </form>
+        </div>
+
+        <!-- Result Display Clay Card -->
+        <div class="hidden max-w-3xl mx-auto bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 md:p-8 shadow-clay-flat-lg clay-card text-center" id="result-container">
+          <div class="w-16 h-16 rounded-full border-4 border-white bg-clay-mint flex items-center justify-center mx-auto mb-6 shadow-clay-flat animate-bounce text-black"><i data-lucide="check-circle" class="w-8 h-8"></i></div>
+          
+          <h2 class="text-2xl font-black text-slate-900 dark:text-white">축하합니다! 링크 생성 완료</h2>
+          <p class="text-sm font-bold text-slate-500 mt-2">길고 복잡했던 주소가 아주 깜찍하고 안전하게 정렬되었습니다.</p>
+
+          <div class="mt-8 space-y-4 text-left">
+            <!-- Brand Short URL -->
+            <div class="bg-slate-50 dark:bg-slate-950 border-4 border-white p-4 rounded-2xl shadow-clay-flat flex justify-between items-center gap-4">
+              <div class="flex flex-col">
+                <span class="text-[10px] font-black text-slate-400">브랜드 단축 URL (도메인 포함)</span>
+                <span class="text-sm font-black text-clay-sky dark:text-clay-mint break-all mt-1" id="brand-url-display">http://kfcman.link/code</span>
+              </div>
+              <button class="w-11 h-11 rounded-xl border-2 border-white bg-white dark:bg-slate-800 text-black dark:text-white hover:bg-slate-100 flex items-center justify-center shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex-shrink-0 cursor-pointer" id="btn-copy-brand" title="주소 복사">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <!-- Local Short URL -->
+            <div class="bg-slate-50 dark:bg-slate-950 border-4 border-white p-4 rounded-2xl shadow-clay-flat flex justify-between items-center gap-4">
+              <div class="flex flex-col">
+                <span class="text-[10px] font-black text-slate-400">임시/대체 접속용 로컬 URL</span>
+                <span class="text-sm font-black text-clay-purple dark:text-clay-mint break-all mt-1" id="local-url-display">http://localhost:3000/code</span>
+              </div>
+              <button class="w-11 h-11 rounded-xl border-2 border-white bg-white dark:bg-slate-800 text-black dark:text-white hover:bg-slate-100 flex items-center justify-center shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex-shrink-0 cursor-pointer" id="btn-copy-local" title="주소 복사">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-8 flex gap-3 justify-center">
+            <button class="btn flex-1 py-3 text-xs font-black border-2 border-white rounded-xl bg-clay-toy hover:bg-amber-400 text-black shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer" id="btn-qr-trigger">
+              <i data-lucide="qr-code" class="w-4 h-4"></i>
+              <span>QR코드 다운받기</span>
+            </button>
+            <button class="btn flex-1 py-3 text-xs font-black border-2 border-white rounded-xl bg-clay-sand dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-100 flex items-center justify-center gap-1.5 shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer" id="btn-reset">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+              <span>새 주소 추가 생성</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Dashboard Stats List Section -->
+      <section class="dashboard-section scroll-mt-24 border-t-4 border-dashed border-white/20 pt-10" id="dashboard-section">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 w-full">
+          <div class="text-left">
+            <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <i data-lucide="bar-chart-2" class="text-clay-sky"></i>
+              <span>단축 링크 통계 대시보드</span>
+            </h2>
+            <p class="text-xs font-bold text-slate-500 mt-1">내가 생성한 단축 코드들의 클릭 수 추이를 실시간 감시합니다.</p>
+          </div>
+          
+
+        </div>
+
+        <!-- Dashboard Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" id="dashboard-summary-panel">
+          <!-- Total Links card -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-5 shadow-clay-flat flex items-center gap-4 clay-card">
+            <div class="w-12 h-12 rounded-2xl border-2 border-white bg-clay-purple text-white flex items-center justify-center shadow-clay-flat"><i data-lucide="link-2" class="w-6 h-6"></i></div>
+            <div class="text-left">
+              <span class="text-[10px] font-black text-slate-400">전체 생성 단축 링크</span>
+              <div class="text-2xl font-black text-slate-900 dark:text-white mt-0.5"><span id="stat-total-links">0</span>개</div>
+            </div>
+          </div>
+          <!-- Total Clicks card -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-5 shadow-clay-flat flex items-center gap-4 clay-card">
+            <div class="w-12 h-12 rounded-2xl border-2 border-white bg-clay-sky text-white flex items-center justify-center shadow-clay-flat"><i data-lucide="mouse-pointer-click" class="w-6 h-6"></i></div>
+            <div class="text-left">
+              <span class="text-[10px] font-black text-slate-400">누적 방문 클릭수</span>
+              <div class="text-2xl font-black text-slate-900 dark:text-white mt-0.5"><span id="stat-total-clicks">0</span>회</div>
+            </div>
+          </div>
+          <!-- Avg Clicks card -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-5 shadow-clay-flat flex items-center gap-4 clay-card">
+            <div class="w-12 h-12 rounded-2xl border-2 border-white bg-clay-grass text-black flex items-center justify-center shadow-clay-flat"><i data-lucide="activity" class="w-6 h-6"></i></div>
+            <div class="text-left">
+              <span class="text-[10px] font-black text-slate-400">링크당 평균 클릭율</span>
+              <div class="text-2xl font-black text-slate-900 dark:text-white mt-0.5"><span id="stat-avg-clicks">0.0</span>회</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Links Table List -->
+        <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl shadow-clay-flat-lg overflow-hidden clay-card w-full" id="links-table-wrapper">
+          <div class="overflow-x-auto w-full">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-100 dark:bg-slate-950 border-b-4 border-white text-xs font-black text-slate-600 dark:text-slate-400">
+                  <th class="p-4">단축 링크 주소 / 원본 목적지</th>
+                  <th class="p-4">생성 시각</th>
+                  <th class="p-4">클릭 집계</th>
+                  <th class="p-4 text-center">제어 패널</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y-2 divide-slate-100 dark:divide-slate-800/50 text-xs font-bold text-slate-700 dark:text-slate-300" id="links-table-body">
+                <!-- Rows injected dynamically via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Links Table Empty State -->
+        <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-12 text-center shadow-clay-flat-lg clay-card hidden" id="list-empty-state">
+          <div class="w-14 h-14 rounded-full border-2 border-white bg-slate-100 dark:bg-white/5 text-slate-400 flex items-center justify-center mx-auto mb-4"><i data-lucide="inbox" class="w-6 h-6"></i></div>
+          <h4 class="text-base font-black text-slate-950 dark:text-white">수집된 주소 데이터가 비어있습니다.</h4>
+          <p class="text-xs text-slate-500 mt-1">상단의 생성 폼을 활용해 첫 번째 단축 주소를 발행해 보세요!</p>
+        </div>
+      </section>
+
+      <!-- 4. Preference Polls System Section -->
+      <section class="dashboard-section scroll-mt-24 border-t-4 border-dashed border-white/20 pt-10" id="polls-section">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 w-full">
+          <div class="text-left">
+            <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <i data-lucide="vote" class="text-clay-purple"></i>
+              <span>실시간 게스트 선호도 설문 광장</span>
+            </h2>
+            <p class="text-xs font-bold text-slate-500 mt-1">비회원도 공유 링크를 타고 들어와 즉각 클릭 투표가 가능한 실시간 피드입니다.</p>
+          </div>
+          
+          <button class="btn px-4 py-2.5 text-xs font-black border-2 border-white rounded-xl bg-clay-purple hover:bg-purple-600 text-white shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-1 cursor-pointer" id="btn-create-poll-toggle">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>설문 제작 카드 열기</span>
+          </button>
+        </div>
+
+        <!-- Collapsible Create Poll Panel -->
+        <div class="hidden max-w-2xl mx-auto bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card mb-8 text-left transition-colors animate-fade-in" id="create-poll-card">
+          <div class="flex justify-between items-center border-b-4 border-white pb-4 mb-5">
+            <div class="flex items-center gap-2">
+              <i data-lucide="file-plus-2" class="w-5 h-5 text-clay-purple"></i>
+              <h3 class="text-base font-black text-slate-950 dark:text-white">신규 선호도 투표 보드 개설</h3>
+            </div>
+            <button class="w-8 h-8 rounded-lg border-2 border-white bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover" id="btn-close-poll-create" type="button"><i data-lucide="x" class="w-4 h-4"></i></button>
+          </div>
+
+          <form id="create-poll-form" class="space-y-4">
+            <div class="space-y-1.5">
+              <label class="block text-xs font-black text-slate-600 dark:text-slate-300">설문조사 주제 / 타이틀</label>
+              <input type="text" id="poll-title-input" placeholder="어떤 메뉴의 치킨을 가장 좋아하시나요?" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 dark:text-white shadow-clay-flat">
+            </div>
+
+            <!-- Choice options inputs container -->
+            <div class="space-y-3">
+              <label class="block text-xs font-black text-slate-600 dark:text-slate-300">선택 가능한 세부 투표 문항 항목들</label>
+              <div id="poll-options-container" class="space-y-3">
+                
+                <!-- Choice row 1 -->
+                <div class="poll-option-row flex gap-3 items-center">
+                  <div class="flex-grow flex items-center bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-4 py-2.5 gap-2 shadow-clay-flat">
+                    <i data-lucide="circle-dot" class="w-4 h-4 text-slate-400"></i>
+                    <input type="text" class="poll-option-input w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400" placeholder="문항 1 입력" required autocomplete="off">
+                  </div>
+                  <div class="w-8"></div>
+                </div>
+
+                <!-- Choice row 2 -->
+                <div class="poll-option-row flex gap-3 items-center">
+                  <div class="flex-grow flex items-center bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-4 py-2.5 gap-2 shadow-clay-flat">
+                    <i data-lucide="circle-dot" class="w-4 h-4 text-slate-400"></i>
+                    <input type="text" class="poll-option-input w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400" placeholder="문항 2 입력" required autocomplete="off">
+                  </div>
+                  <div class="w-8"></div>
+                </div>
+
+              </div>
+
+              <button class="btn py-2.5 w-full text-xs font-black border-2 border-white rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-200 shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer" type="button" id="btn-add-poll-option">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>문항 입력칸 새로 추가</span>
+              </button>
+            </div>
+
+            <!-- Parameters -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 border-t-2 border-dashed border-slate-200 dark:border-slate-800 pt-4">
+              <div class="space-y-1.5">
+                <label class="block text-xs font-black text-slate-600 dark:text-slate-300">투표 마감 제한시간 (분)</label>
+                <input type="number" id="poll-duration-input" value="10" min="1" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 dark:text-white shadow-clay-flat">
+              </div>
+              <div class="space-y-1.5">
+                <label class="block text-xs font-black text-slate-600 dark:text-slate-300">중복 투표 제한 제어 방식</label>
+                <select id="poll-dup-mode-input" class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 dark:text-white shadow-clay-flat cursor-pointer h-[42px]">
+                  <option value="once" selected class="bg-slate-900 text-white">평생 딱 1번 투표 제한</option>
+                  <option value="hourly" class="bg-slate-900 text-white">1시간마다 계속 다시 투표</option>
+                </select>
+              </div>
+              <div class="flex items-center gap-2 h-full md:pt-6">
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                  <input type="checkbox" id="poll-multiple-input" class="w-5 h-5 border-2 border-white rounded bg-white accent-clay-purple cursor-pointer shadow-clay-flat">
+                  <span class="text-xs font-black text-slate-700 dark:text-slate-300">다중 선택 허용</span>
+                </label>
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-3.5 text-xs font-black border-4 border-white rounded-2xl bg-clay-purple hover:bg-purple-600 text-white shadow-clay-flat-lg hover:shadow-clay-flat hover:translate-x-1 hover:translate-y-1 transition-all flex items-center justify-center gap-1.5 cursor-pointer" id="btn-create-poll-submit">
+              <i data-lucide="save" class="w-4 h-4"></i>
+              <span>선호도 조사 등록 및 게시하기</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Search & Filter Tab Controls -->
+        <div class="flex justify-between items-center mb-6 gap-4 flex-wrap text-left w-full border-t border-white/10 pt-8">
+          <div class="flex items-center gap-2 border-2 border-white rounded-xl bg-white dark:bg-slate-950 px-3 py-2 w-full md:w-80 shadow-clay-flat">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+            <input type="text" id="poll-search-input" placeholder="설문 제목 또는 작성자 검색..." autocomplete="off" class="w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400">
+          </div>
+          
+          <div class="flex gap-2">
+            <button class="px-4 py-2 text-xs font-black border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat active" id="btn-filter-poll-all">전체</button>
+            <button class="px-4 py-2 text-xs font-black border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-filter-poll-active">진행중</button>
+            <button class="px-4 py-2 text-xs font-black border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-filter-poll-closed">마감됨</button>
+          </div>
+        </div>
+
+        <!-- Poll Cards Grid Feed -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="polls-grid">
+          <!-- Cards populated dynamically -->
+        </div>
+
+        <!-- Empty Feed state -->
+        <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-12 text-center shadow-clay-flat-lg clay-card hidden" id="polls-empty-state">
+          <div class="w-14 h-14 rounded-full border-2 border-white bg-slate-100 dark:bg-white/5 text-slate-400 flex items-center justify-center mx-auto mb-4"><i data-lucide="inbox" class="w-6 h-6"></i></div>
+          <h4 class="text-base font-black text-slate-950 dark:text-white">보드에 개설된 설문조사가 존재하지 않습니다.</h4>
+          <p class="text-xs text-slate-500 mt-1">상단의 제작 버튼을 눌러 첫 번째 여론조사를 생성해 보세요!</p>
+        </div>
+      </section>
+
+      <!-- 6. Eusseuk Points Classroom Module (Parent Section) -->
+      <section class="eusseuk-section scroll-mt-24 border-t-4 border-dashed border-white/20 pt-10 hidden" id="eusseuk-section">
+        
+        <!-- Eusseuk Points Local Sub-Tab Navigation Bar -->
+        <div class="flex gap-2 text-xs font-black border-b-2 border-slate-200 dark:border-white/10 pb-3 mb-6 w-full text-left flex-wrap">
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat active" id="btn-classroom-subtab-dash">
+            <i data-lucide="layout-dashboard" class="w-4 h-4 inline-block mr-1"></i> 대시보드
+          </button>
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-classroom-subtab-gradebook">
+            <i data-lucide="clipboard-list" class="w-4 h-4 inline-block mr-1"></i> 학생 명렬표
+          </button>
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-classroom-subtab-thermometer">
+            <i data-lucide="thermometer" class="w-4 h-4 inline-block mr-1"></i> 학급 온도계
+          </button>
+
+        </div>
+
+        <!-- SUB-VIEW 1: Classroom Dashboard View -->
+        <div class="classroom-section" id="classroom-section">
+          <div class="text-left mb-6">
+            <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-grass text-black flex items-center justify-center shadow-clay-flat"><i data-lucide="layout-dashboard" class="w-5 h-5"></i></span>
+              <span>우리 학급 대시보드</span>
+            </h2>
+            <p class="text-xs font-bold text-slate-500 mt-2">학생 <span id="dash-student-count">0</span>명 · 누적 응원 점수와 지급 현황을 한눈에 확인하세요</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+            <!-- Left: Class Thermometer Glass Card -->
+            <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card text-center flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-4">
+                  <span class="text-sm font-black text-slate-950 dark:text-white">학급 온도계</span>
+                  <span class="text-[10px] font-black text-slate-400">실시간</span>
+                </div>
+
+                <!-- SVG Glass Thermometer -->
+                <div class="flex items-center justify-center gap-6 py-4">
+                  <div class="relative w-20 h-64 flex flex-col items-center">
+                    <!-- Glass Tube Outer Border -->
+                    <div class="w-8 h-48 border-4 border-white bg-slate-100 dark:bg-slate-950/40 rounded-full relative overflow-hidden flex flex-col justify-end shadow-inner">
+                      <!-- Mercury level rect (dynamic height via style) -->
+                      <div id="thermometer-mercury" class="w-full bg-gradient-to-t from-clay-sky to-clay-grass rounded-b-full transition-all duration-1000 ease-out" style="height: 0%;"></div>
+                    </div>
+                    <!-- Thermometer Bulb Sphere -->
+                    <div class="w-14 h-14 border-4 border-white bg-gradient-to-tr from-clay-sky to-clay-grass rounded-full -mt-4 shadow-lg flex items-center justify-center relative z-10">
+                      <div class="w-6 h-6 bg-white/20 rounded-full animate-ping absolute"></div>
+                    </div>
+                  </div>
+                  
+                  <div class="text-left space-y-2">
+                    <div class="text-5xl font-black text-clay-sky dark:text-clay-mint leading-none font-sans" id="dash-temp-val">0.0°</div>
+                    <div class="text-xs font-black text-slate-500 flex items-center gap-1">
+                      <span>학급 온도</span>
+                      <i data-lucide="help-circle" class="w-3.5 h-3.5 cursor-pointer text-slate-400" title="누적 원점수 합계 / 200 = 학급 온도"></i>
+                    </div>
+                    <div class="text-[10px] font-bold text-slate-400 mt-2">
+                      누적 원점수: <span id="dash-total-raw" class="text-slate-800 dark:text-white font-black">0점</span><br>
+                      변환 비율: <span id="dash-ratio-rule" class="text-slate-800 dark:text-white font-black">÷ 200</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Target Milestones info box -->
+              <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-2xl p-4 text-left mt-4">
+                <div class="flex items-center gap-1.5 text-xs font-black text-slate-800 dark:text-slate-300">
+                  <i data-lucide="target" class="w-4 h-4 text-clay-toy animate-pulse"></i>
+                  <span>다음 목표 <span id="dash-next-target-temp">100.0°</span></span>
+                </div>
+                <p class="text-sm font-black text-clay-purple dark:text-clay-mint mt-1.5" id="dash-next-target-activity">써바이벌 피구</p>
+                <p class="text-[10px] font-bold text-slate-400 mt-1" id="dash-temp-remaining-label">남은 온도 100°</p>
+                
+                <div class="border-t border-slate-200 dark:border-white/10 mt-3 pt-2.5">
+                  <span class="text-[10px] font-black text-slate-400 block mb-1">달성한 목표</span>
+                  <div class="space-y-1 max-h-20 overflow-y-auto" id="dash-achieved-goals-list">
+                    <!-- achieved goals here -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Middle & Right (span 2): Top 5 Space Race -->
+            <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card lg:col-span-2 flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-5">
+                  <span class="text-sm font-black text-slate-950 dark:text-white flex items-center gap-1.5">
+                    <i data-lucide="rocket" class="text-clay-purple w-5 h-5 animate-bounce"></i>
+                    <span>점수 TOP 5 우주 레이스</span>
+                  </span>
+                  <button id="btn-race-goto-gradebook" class="text-[10px] font-black text-clay-sky dark:text-clay-mint flex items-center gap-0.5 hover:underline">전체보기 <i data-lucide="chevron-right" class="w-3 h-3"></i></button>
+                </div>
+
+                <!-- Space race tracks container -->
+                <div class="space-y-5 animate-fade-in" id="space-race-tracks-container">
+                  <!-- Track rows dynamically populated -->
+                </div>
+              </div>
+              
+              <div class="mt-6 p-3 bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-2xl text-[10px] font-bold text-slate-400 leading-relaxed text-left flex items-start gap-2">
+                <i data-lucide="info" class="w-4 h-4 text-clay-sky flex-shrink-0 mt-0.5"></i>
+                <span>우주 레이스는 누적 원점수 상위 5명 학생들의 실시간 궤적을 보여줍니다. 칭찬 점수가 올라가면 로켓이 앞으로 힘차게 전진하며, 파란색/초록색 마일리지가 함께 표출됩니다.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Student Grid: Bottom -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card mt-8 text-left">
+            <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-5">
+              <h3 class="text-base font-black text-slate-950 dark:text-white flex items-center gap-2">
+                <i data-lucide="users" class="text-clay-sky w-5 h-5"></i>
+                <span>학생별 점수 한눈에 보기</span>
+              </h3>
+              <button id="btn-grid-goto-gradebook" class="text-[10px] font-black text-clay-sky dark:text-clay-mint flex items-center gap-0.5 hover:underline">관리하기 <i data-lucide="chevron-right" class="w-3 h-3"></i></button>
+            </div>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 animate-fade-in" id="dash-students-grid">
+              <!-- Student cards dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-VIEW 2: Student Gradebook View -->
+        <div class="gradebook-section hidden" id="gradebook-section">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 w-full text-left">
+            <div>
+              <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-sky text-white flex items-center justify-center shadow-clay-flat"><i data-lucide="clipboard-list" class="w-5 h-5"></i></span>
+                <span>학생 명렬표</span>
+              </h2>
+              <p class="text-xs font-bold text-slate-500 mt-2">학생 <span id="grade-student-count">0</span>명 · 실시간 점수 부여 및 리워드 지급을 관리하세요</p>
+            </div>
+            
+            <!-- Controller Buttons -->
+            <div class="flex flex-wrap gap-2">
+              <button class="btn px-4 py-2.5 text-xs font-black border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center gap-1 cursor-pointer" id="btn-import-scores">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>점수 가져오기</span>
+              </button>
+              <button class="btn px-4 py-2.5 text-xs font-black border-2 border-white rounded-xl bg-clay-sky hover:bg-cyan-400 text-white shadow-clay-flat flex items-center gap-1 cursor-pointer" id="btn-add-all-scores">
+                <i data-lucide="wand-2" class="w-4 h-4"></i>
+                <span>전체 점수 부여</span>
+              </button>
+              <button class="btn px-4 py-2.5 text-xs font-black border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center gap-1 cursor-pointer" id="btn-generate-numbers">
+                <i data-lucide="hash" class="w-4 h-4"></i>
+                <span>번호만 생성</span>
+              </button>
+              <button class="btn px-4 py-2.5 text-xs font-black border-2 border-white rounded-xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat flex items-center gap-1 cursor-pointer" id="btn-add-transfer">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>전입 (번호)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Gradebook table wrapper -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl shadow-clay-flat-lg overflow-hidden clay-card w-full">
+            <div class="overflow-x-auto w-full">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 dark:bg-slate-950 border-b-4 border-white text-xs font-black text-slate-600 dark:text-slate-400">
+                    <th class="p-4">번호</th>
+                    <th class="p-4">이름</th>
+                    <th class="p-4">누적 원점수</th>
+                    <th class="p-4">달성</th>
+                    <th class="p-4">지급</th>
+                    <th class="p-4">미지급</th>
+                    <th class="p-4 text-center">관리</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y-2 divide-slate-100 dark:divide-slate-800/50 text-xs font-bold text-slate-700 dark:text-slate-300" id="gradebook-table-body">
+                  <!-- Rows injected dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-VIEW 3: Class Thermometer Settings View -->
+        <div class="thermometer-section hidden" id="thermometer-section">
+          <div class="text-left mb-6">
+            <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-purple text-white flex items-center justify-center shadow-clay-flat"><i data-lucide="thermometer" class="w-5 h-5"></i></span>
+              <span>학급 온도계 상세 설정</span>
+            </h2>
+            <p class="text-xs font-bold text-slate-500 mt-2">전체 학생 점수 합계 ÷ 200 = 우리 반의 따뜻한 온도</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+            
+            <!-- Left: Thermometer Visualization Card -->
+            <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card text-center flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-4">
+                  <span class="text-sm font-black text-slate-950 dark:text-white">학급 온도계</span>
+                  <span class="text-[10px] font-black text-slate-400">실시간 스케일</span>
+                </div>
+
+                <div class="flex items-center justify-center gap-6 py-4">
+                  <div class="relative w-20 h-64 flex flex-col items-center">
+                    <div class="w-8 h-48 border-4 border-white bg-slate-100 dark:bg-slate-950/40 rounded-full relative overflow-hidden flex flex-col justify-end shadow-inner">
+                      <div id="thermometer-mercury-detail" class="w-full bg-gradient-to-t from-clay-sky to-clay-grass rounded-b-full transition-all duration-1000 ease-out" style="height: 0%;"></div>
+                    </div>
+                    <div class="w-14 h-14 border-4 border-white bg-gradient-to-tr from-clay-sky to-clay-grass rounded-full -mt-4 shadow-lg flex items-center justify-center relative z-10">
+                      <div class="w-6 h-6 bg-white/20 rounded-full animate-ping absolute"></div>
+                    </div>
+                  </div>
+                  
+                  <div class="text-left space-y-2">
+                    <div class="text-5xl font-black text-clay-sky dark:text-clay-mint leading-none font-sans" id="detail-temp-val">0.0°</div>
+                    <div class="text-xs font-black text-slate-500">학급 온도</div>
+                    <div class="text-[10px] font-bold text-slate-400 mt-3" id="detail-remaining-miles">
+                      목표 달성까지<br>
+                      점수가 필요합니다
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick stats list inside visualization card -->
+              <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-2xl p-4 text-left mt-4 text-[10px] font-bold text-slate-400 space-y-1">
+                <div>누적 원점수: <span id="detail-stat-total-raw" class="text-slate-800 dark:text-white font-black">0점</span></div>
+                <div>지급 완료 점수: <span id="detail-stat-total-paid" class="text-slate-800 dark:text-white font-black">0점</span></div>
+                <div>지급 대기 점수: <span id="detail-stat-total-unpaid" class="text-slate-800 dark:text-white font-black">0점</span></div>
+                <div>등록 학생 수: <span id="detail-stat-students-count" class="text-slate-800 dark:text-white font-black">0명</span></div>
+              </div>
+            </div>
+
+            <!-- Middle: Milestones List Container Card -->
+            <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-4">
+                  <span class="text-sm font-black text-slate-950 dark:text-white">학급 목표 (Milestones)</span>
+                  <span class="text-[10px] font-black text-slate-400">온도별 보상</span>
+                </div>
+                <div class="space-y-3 max-h-80 overflow-y-auto pr-1" id="milestones-list-container">
+                  <!-- Milestones dynamically populated -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Add Milestone Form Card -->
+            <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-4">
+                  <span class="text-sm font-black text-slate-950 dark:text-white">목표 보상 추가</span>
+                  <span class="text-[10px] font-black text-slate-400">신규 추가</span>
+                </div>
+                <form id="add-milestone-form" class="space-y-4 text-left">
+                  <div class="space-y-1.5">
+                    <label class="block text-xs font-black text-slate-600 dark:text-slate-300">목표 달성 온도 (°)</label>
+                    <div class="flex items-center bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3.5 py-2 shadow-clay-flat">
+                      <input type="number" step="0.1" id="milestone-temp-input" min="0.1" placeholder="예: 36.5" required class="w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white">
+                    </div>
+                  </div>
+                  <div class="space-y-1.5">
+                    <label class="block text-xs font-black text-slate-600 dark:text-slate-300">보상/활동 내용</label>
+                    <div class="flex items-center bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3.5 py-2 shadow-clay-flat">
+                      <input type="text" id="milestone-activity-input" placeholder="예: 단체 피구 게임" required class="w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white">
+                    </div>
+                  </div>
+                  <button type="submit" class="btn px-4 py-2.5 text-xs font-black border-4 border-white rounded-2xl bg-clay-purple hover:bg-purple-600 text-white shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer w-full">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>신규 마일스톤 등록</span>
+                  </button>
+                </form>
+              </div>
+              <div class="mt-4 p-3 bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-2xl text-[9px] font-bold text-slate-400 leading-normal text-left">
+                <i data-lucide="info" class="w-3.5 h-3.5 inline-block mr-1 text-clay-sky"></i>
+                등록된 온도가 누적 점수로 계산된 온도에 이르면 목표를 자동으로 달성하게 되며, 대시보드 화면 전광판에 즉시 노출됩니다.
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+              <!-- 7. Unified Configuration & Settings Section -->
+      <section class="settings-section scroll-mt-24 border-t-4 border-dashed border-white/20 pt-10 hidden" id="settings-section">
+        <div class="text-left mb-6">
+          <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-sand dark:bg-[#131824] hover:bg-slate-200 text-slate-800 dark:text-white transition-all shadow-clay-flat flex items-center justify-center cursor-pointer"><i data-lucide="settings" class="w-5 h-5"></i></span>
+            <span>통합 설정 제어판</span>
+          </h2>
+          <p class="text-xs font-bold text-slate-500 mt-2">시스템 리소스 모니터링, 가입 대기열 승인, 다채널 알림 및 서비스별 설정을 관리합니다.</p>
+        </div>
+
+        <!-- Settings Sub-Tab Navigation Bar -->
+        <div class="flex gap-2 text-xs font-black border-b-2 border-slate-200 dark:border-white/10 pb-3 mb-6 w-full text-left flex-wrap" id="settings-subtabs-bar">
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat hidden" id="btn-settings-subtab-admin">
+            <i data-lucide="shield-alert" class="w-4 h-4 inline-block mr-1"></i> 통합 관리자 (Admin Center)
+          </button>
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-settings-subtab-shortcut">
+            <i data-lucide="link-2" class="w-4 h-4 inline-block mr-1"></i> 단축 & 설문 설정
+          </button>
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat active" id="btn-settings-subtab-classroom">
+            <i data-lucide="award" class="w-4 h-4 inline-block mr-1"></i> 으쓱점수 설정
+          </button>
+        </div>
+
+        <!-- Settings Cards Container -->
+        <div class="space-y-8">
+          
+          <!-- SUB-TAB VIEW 1: Admin Center (Only visible to admin role) -->
+          <div class="space-y-8 hidden" id="settings-subview-admin">
+             <!-- 보안 관리자 통제센터, 가입 승인 대기열, 계정 통제, 다채널 알림 등 -->
+             <!-- 6. Eusseuk Points Classroom Module (Parent Section) -->
+      <section class="eusseuk-section scroll-mt-24 border-t-4 border-dashed border-white/20 pt-10 hidden" id="eusseuk-section">
+        
+        <!-- Eusseuk Points Local Sub-Tab Navigation Bar -->
+        <div class="flex gap-2 text-xs font-black border-b-2 border-slate-200 dark:border-white/10 pb-3 mb-6 w-full text-left flex-wrap">
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat active" id="btn-classroom-subtab-dash">
+            <i data-lucide="layout-dashboard" class="w-4 h-4 inline-block mr-1"></i> 대시보드
+          </button>
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-classroom-subtab-gradebook">
+            <i data-lucide="clipboard-list" class="w-4 h-4 inline-block mr-1"></i> 학생 명렬표
+          </button>
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-classroom-subtab-thermometer">
+            <i data-lucide="thermometer" class="w-4 h-4 inline-block mr-1"></i> 학급 온도계
+          </button>
+
+        </div>
+
+        <!-- SUB-VIEW 1: Classroom Dashboard View -->
+        <div class="classroom-section" id="classroom-section">
+          <div class="text-left mb-6">
+            <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-grass text-black flex items-center justify-center shadow-clay-flat"><i data-lucide="layout-dashboard" class="w-5 h-5"></i></span>
+              <span>우리 학급 대시보드</span>
+            </h2>
+            <p class="text-xs font-bold text-slate-500 mt-2">학생 <span id="dash-student-count">0</span>명 · 누적 응원 점수와 지급 현황을 한눈에 확인하세요</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+            <!-- Left: Class Thermometer Glass Card -->
+            <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card text-center flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-4">
+                  <span class="text-sm font-black text-slate-950 dark:text-white">학급 온도계</span>
+                  <span class="text-[10px] font-black text-slate-400">실시간</span>
+                </div>
+
+                <!-- SVG Glass Thermometer -->
+                <div class="flex items-center justify-center gap-6 py-4">
+                  <div class="relative w-20 h-64 flex flex-col items-center">
+                    <!-- Glass Tube Outer Border -->
+                    <div class="w-8 h-48 border-4 border-white bg-slate-100 dark:bg-slate-950/40 rounded-full relative overflow-hidden flex flex-col justify-end shadow-inner">
+                      <!-- Mercury level rect (dynamic height via style) -->
+                      <div id="thermometer-mercury" class="w-full bg-gradient-to-t from-clay-sky to-clay-grass rounded-b-full transition-all duration-1000 ease-out" style="height: 0%;"></div>
+                    </div>
+                    <!-- Thermometer Bulb Sphere -->
+                    <div class="w-14 h-14 border-4 border-white bg-gradient-to-tr from-clay-sky to-clay-grass rounded-full -mt-4 shadow-lg flex items-center justify-center relative z-10">
+                      <div class="w-6 h-6 bg-white/20 rounded-full animate-ping absolute"></div>
+                    </div>
+                  </div>
+                  
+                  <div class="text-left space-y-2">
+                    <div class="text-5xl font-black text-clay-sky dark:text-clay-mint leading-none font-sans" id="dash-temp-val">0.0°</div>
+                    <div class="text-xs font-black text-slate-500 flex items-center gap-1">
+                      <span>학급 온도</span>
+                      <i data-lucide="help-circle" class="w-3.5 h-3.5 cursor-pointer text-slate-400" title="누적 원점수 합계 / 200 = 학급 온도"></i>
+                    </div>
+                    <div class="text-[10px] font-bold text-slate-400 mt-2">
+                      누적 원점수: <span id="dash-total-raw" class="text-slate-800 dark:text-white font-black">0점</span><br>
+                      변환 비율: <span id="dash-ratio-rule" class="text-slate-800 dark:text-white font-black">÷ 200</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Target Milestones info box -->
+              <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-2xl p-4 text-left mt-4">
+                <div class="flex items-center gap-1.5 text-xs font-black text-slate-800 dark:text-slate-300">
+                  <i data-lucide="target" class="w-4 h-4 text-clay-toy animate-pulse"></i>
+                  <span>다음 목표 <span id="dash-next-target-temp">100.0°</span></span>
+                </div>
+                <p class="text-sm font-black text-clay-purple dark:text-clay-mint mt-1.5" id="dash-next-target-activity">써바이벌 피구</p>
+                <p class="text-[10px] font-bold text-slate-400 mt-1" id="dash-temp-remaining-label">남은 온도 100°</p>
+                
+                <div class="border-t border-slate-200 dark:border-white/10 mt-3 pt-2.5">
+                  <span class="text-[10px] font-black text-slate-400 block mb-1">달성한 목표</span>
+                  <div class="space-y-1 max-h-20 overflow-y-auto" id="dash-achieved-goals-list">
+                    <!-- achieved goals here -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Middle & Right (span 2): Top 5 Space Race -->
+            <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card lg:col-span-2 flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-5">
+                  <span class="text-sm font-black text-slate-950 dark:text-white flex items-center gap-1.5">
+                    <i data-lucide="rocket" class="text-clay-purple w-5 h-5 animate-bounce"></i>
+                    <span>점수 TOP 5 우주 레이스</span>
+                  </span>
+                  <button id="btn-race-goto-gradebook" class="text-[10px] font-black text-clay-sky dark:text-clay-mint flex items-center gap-0.5 hover:underline">전체보기 <i data-lucide="chevron-right" class="w-3 h-3"></i></button>
+                </div>
+
+                <!-- Space race tracks container -->
+                <div class="space-y-5 animate-fade-in" id="space-race-tracks-container">
+                  <!-- Track rows dynamically populated -->
+                </div>
+              </div>
+              
+              <div class="mt-6 p-3 bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-2xl text-[10px] font-bold text-slate-400 leading-relaxed text-left flex items-start gap-2">
+                <i data-lucide="info" class="w-4 h-4 text-clay-sky flex-shrink-0 mt-0.5"></i>
+                <span>우주 레이스는 누적 원점수 상위 5명 학생들의 실시간 궤적을 보여줍니다. 칭찬 점수가 올라가면 로켓이 앞으로 힘차게 전진하며, 파란색/초록색 마일리지가 함께 표출됩니다.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Student Grid: Bottom -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card mt-8 text-left">
+            <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-5">
+              <h3 class="text-base font-black text-slate-950 dark:text-white flex items-center gap-2">
+                <i data-lucide="users" class="text-clay-sky w-5 h-5"></i>
+                <span>학생별 점수 한눈에 보기</span>
+              </h3>
+              <button id="btn-grid-goto-gradebook" class="text-[10px] font-black text-clay-sky dark:text-clay-mint flex items-center gap-0.5 hover:underline">관리하기 <i data-lucide="chevron-right" class="w-3 h-3"></i></button>
+            </div>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 animate-fade-in" id="dash-students-grid">
+              <!-- Student cards dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-VIEW 2: Student Gradebook View -->
+        <div class="gradebook-section hidden" id="gradebook-section">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 w-full text-left">
+            <div>
+              <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-sky text-white flex items-center justify-center shadow-clay-flat"><i data-lucide="clipboard-list" class="w-5 h-5"></i></span>
+                <span>학생 명렬표</span>
+              </h2>
+              <p class="text-xs font-bold text-slate-500 mt-2">학생 <span id="grade-student-count">0</span>명 · 실시간 점수 부여 및 리워드 지급을 관리하세요</p>
+            </div>
+            
+            <!-- Controller Buttons -->
+            <div class="flex flex-wrap gap-2">
+              <button class="btn px-4 py-2.5 text-xs font-black border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center gap-1 cursor-pointer" id="btn-import-scores">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>점수 가져오기</span>
+              </button>
+              <button class="btn px-4 py-2.5 text-xs font-black border-2 border-white rounded-xl bg-clay-sky hover:bg-cyan-400 text-white shadow-clay-flat flex items-center gap-1 cursor-pointer" id="btn-add-all-scores">
+                <i data-lucide="wand-2" class="w-4 h-4"></i>
+                <span>전체 점수 부여</span>
+              </button>
+              <button class="btn px-4 py-2.5 text-xs font-black border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center gap-1 cursor-pointer" id="btn-generate-numbers">
+                <i data-lucide="hash" class="w-4 h-4"></i>
+                <span>번호만 생성</span>
+              </button>
+              <button class="btn px-4 py-2.5 text-xs font-black border-2 border-white rounded-xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat flex items-center gap-1 cursor-pointer" id="btn-add-transfer">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>전입 (번호)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Gradebook table wrapper -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl shadow-clay-flat-lg overflow-hidden clay-card w-full">
+            <div class="overflow-x-auto w-full">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 dark:bg-slate-950 border-b-4 border-white text-xs font-black text-slate-600 dark:text-slate-400">
+                    <th class="p-4">번호</th>
+                    <th class="p-4">이름</th>
+                    <th class="p-4">누적 원점수</th>
+                    <th class="p-4">달성</th>
+                    <th class="p-4">지급</th>
+                    <th class="p-4">미지급</th>
+                    <th class="p-4 text-center">관리</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y-2 divide-slate-100 dark:divide-slate-800/50 text-xs font-bold text-slate-700 dark:text-slate-300" id="gradebook-table-body">
+                  <!-- Rows injected dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-VIEW 3: Class Thermometer Settings View -->
+        <div class="thermometer-section hidden" id="thermometer-section">
+          <div class="text-left mb-6">
+            <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-purple text-white flex items-center justify-center shadow-clay-flat"><i data-lucide="thermometer" class="w-5 h-5"></i></span>
+              <span>학급 온도계 상세 설정</span>
+            </h2>
+            <p class="text-xs font-bold text-slate-500 mt-2">전체 학생 점수 합계 ÷ 200 = 우리 반의 따뜻한 온도</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+            
+            <!-- Left: Thermometer Visualization Card -->
+            <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card text-center flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-4">
+                  <span class="text-sm font-black text-slate-950 dark:text-white">학급 온도계</span>
+                  <span class="text-[10px] font-black text-slate-400">실시간 스케일</span>
+                </div>
+
+                <div class="flex items-center justify-center gap-6 py-4">
+                  <div class="relative w-20 h-64 flex flex-col items-center">
+                    <div class="w-8 h-48 border-4 border-white bg-slate-100 dark:bg-slate-950/40 rounded-full relative overflow-hidden flex flex-col justify-end shadow-inner">
+                      <div id="thermometer-mercury-detail" class="w-full bg-gradient-to-t from-clay-sky to-clay-grass rounded-b-full transition-all duration-1000 ease-out" style="height: 0%;"></div>
+                    </div>
+                    <div class="w-14 h-14 border-4 border-white bg-gradient-to-tr from-clay-sky to-clay-grass rounded-full -mt-4 shadow-lg flex items-center justify-center relative z-10">
+                      <div class="w-6 h-6 bg-white/20 rounded-full animate-ping absolute"></div>
+                    </div>
+                  </div>
+                  
+                  <div class="text-left space-y-2">
+                    <div class="text-5xl font-black text-clay-sky dark:text-clay-mint leading-none font-sans" id="detail-temp-val">0.0°</div>
+                    <div class="text-xs font-black text-slate-500">학급 온도</div>
+                    <div class="text-[10px] font-bold text-slate-400 mt-3" id="detail-remaining-miles">
+                      목표 달성까지<br>
+                      점수가 필요합니다
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick stats list inside visualization card -->
+              <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-2xl p-4 text-left mt-4 text-[10px] font-bold text-slate-400 space-y-1">
+                <div>누적 원점수: <span id="detail-stat-total-raw" class="text-slate-800 dark:text-white font-black">0점</span></div>
+                <div>지급 완료 점수: <span id="detail-stat-total-paid" class="text-slate-800 dark:text-white font-black">0점</span></div>
+                <div>지급 대기 점수: <span id="detail-stat-total-unpaid" class="text-slate-800 dark:text-white font-black">0점</span></div>
+                <div>등록 학생 수: <span id="detail-stat-students-count" class="text-slate-800 dark:text-white font-black">0명</span></div>
+              </div>
+            </div>
+
+            <!-- Middle: Milestones List Container Card -->
+            <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-4">
+                  <span class="text-sm font-black text-slate-950 dark:text-white">학급 목표 (Milestones)</span>
+                  <span class="text-[10px] font-black text-slate-400">온도별 보상</span>
+                </div>
+                <div class="space-y-3 max-h-80 overflow-y-auto pr-1" id="milestones-list-container">
+                  <!-- Milestones dynamically populated -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Add Milestone Form Card -->
+            <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-4">
+                  <span class="text-sm font-black text-slate-950 dark:text-white">목표 보상 추가</span>
+                  <span class="text-[10px] font-black text-slate-400">신규 추가</span>
+                </div>
+                <form id="add-milestone-form" class="space-y-4 text-left">
+                  <div class="space-y-1.5">
+                    <label class="block text-xs font-black text-slate-600 dark:text-slate-300">목표 달성 온도 (°)</label>
+                    <div class="flex items-center bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3.5 py-2 shadow-clay-flat">
+                      <input type="number" step="0.1" id="milestone-temp-input" min="0.1" placeholder="예: 36.5" required class="w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white">
+                    </div>
+                  </div>
+                  <div class="space-y-1.5">
+                    <label class="block text-xs font-black text-slate-600 dark:text-slate-300">보상/활동 내용</label>
+                    <div class="flex items-center bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3.5 py-2 shadow-clay-flat">
+                      <input type="text" id="milestone-activity-input" placeholder="예: 단체 피구 게임" required class="w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white">
+                    </div>
+                  </div>
+                  <button type="submit" class="btn px-4 py-2.5 text-xs font-black border-4 border-white rounded-2xl bg-clay-purple hover:bg-purple-600 text-white shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer w-full">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>신규 마일스톤 등록</span>
+                  </button>
+                </form>
+              </div>
+              <div class="mt-4 p-3 bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-2xl text-[9px] font-bold text-slate-400 leading-normal text-left">
+                <i data-lucide="info" class="w-3.5 h-3.5 inline-block mr-1 text-clay-sky"></i>
+                등록된 온도가 누적 점수로 계산된 온도에 이르면 목표를 자동으로 달성하게 되며, 대시보드 화면 전광판에 즉시 노출됩니다.
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+              <!-- 7. Unified Configuration & Settings Section -->
+      <section class="settings-section scroll-mt-24 border-t-4 border-dashed border-white/20 pt-10 hidden" id="settings-section">
+        <div class="text-left mb-6">
+          <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-sand dark:bg-[#131824] hover:bg-slate-200 text-slate-800 dark:text-white transition-all shadow-clay-flat flex items-center justify-center cursor-pointer"><i data-lucide="settings" class="w-5 h-5"></i></span>
+            <span>통합 설정 제어판</span>
+          </h2>
+          <p class="text-xs font-bold text-slate-500 mt-2">시스템 리소스 모니터링, 가입 대기열 승인, 다채널 알림 및 서비스별 설정을 관리합니다.</p>
+        </div>
+
+        <!-- Settings Sub-Tab Navigation Bar -->
+        <div class="flex gap-2 text-xs font-black border-b-2 border-slate-200 dark:border-white/10 pb-3 mb-6 w-full text-left flex-wrap" id="settings-subtabs-bar">
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat hidden" id="btn-settings-subtab-admin">
+            <i data-lucide="shield-alert" class="w-4 h-4 inline-block mr-1"></i> 통합 관리자 (Admin Center)
+          </button>
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-settings-subtab-shortcut">
+            <i data-lucide="link-2" class="w-4 h-4 inline-block mr-1"></i> 단축 & 설문 설정
+          </button>
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat active" id="btn-settings-subtab-classroom">
+            <i data-lucide="award" class="w-4 h-4 inline-block mr-1"></i> 으쓱점수 설정
+          </button>
+        </div>
+
+        <!-- Settings Cards Container -->
+        <div class="space-y-8">
+          
+          <!-- SUB-TAB VIEW 1: Admin Center (Only visible to admin role) -->
+          <div class="space-y-8 hidden" id="settings-subview-admin">
+             <!-- 보안 관리자 통제센터, 가입 승인 대기열, 계정 통제, 다채널 알림 등 -->
+             <!-- 5. Administrator Control Center Section -->
+      <section class="space-y-8" id="admin-approval-section">
+        
+        <!-- Section title header -->
+        <div class="text-left border-b-4 border-white pb-4 mb-6">
+          <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <i data-lucide="shield-check" class="text-clay-toy"></i>
+            <span>ADMINISTRATOR 보안 관리자 통제 센터</span>
+          </h2>
+          <p class="text-xs font-bold text-slate-500 mt-1">회원 가입 대기열 승인, 실시간 호스트 서버 물리 자원 상태 확인 및 다채널 알림 관리를 통합 수행합니다.</p>
+        </div>
+
+        <!-- System Monitor Resource Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <!-- CPU -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-4 shadow-clay-flat flex items-center gap-3 clay-card">
+            <div class="w-10 h-10 rounded-xl border-2 border-white bg-clay-purple text-white flex items-center justify-center"><i data-lucide="cpu" class="w-5 h-5"></i></div>
+            <div class="text-left">
+              <span class="text-[9px] font-black text-slate-400 block">CPU 가동율</span>
+              <span class="text-base font-black text-slate-900 dark:text-white" id="monitor-cpu-val">0%</span>
+            </div>
+          </div>
+          <!-- Memory -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-4 shadow-clay-flat flex items-center gap-3 clay-card">
+            <div class="w-10 h-10 rounded-xl border-2 border-white bg-clay-sky text-white flex items-center justify-center"><i data-lucide="database" class="w-5 h-5"></i></div>
+            <div class="text-left">
+              <span class="text-[9px] font-black text-slate-400 block">메모리 사용율</span>
+              <span class="text-base font-black text-slate-900 dark:text-white" id="monitor-mem-val">0%</span>
+            </div>
+          </div>
+          <!-- Disk -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-4 shadow-clay-flat flex items-center gap-3 clay-card">
+            <div class="w-10 h-10 rounded-xl border-2 border-white bg-clay-toy text-black flex items-center justify-center"><i data-lucide="hard-drive" class="w-5 h-5"></i></div>
+            <div class="text-left">
+              <span class="text-[9px] font-black text-slate-400 block">디스크 사용율</span>
+              <span class="text-base font-black text-slate-900 dark:text-white" id="monitor-disk-val">0%</span>
+            </div>
+          </div>
+          <!-- Uptime -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-4 shadow-clay-flat flex items-center gap-3 clay-card">
+            <div class="w-10 h-10 rounded-xl border-2 border-white bg-clay-grass text-black flex items-center justify-center"><i data-lucide="clock" class="w-5 h-5"></i></div>
+            <div class="text-left font-sans">
+              <span class="text-[9px] font-black text-slate-400 block">무중단 업타임</span>
+              <span class="text-xs font-black text-slate-900 dark:text-white truncate" id="monitor-uptime-val">0일 0시간</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 text-left">
+          <!-- Left: Pending Approvals list -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-5 shadow-clay-flat-lg clay-card">
+            <div class="flex items-center gap-2 border-b-2 border-white pb-3 mb-4">
+              <i data-lucide="users" class="text-clay-purple w-5 h-5"></i>
+              <h3 class="text-base font-black text-slate-900 dark:text-white">회원가입 신청 대기열 승인</h3>
+            </div>
+            
+            <div class="overflow-x-auto w-full hidden" id="admin-table-wrapper">
+              <table class="w-full text-xs">
+                <thead>
+                  <tr class="bg-slate-100 dark:bg-slate-950 border-b-2 border-white text-slate-600 dark:text-slate-400 font-black">
+                    <th class="p-2.5">신청자 아이디</th>
+                    <th class="p-2.5">접수 일시</th>
+                    <th class="p-2.5 text-center">심사 제어</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/50 font-bold text-slate-700 dark:text-slate-300" id="admin-pending-body">
+                  <!-- Pending rows dynamically -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="p-6 text-center text-slate-400 font-bold" id="admin-empty-state">
+              <i data-lucide="shield-alert" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+              <p class="text-xs">현재 신규 가입 승인 대기자가 0명입니다.</p>
+            </div>
+          </div>
+
+          <!-- Right: Member statistics and metrics table -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-5 shadow-clay-flat-lg clay-card">
+            <div class="flex justify-between items-center border-b-2 border-white pb-3 mb-4">
+              <div class="flex items-center gap-2">
+                <i data-lucide="shield" class="text-clay-sky w-5 h-5"></i>
+                <h3 class="text-base font-black text-slate-900 dark:text-white">회원 이용량 모니터링 & 계정 통제</h3>
+              </div>
+              <button class="w-8 h-8 rounded-lg border-2 border-white bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover" id="btn-refresh-user-stats" title="회원 관리 데이터 새로고침"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+            </div>
+            
+            <div class="overflow-x-auto w-full">
+              <table class="w-full text-xs">
+                <thead>
+                  <tr class="bg-slate-100 dark:bg-slate-950 border-b-2 border-white text-slate-600 dark:text-slate-400 font-black">
+                    <th class="p-2.5">아이디</th>
+                    <th class="p-2.5">권한</th>
+                    <th class="p-2.5">주소수</th>
+                    <th class="p-2.5">클릭수</th>
+                    <th class="p-2.5">가입일</th>
+                    <th class="p-2.5">상태</th>
+                    <th class="p-2.5 text-center">관제</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/50 font-bold text-slate-700 dark:text-slate-300" id="admin-user-stats-body">
+                  <!-- User stats rows dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Multi-channel notifications configuration -->
+        <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card text-left">
+          <div class="flex items-center gap-2 border-b-4 border-white pb-4 mb-6">
+            <i data-lucide="bell-ring" class="text-clay-toy w-6 h-6 animate-pulse"></i>
+            <h3 class="text-lg font-black text-slate-900 dark:text-white">신규 회원가입 알림 & 다채널 외부 연동 관리</h3>
+          </div>
+
+          <form id="notification-settings-form">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              
+              <!-- 1. Webhook Settings -->
+              <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white p-5 rounded-2xl shadow-clay-flat space-y-3">
+                <div class="flex justify-between items-center">
+                  <h4 class="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5"><i data-lucide="slack" class="w-4 h-4 text-clay-purple"></i> Discord / Telegram Webhook</h4>
+                  <label class="switch-container inline-flex items-center cursor-pointer relative w-12 h-6 rounded-full bg-slate-200 dark:bg-slate-800 border-2 border-white shadow-inner">
+                    <input type="checkbox" id="chk-webhook-enabled" class="sr-only cursor-pointer">
+                    <div class="switch-dot w-4 h-4 rounded-full bg-black dark:bg-clay-mint border border-white absolute left-1 top-0.5"></div>
+                  </label>
+                </div>
+                <p class="text-[10px] font-bold text-slate-400 leading-normal">
+                  디스코드 또는 텔레그램 채널의 웹훅 URL을 등록하여 모바일 푸시 알림으로 편리하게 실시간 승인 요청을 받습니다. (100% 무료)
+                </p>
+                <div id="panel-webhook-config" class="hidden space-y-1.5">
+                  <label class="block text-[9px] font-black text-slate-400">웹훅 연동 주소 (Webhook URL)</label>
+                  <input type="url" id="txt-webhook-url" placeholder="https://discord.com/api/webhooks/..." class="w-full bg-white dark:bg-clay-card border-2 border-white rounded-lg px-3 py-2 text-xs font-bold text-slate-800 dark:text-white shadow-clay-flat">
+                </div>
+              </div>
+
+              <!-- 2. Email SMTP Settings -->
+              <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white p-5 rounded-2xl shadow-clay-flat space-y-3">
+                <div class="flex justify-between items-center">
+                  <h4 class="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5"><i data-lucide="mail" class="w-4 h-4 text-clay-toy"></i> 이메일 SMTP 알림 연동</h4>
+                  <label class="switch-container inline-flex items-center cursor-pointer relative w-12 h-6 rounded-full bg-slate-200 dark:bg-slate-800 border-2 border-white shadow-inner">
+                    <input type="checkbox" id="chk-email-enabled" class="sr-only cursor-pointer">
+                    <div class="switch-dot w-4 h-4 rounded-full bg-black dark:bg-clay-mint border border-white absolute left-1 top-0.5"></div>
+                  </label>
+                </div>
+                <p class="text-[10px] font-bold text-slate-400 leading-normal">
+                  Gmail, Naver 등 메일 송신 기능을 활용해 회원가입 신청이 들어올 때마다 지정된 관리자 메일 계정으로 상세 정보를 즉시 전송합니다.
+                </p>
+                <div id="panel-email-config" class="hidden space-y-2">
+                  <div class="space-y-1">
+                    <label class="block text-[9px] font-black text-slate-400">SMTP 서버 주소</label>
+                    <input type="text" id="txt-email-host" placeholder="smtp.gmail.com" class="w-full bg-white dark:bg-clay-card border-2 border-white rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-white">
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <div class="space-y-1">
+                      <label class="block text-[9px] font-black text-slate-400">포트 (Port)</label>
+                      <input type="number" id="num-email-port" value="465" class="w-full bg-white dark:bg-clay-card border-2 border-white rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-white">
+                    </div>
+                    <div class="space-y-1">
+                      <label class="block text-[9px] font-black text-slate-400">보안 옵션</label>
+                      <select id="sel-email-secure" class="w-full bg-white dark:bg-clay-card border-2 border-white rounded-lg px-3 py-1 text-xs font-bold text-slate-800 dark:text-white h-[32px] cursor-pointer">
+                        <option value="true" class="bg-slate-900 text-white">SSL (465 권장)</option>
+                        <option value="false" class="bg-slate-900 text-white">STARTTLS (587)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="space-y-1">
+                    <label class="block text-[9px] font-black text-slate-400">계정 메일 주소</label>
+                    <input type="email" id="txt-email-user" placeholder="your_email@gmail.com" class="w-full bg-white dark:bg-clay-card border-2 border-white rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-white">
+                  </div>
+                  <div class="space-y-1">
+                    <label class="block text-[9px] font-black text-slate-400">비밀번호 (SMTP 앱 비밀번호)</label>
+                    <input type="password" id="txt-email-pass" placeholder="SMTP 앱 비밀번호" class="w-full bg-white dark:bg-clay-card border-2 border-white rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-white">
+                  </div>
+                  <div class="space-y-1">
+                    <label class="block text-[9px] font-black text-slate-400">알림 수신 메일 주소</label>
+                    <input type="email" id="txt-email-receiver" placeholder="admin_inbox@domain.com" class="w-full bg-white dark:bg-clay-card border-2 border-white rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-white">
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. SMS Coolsms Settings -->
+              <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white p-5 rounded-2xl shadow-clay-flat space-y-3">
+                <div class="flex justify-between items-center">
+                  <h4 class="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5"><i data-lucide="message-square" class="w-4 h-4 text-clay-sky"></i> SMS & 카카오 알림톡 (Coolsms)</h4>
+                  <label class="switch-container inline-flex items-center cursor-pointer relative w-12 h-6 rounded-full bg-slate-200 dark:bg-slate-800 border-2 border-white shadow-inner">
+                    <input type="checkbox" id="chk-sms-enabled" class="sr-only cursor-pointer">
+                    <div class="switch-dot w-4 h-4 rounded-full bg-black dark:bg-clay-mint border border-white absolute left-1 top-0.5"></div>
+                  </label>
+                </div>
+                <p class="text-[10px] font-bold text-slate-400 leading-normal">
+                  Coolsms API를 연동해 관리자 휴대폰 번호로 가입 신청 대기 문자를 실시간 송출합니다. 카카오톡 비즈니스 채널 연동을 통한 알림톡 발송도 완벽 지원합니다.
+                </p>
+                <div id="panel-sms-config" class="hidden space-y-2">
+                  <div class="space-y-1">
+                    <label class="block text-[9px] font-black text-slate-400">Coolsms API Key</label>
+                    <input type="text" id="txt-sms-apikey" placeholder="NCS로 시작하는 API Key" class="w-full bg-white dark:bg-clay-card border-2 border-white rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-white">
+                  </div>
+                  <div class="space-y-1">
+                    <label class="block text-[9px] font-black text-slate-400">Coolsms API Secret</label>
+                    <input type="password" id="txt-sms-apisecret" placeholder="API Secret Key" class="w-full bg-white dark:bg-clay-card border-2 border-white rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-white">
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <div class="space-y-1">
+                      <label class="block text-[9px] font-black text-slate-400">발신자 전화번호</label>
+                      <input type="text" id="txt-sms-sender" placeholder="01012345678" class="w-full bg-white dark:bg-clay-card border-2 border-white rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-white">
+                    </div>
+                    <div class="space-y-1">
+                      <label class="block text-[9px] font-black text-slate-400">수신자 전화번호</label>
+                      <input type="text" id="txt-sms-receiver" placeholder="01012345678" class="w-full bg-white dark:bg-clay-card border-2 border-white rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-white">
+          <div class="p-3 bg-white dark:bg-clay-card border-2 border-dashed border-white/10 rounded-xl space-y-2">
+                    <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input type="checkbox" id="chk-sms-usekakao" class="w-4 h-4 rounded border-2 border-white bg-white accent-clay-purple cursor-pointer shadow-clay-flat">
+                      <span class="text-[10px] font-black text-slate-700 dark:text-slate-300">카카오 알림톡(Alimtalk) 수신</span>
+                    </label>
+                    
+                    <div id="panel-sms-kakao-details" class="hidden space-y-1.5">
+                      <div class="space-y-0.5">
+                        <label class="block text-[8px] font-black text-slate-400">비즈니스 발신 키 (pfId)</label>
+                        <input type="text" id="txt-sms-pfid" placeholder="KA01PF19030601..." class="w-full bg-white dark:bg-clay-card border-2 border-white rounded-lg px-2.5 py-1 text-[10px] font-bold text-slate-800 dark:text-white">
+                      </div>
+                      <div class="space-y-0.5">
+                        <label class="block text-[8px] font-black text-slate-400">템플릿 ID (templateId)</label>
+                        <input type="text" id="txt-sms-templateid" placeholder="KA01TP19030602..." class="w-full bg-white dark:bg-clay-card border-2 border-white rounded-lg px-2.5 py-1 text-[10px] font-bold text-slate-800 dark:text-white">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Buttons group -->
+            <div class="flex gap-3 justify-end items-center border-t-2 border-dashed border-slate-200 dark:border-slate-800 pt-4">
+              <button type="button" class="btn px-4 py-2 text-xs font-black border-2 border-white rounded-xl bg-white hover:bg-slate-100 text-black shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95" id="btn-test-notification">
+                <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                <span>테스트 알림 즉시 전송</span>
+              </button>
+              <button type="submit" class="btn px-5 py-2.5 text-xs font-black border-4 border-white rounded-2xl bg-clay-toy hover:bg-amber-400 text-black shadow-clay-flat-lg hover:shadow-clay-flat hover:translate-x-1 hover:translate-y-1 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95" id="btn-save-notification">
+                <i data-lucide="save" class="w-3.5 h-3.5"></i>
+                <span>알림 채널 설정 저장</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </section>
+          </div>
+
+          <!-- SUB-TAB VIEW 2: Shortener & Polls Settings -->
+          <div class="space-y-6 hidden" id="settings-subview-shortcut">
+             <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat clay-card text-left space-y-4">
+               <h4 class="text-sm font-black text-slate-950 dark:text-white flex items-center gap-1.5"><i data-lucide="trash-2" class="w-4 h-4 text-clay-red"></i> 단축 링크 데이터 청소</h4>
+               <p class="text-xs text-slate-400 leading-normal">
+                 대시보드에 축적된 모든 단축 링크 히스토리와 트래킹 방문 클릭 로그를 복구 불가능하게 영구히 소멸시킵니다.
+               </p>
+               <button class="btn px-4 py-2.5 text-xs font-black border-2 border-white rounded-xl bg-clay-red hover:bg-red-500 text-white shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-1 cursor-pointer" id="btn-clear-history">
+                 <i data-lucide="trash-2" class="w-4 h-4"></i>
+                 <span>모든 대시보드 리스트 청소</span>
+               </button>
+             </div>
+          </div>
+
+          <!-- SUB-TAB VIEW 3: Classroom Settings (으쓱점수 설정) -->
+          <div class="space-y-6" id="settings-subview-classroom">
+             </section>
+
+            <!-- 7. Unified Configuration & Settings Section -->
+      <section class="settings-section scroll-mt-24 border-t-4 border-dashed border-white/20 pt-10 hidden" id="settings-section">
+        <div class="text-left mb-6">
+          <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-sand dark:bg-[#131824] hover:bg-slate-200 text-slate-800 dark:text-white transition-all shadow-clay-flat flex items-center justify-center cursor-pointer"><i data-lucide="settings" class="w-5 h-5"></i></span>
+            <span>통합 설정 제어판</span>
+          </h2>
+          <p class="text-xs font-bold text-slate-500 mt-2">시스템 리소스 모니터링, 가입 대기열 승인, 다채널 알림 및 서비스별 설정을 관리합니다.</p>
+        </div>
+
+        <!-- Settings Sub-Tab Navigation Bar -->
+        <div class="flex gap-2 text-xs font-black border-b-2 border-slate-200 dark:border-white/10 pb-3 mb-6 w-full text-left flex-wrap" id="settings-subtabs-bar">
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat hidden" id="btn-settings-subtab-admin">
+            <i data-lucide="shield-alert" class="w-4 h-4 inline-block mr-1"></i> 통합 관리자 (Admin Center)
+          </button>
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-settings-subtab-shortcut">
+            <i data-lucide="link-2" class="w-4 h-4 inline-block mr-1"></i> 단축 & 설문 설정
+          </button>
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat active" id="btn-settings-subtab-classroom">
+            <i data-lucide="award" class="w-4 h-4 inline-block mr-1"></i> 으쓱점수 설정
+          </button>
+        </div>
+
+        <!-- Settings Cards Container -->
+        <div class="space-y-8">
+          
+          <!-- SUB-TAB VIEW 1: Admin Center (Only visible to admin role) -->
+          <div class="space-y-8 hidden" id="settings-subview-admin">
+             <!-- 보안 관리자 통제센터, 가입 승인 대기열, 계정 통제, 다채널 알림 등 -->
+             <!-- 6. Eusseuk Points Classroom Module (Parent Section) -->
+      <section class="eusseuk-section scroll-mt-24 border-t-4 border-dashed border-white/20 pt-10 hidden" id="eusseuk-section">
+        
+        <!-- Eusseuk Points Local Sub-Tab Navigation Bar -->
+        <div class="flex gap-2 text-xs font-black border-b-2 border-slate-200 dark:border-white/10 pb-3 mb-6 w-full text-left flex-wrap">
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat active" id="btn-classroom-subtab-dash">
+            <i data-lucide="layout-dashboard" class="w-4 h-4 inline-block mr-1"></i> 대시보드
+          </button>
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-classroom-subtab-gradebook">
+            <i data-lucide="clipboard-list" class="w-4 h-4 inline-block mr-1"></i> 학생 명렬표
+          </button>
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-classroom-subtab-thermometer">
+            <i data-lucide="thermometer" class="w-4 h-4 inline-block mr-1"></i> 학급 온도계
+          </button>
+
+        </div>
+
+        <!-- SUB-VIEW 1: Classroom Dashboard View -->
+        <div class="classroom-section" id="classroom-section">
+          <div class="text-left mb-6">
+            <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-grass text-black flex items-center justify-center shadow-clay-flat"><i data-lucide="layout-dashboard" class="w-5 h-5"></i></span>
+              <span>우리 학급 대시보드</span>
+            </h2>
+            <p class="text-xs font-bold text-slate-500 mt-2">학생 <span id="dash-student-count">0</span>명 · 누적 응원 점수와 지급 현황을 한눈에 확인하세요</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+            <!-- Left: Class Thermometer Glass Card -->
+            <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card text-center flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-4">
+                  <span class="text-sm font-black text-slate-950 dark:text-white">학급 온도계</span>
+                  <span class="text-[10px] font-black text-slate-400">실시간</span>
+                </div>
+
+                <!-- SVG Glass Thermometer -->
+                <div class="flex items-center justify-center gap-6 py-4">
+                  <div class="relative w-20 h-64 flex flex-col items-center">
+                    <!-- Glass Tube Outer Border -->
+                    <div class="w-8 h-48 border-4 border-white bg-slate-100 dark:bg-slate-950/40 rounded-full relative overflow-hidden flex flex-col justify-end shadow-inner">
+                      <!-- Mercury level rect (dynamic height via style) -->
+                      <div id="thermometer-mercury" class="w-full bg-gradient-to-t from-clay-sky to-clay-grass rounded-b-full transition-all duration-1000 ease-out" style="height: 0%;"></div>
+                    </div>
+                    <!-- Thermometer Bulb Sphere -->
+                    <div class="w-14 h-14 border-4 border-white bg-gradient-to-tr from-clay-sky to-clay-grass rounded-full -mt-4 shadow-lg flex items-center justify-center relative z-10">
+                      <div class="w-6 h-6 bg-white/20 rounded-full animate-ping absolute"></div>
+                    </div>
+                  </div>
+                  
+                  <div class="text-left space-y-2">
+                    <div class="text-5xl font-black text-clay-sky dark:text-clay-mint leading-none font-sans" id="dash-temp-val">0.0°</div>
+                    <div class="text-xs font-black text-slate-500 flex items-center gap-1">
+                      <span>학급 온도</span>
+                      <i data-lucide="help-circle" class="w-3.5 h-3.5 cursor-pointer text-slate-400" title="누적 원점수 합계 / 200 = 학급 온도"></i>
+                    </div>
+                    <div class="text-[10px] font-bold text-slate-400 mt-2">
+                      누적 원점수: <span id="dash-total-raw" class="text-slate-800 dark:text-white font-black">0점</span><br>
+                      변환 비율: <span id="dash-ratio-rule" class="text-slate-800 dark:text-white font-black">÷ 200</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Target Milestones info box -->
+              <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-2xl p-4 text-left mt-4">
+                <div class="flex items-center gap-1.5 text-xs font-black text-slate-800 dark:text-slate-300">
+                  <i data-lucide="target" class="w-4 h-4 text-clay-toy animate-pulse"></i>
+                  <span>다음 목표 <span id="dash-next-target-temp">100.0°</span></span>
+                </div>
+                <p class="text-sm font-black text-clay-purple dark:text-clay-mint mt-1.5" id="dash-next-target-activity">써바이벌 피구</p>
+                <p class="text-[10px] font-bold text-slate-400 mt-1" id="dash-temp-remaining-label">남은 온도 100°</p>
+                
+                <div class="border-t border-slate-200 dark:border-white/10 mt-3 pt-2.5">
+                  <span class="text-[10px] font-black text-slate-400 block mb-1">달성한 목표</span>
+                  <div class="space-y-1 max-h-20 overflow-y-auto" id="dash-achieved-goals-list">
+                    <!-- achieved goals here -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Middle & Right (span 2): Top 5 Space Race -->
+            <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card lg:col-span-2 flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-5">
+                  <span class="text-sm font-black text-slate-950 dark:text-white flex items-center gap-1.5">
+                    <i data-lucide="rocket" class="text-clay-purple w-5 h-5 animate-bounce"></i>
+                    <span>점수 TOP 5 우주 레이스</span>
+                  </span>
+                  <button id="btn-race-goto-gradebook" class="text-[10px] font-black text-clay-sky dark:text-clay-mint flex items-center gap-0.5 hover:underline">전체보기 <i data-lucide="chevron-right" class="w-3 h-3"></i></button>
+                </div>
+
+                <!-- Space race tracks container -->
+                <div class="space-y-5 animate-fade-in" id="space-race-tracks-container">
+                  <!-- Track rows dynamically populated -->
+                </div>
+              </div>
+              
+              <div class="mt-6 p-3 bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-2xl text-[10px] font-bold text-slate-400 leading-relaxed text-left flex items-start gap-2">
+                <i data-lucide="info" class="w-4 h-4 text-clay-sky flex-shrink-0 mt-0.5"></i>
+                <span>우주 레이스는 누적 원점수 상위 5명 학생들의 실시간 궤적을 보여줍니다. 칭찬 점수가 올라가면 로켓이 앞으로 힘차게 전진하며, 파란색/초록색 마일리지가 함께 표출됩니다.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Student Grid: Bottom -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card mt-8 text-left">
+            <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-5">
+              <h3 class="text-base font-black text-slate-950 dark:text-white flex items-center gap-2">
+                <i data-lucide="users" class="text-clay-sky w-5 h-5"></i>
+                <span>학생별 점수 한눈에 보기</span>
+              </h3>
+              <button id="btn-grid-goto-gradebook" class="text-[10px] font-black text-clay-sky dark:text-clay-mint flex items-center gap-0.5 hover:underline">관리하기 <i data-lucide="chevron-right" class="w-3 h-3"></i></button>
+            </div>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 animate-fade-in" id="dash-students-grid">
+              <!-- Student cards dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-VIEW 2: Student Gradebook View -->
+        <div class="gradebook-section hidden" id="gradebook-section">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 w-full text-left">
+            <div>
+              <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-sky text-white flex items-center justify-center shadow-clay-flat"><i data-lucide="clipboard-list" class="w-5 h-5"></i></span>
+                <span>학생 명렬표</span>
+              </h2>
+              <p class="text-xs font-bold text-slate-500 mt-2">학생 <span id="grade-student-count">0</span>명 · 실시간 점수 부여 및 리워드 지급을 관리하세요</p>
+            </div>
+            
+            <!-- Controller Buttons -->
+            <div class="flex flex-wrap gap-2">
+              <button class="btn px-4 py-2.5 text-xs font-black border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center gap-1 cursor-pointer" id="btn-import-scores">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>점수 가져오기</span>
+              </button>
+              <button class="btn px-4 py-2.5 text-xs font-black border-2 border-white rounded-xl bg-clay-sky hover:bg-cyan-400 text-white shadow-clay-flat flex items-center gap-1 cursor-pointer" id="btn-add-all-scores">
+                <i data-lucide="wand-2" class="w-4 h-4"></i>
+                <span>전체 점수 부여</span>
+              </button>
+              <button class="btn px-4 py-2.5 text-xs font-black border-2 border-white rounded-xl bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat flex items-center gap-1 cursor-pointer" id="btn-generate-numbers">
+                <i data-lucide="hash" class="w-4 h-4"></i>
+                <span>번호만 생성</span>
+              </button>
+              <button class="btn px-4 py-2.5 text-xs font-black border-2 border-white rounded-xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat flex items-center gap-1 cursor-pointer" id="btn-add-transfer">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>전입 (번호)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Gradebook table wrapper -->
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl shadow-clay-flat-lg overflow-hidden clay-card w-full">
+            <div class="overflow-x-auto w-full">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 dark:bg-slate-950 border-b-4 border-white text-xs font-black text-slate-600 dark:text-slate-400">
+                    <th class="p-4">번호</th>
+                    <th class="p-4">이름</th>
+                    <th class="p-4">누적 원점수</th>
+                    <th class="p-4">달성</th>
+                    <th class="p-4">지급</th>
+                    <th class="p-4">미지급</th>
+                    <th class="p-4 text-center">관리</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y-2 divide-slate-100 dark:divide-slate-800/50 text-xs font-bold text-slate-700 dark:text-slate-300" id="gradebook-table-body">
+                  <!-- Rows injected dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-VIEW 3: Class Thermometer Settings View -->
+        <div class="thermometer-section hidden" id="thermometer-section">
+          <div class="text-left mb-6">
+            <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-purple text-white flex items-center justify-center shadow-clay-flat"><i data-lucide="thermometer" class="w-5 h-5"></i></span>
+              <span>학급 온도계 상세 설정</span>
+            </h2>
+            <p class="text-xs font-bold text-slate-500 mt-2">전체 학생 점수 합계 ÷ 200 = 우리 반의 따뜻한 온도</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+            
+            <!-- Left: Thermometer Visualization Card -->
+            <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card text-center flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-4">
+                  <span class="text-sm font-black text-slate-950 dark:text-white">학급 온도계</span>
+                  <span class="text-[10px] font-black text-slate-400">실시간 스케일</span>
+                </div>
+
+                <div class="flex items-center justify-center gap-6 py-4">
+                  <div class="relative w-20 h-64 flex flex-col items-center">
+                    <div class="w-8 h-48 border-4 border-white bg-slate-100 dark:bg-slate-950/40 rounded-full relative overflow-hidden flex flex-col justify-end shadow-inner">
+                      <div id="thermometer-mercury-detail" class="w-full bg-gradient-to-t from-clay-sky to-clay-grass rounded-b-full transition-all duration-1000 ease-out" style="height: 0%;"></div>
+                    </div>
+                    <div class="w-14 h-14 border-4 border-white bg-gradient-to-tr from-clay-sky to-clay-grass rounded-full -mt-4 shadow-lg flex items-center justify-center relative z-10">
+                      <div class="w-6 h-6 bg-white/20 rounded-full animate-ping absolute"></div>
+                    </div>
+                  </div>
+                  
+                  <div class="text-left space-y-2">
+                    <div class="text-5xl font-black text-clay-sky dark:text-clay-mint leading-none font-sans" id="detail-temp-val">0.0°</div>
+                    <div class="text-xs font-black text-slate-500">학급 온도</div>
+                    <div class="text-[10px] font-bold text-slate-400 mt-3" id="detail-remaining-miles">
+                      목표 달성까지<br>
+                      점수가 필요합니다
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick stats list inside visualization card -->
+              <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-2xl p-4 text-left mt-4 text-[10px] font-bold text-slate-400 space-y-1">
+                <div>누적 원점수: <span id="detail-stat-total-raw" class="text-slate-800 dark:text-white font-black">0점</span></div>
+                <div>지급 완료 점수: <span id="detail-stat-total-paid" class="text-slate-800 dark:text-white font-black">0점</span></div>
+                <div>지급 대기 점수: <span id="detail-stat-total-unpaid" class="text-slate-800 dark:text-white font-black">0점</span></div>
+                <div>등록 학생 수: <span id="detail-stat-students-count" class="text-slate-800 dark:text-white font-black">0명</span></div>
+              </div>
+            </div>
+
+            <!-- Middle: Milestones List Container Card -->
+            <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-4">
+                  <span class="text-sm font-black text-slate-950 dark:text-white">학급 목표 (Milestones)</span>
+                  <span class="text-[10px] font-black text-slate-400">온도별 보상</span>
+                </div>
+                <div class="space-y-3 max-h-80 overflow-y-auto pr-1" id="milestones-list-container">
+                  <!-- Milestones dynamically populated -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Add Milestone Form Card -->
+            <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card flex flex-col justify-between">
+              <div>
+                <div class="flex justify-between items-center border-b-2 border-slate-100 dark:border-white/10 pb-3 mb-4">
+                  <span class="text-sm font-black text-slate-950 dark:text-white">목표 보상 추가</span>
+                  <span class="text-[10px] font-black text-slate-400">신규 추가</span>
+                </div>
+                <form id="add-milestone-form" class="space-y-4 text-left">
+                  <div class="space-y-1.5">
+                    <label class="block text-xs font-black text-slate-600 dark:text-slate-300">목표 달성 온도 (°)</label>
+                    <div class="flex items-center bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3.5 py-2 shadow-clay-flat">
+                      <input type="number" step="0.1" id="milestone-temp-input" min="0.1" placeholder="예: 36.5" required class="w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white">
+                    </div>
+                  </div>
+                  <div class="space-y-1.5">
+                    <label class="block text-xs font-black text-slate-600 dark:text-slate-300">보상/활동 내용</label>
+                    <div class="flex items-center bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3.5 py-2 shadow-clay-flat">
+                      <input type="text" id="milestone-activity-input" placeholder="예: 단체 피구 게임" required class="w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white">
+                    </div>
+                  </div>
+                  <button type="submit" class="btn px-4 py-2.5 text-xs font-black border-4 border-white rounded-2xl bg-clay-purple hover:bg-purple-600 text-white shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer w-full">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>신규 마일스톤 등록</span>
+                  </button>
+                </form>
+              </div>
+              <div class="mt-4 p-3 bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-2xl text-[9px] font-bold text-slate-400 leading-normal text-left">
+                <i data-lucide="info" class="w-3.5 h-3.5 inline-block mr-1 text-clay-sky"></i>
+                등록된 온도가 누적 점수로 계산된 온도에 이르면 목표를 자동으로 달성하게 되며, 대시보드 화면 전광판에 즉시 노출됩니다.
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+              <!-- 7. Unified Configuration & Settings Section -->
+      <section class="settings-section scroll-mt-24 border-t-4 border-dashed border-white/20 pt-10 hidden" id="settings-section">
+        <div class="text-left mb-6">
+          <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-sand dark:bg-[#131824] hover:bg-slate-200 text-slate-800 dark:text-white transition-all shadow-clay-flat flex items-center justify-center cursor-pointer"><i data-lucide="settings" class="w-5 h-5"></i></span>
+            <span>통합 설정 제어판</span>
+          </h2>
+          <p class="text-xs font-bold text-slate-500 mt-2">시스템 리소스 모니터링, 가입 대기열 승인, 다채널 알림 및 서비스별 설정을 관리합니다.</p>
+        </div>
+
+        <!-- Settings Sub-Tab Navigation Bar -->
+        <div class="flex gap-2 text-xs font-black border-b-2 border-slate-200 dark:border-white/10 pb-3 mb-6 w-full text-left flex-wrap" id="settings-subtabs-bar">
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat hidden" id="btn-settings-subtab-admin">
+            <i data-lucide="shield-alert" class="w-4 h-4 inline-block mr-1"></i> 통합 관리자 (Admin Center)
+          </button>
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-settings-subtab-shortcut">
+            <i data-lucide="link-2" class="w-4 h-4 inline-block mr-1"></i> 단축 & 설문 설정
+          </button>
+          <button type="button" class="px-4 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat active" id="btn-settings-subtab-classroom">
+            <i data-lucide="award" class="w-4 h-4 inline-block mr-1"></i> 으쓱점수 설정
+          </button>
+        </div>
+
+        <!-- Settings Cards Container -->
+        <div class="space-y-8">
+          
+          <!-- SUB-TAB VIEW 1: Admin Center (Only visible to admin role) -->
+          <div class="space-y-8 hidden" id="settings-subview-admin">
+             <!-- 보안 관리자 통제센터, 가입 승인 대기열, 계정 통제, 다채널 알림 등 -->
+          </div>
+
+          <!-- SUB-TAB VIEW 2: Shortener & Polls Settings -->
+          <div class="space-y-6 hidden" id="settings-subview-shortcut">
+             <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat clay-card text-left space-y-4">
+               <h4 class="text-sm font-black text-slate-950 dark:text-white flex items-center gap-1.5"><i data-lucide="trash-2" class="w-4 h-4 text-clay-red"></i> 단축 링크 데이터 청소</h4>
+               <p class="text-xs text-slate-400 leading-normal">
+                 대시보드에 축적된 모든 단축 링크 히스토리와 트래킹 방문 클릭 로그를 복구 불가능하게 영구히 소멸시킵니다.
+               </p>
+               <button class="btn px-4 py-2.5 text-xs font-black border-2 border-white rounded-xl bg-clay-red hover:bg-red-500 text-white shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center gap-1 cursor-pointer" id="btn-clear-history">
+                 <i data-lucide="trash-2" class="w-4 h-4"></i>
+                 <span>모든 대시보드 리스트 청소</span>
+               </button>
+             </div>
+          </div>
+
+          <!-- SUB-TAB VIEW 3: Classroom Settings (으쓱점수 설정) -->
+          <div class="space-y-6" id="settings-subview-classroom">
+             <!-- SUB-VIEW 4: Classroom Settings View -->
+        <div class="classroom-settings-section" id="classroom-settings-section">
+          <div class="text-left mb-6">
+            <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <span class="w-10 h-10 rounded-xl border-2 border-white bg-clay-purple text-white flex items-center justify-center shadow-clay-flat"><i data-lucide="settings" class="w-5 h-5"></i></span>
+              <span>학급 설정 제어판</span>
+            </h2>
+            <p class="text-xs font-bold text-slate-500 mt-2">학급 운영 규칙, 개인정보 보호 및 폰트 크기를 설정합니다.</p>
+          </div>
+
+          <!-- Settings Subtabs -->
+          <div class="flex gap-2 text-xs font-black border-b-2 border-slate-200 dark:border-white/10 pb-3 mb-6 w-full text-left flex-wrap">
+            <button type="button" class="px-3.5 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat active" id="btn-subtab-privacy">
+              <i data-lucide="shield-check" class="w-4 h-4 inline-block mr-1"></i> 개인정보 & 생성
+            </button>
+            <button type="button" class="px-3.5 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-subtab-rules">
+              <i data-lucide="sliders" class="w-4 h-4 inline-block mr-1"></i> 점수 환산 규칙
+            </button>
+            <button type="button" class="px-3.5 py-2 rounded-xl border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-subtab-fontsize">
+              <i data-lucide="type" class="w-4 h-4 inline-block mr-1"></i> 화면 크기 조정
+            </button>
+          </div>
+
+          <!-- settings cards -->
+          <div class="space-y-6">
+            <!-- 1. settings-privacy-card -->
+            <div id="settings-privacy-card" class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat clay-card space-y-6 text-left">
+              <div class="space-y-2">
+                <h4 class="text-sm font-black text-slate-950 dark:text-white flex items-center gap-1.5"><i data-lucide="eye-off" class="w-4 h-4 text-clay-purple"></i> 실명 익명화 보호 모드</h4>
+                <p class="text-xs text-slate-400">활성화 시, 대시보드 및 전광판에 학생 실명 대신 '번호번 학생'으로 표출하여 학생의 개인정보를 원천 보호합니다.</p>
+                <div class="flex items-center gap-3 pt-2">
+                  <label class="switch-container relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="chk-name-privacy" class="sr-only">
+                    <div class="w-11 h-6 bg-slate-300 dark:bg-slate-850 rounded-full border-2 border-white transition-colors duration-200 focus:outline-none">
+                      <div class="switch-dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full border border-slate-300 transition-transform duration-200"></div>
+                    </div>
+                  </label>
+                  <span class="text-xs font-black text-slate-800 dark:text-white" id="privacy-status-label">학생 이름 숨김 (익명 번호)</span>
+                </div>
+              </div>
+
+              <hr class="border-slate-100 dark:border-white/10">
+
+              <div class="space-y-4">
+                <h4 class="text-sm font-black text-slate-950 dark:text-white flex items-center gap-1.5"><i data-lucide="users" class="w-4 h-4 text-clay-grass"></i> 번호만으로 학급 일괄 생성</h4>
+                <p class="text-xs text-slate-400">기존 학생 데이터를 모두 초기화하고 지정된 범위의 번호 슬롯을 초고속 자동 생성합니다.</p>
+                <form id="bulk-generate-settings-form" class="space-y-4 max-w-sm">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                      <label class="block text-[10px] font-black text-slate-500">생성 학생 수 (명)</label>
+                      <input type="number" id="bulk-gen-count" min="1" max="100" placeholder="30" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-white shadow-clay-flat">
+                    </div>
+                    <div class="space-y-1.5">
+                      <label class="block text-[10px] font-black text-slate-500">시작 번호 (번)</label>
+                      <input type="number" id="bulk-gen-start" min="1" placeholder="1" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-white shadow-clay-flat">
+                    </div>
+                  </div>
+                  <button type="submit" class="btn px-4 py-2.5 text-xs font-black border-4 border-white rounded-2xl bg-clay-red hover:bg-red-500 text-white shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-1 cursor-pointer w-full">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 animate-spin" style="animation-duration: 4s;"></i>
+                    <span>기존 목록 일괄 폐기 및 신규 자동 생성</span>
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <!-- 2. settings-rules-card -->
+            <div id="settings-rules-card" class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat clay-card space-y-6 text-left hidden">
+              <div class="space-y-3">
+                <h4 class="text-sm font-black text-slate-950 dark:text-white flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-clay-sky inline-block"></span> 달성 점수(Achievement) 변환 비율</h4>
+                <p class="text-xs text-slate-400">
+                  학생들이 획득하는 누적 칭찬(원점수)이 몇 점 누적될 때마다 달성(배지) 1점을 환산할지 정합니다. (현재 <span class="text-clay-sky font-black" id="rule-current-ratio-label">50점 = 달성 1점</span>)
+                </p>
+                <div class="flex gap-2 max-w-md" id="rules-achievement-ratios">
+                  <button type="button" class="btn-ratio flex-1 py-1.5 border-2 border-white rounded-lg bg-clay-sand text-slate-800 text-xs font-black shadow-clay-flat cursor-pointer active" data-ratio="50">50점</button>
+                  <button type="button" class="btn-ratio flex-1 py-1.5 border-2 border-white rounded-lg bg-clay-sand text-slate-800 text-xs font-black shadow-clay-flat cursor-pointer" data-ratio="30">30점</button>
+                  <button type="button" class="btn-ratio flex-1 py-1.5 border-2 border-white rounded-lg bg-clay-sand text-slate-800 text-xs font-black shadow-clay-flat cursor-pointer" data-ratio="100">100점</button>
+                </div>
+                <form id="ratio-custom-form" class="flex gap-2.5 max-w-sm items-end pt-2">
+                  <div class="flex-grow flex items-center bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-1.5 shadow-clay-flat">
+                    <input type="number" id="custom-ratio-val" min="1" placeholder="50" class="w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white">
+                  </div>
+                  <button type="submit" class="btn px-4 py-2 text-xs font-black border-2 border-white rounded-xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat cursor-pointer h-[32px]">저장</button>
+                </form>
+              </div>
+
+              <hr class="border-slate-100 dark:border-white/10">
+
+              <div class="space-y-3">
+                <h4 class="text-sm font-black text-slate-950 dark:text-white flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-clay-purple inline-block"></span> 학급 온도계 환산 규칙</h4>
+                <p class="text-xs text-slate-400">
+                  전체 학생의 누적 원점수 합한 값을 몇으로 나누어 학급 온도(°)로 표시할지 정합니다. (현재 <span class="text-clay-purple font-black" id="rule-current-temp-label">합계 ÷ 200</span>)
+                </p>
+                <div class="flex gap-2 max-w-sm" id="rules-temp-dividers">
+                  <button type="button" class="btn-divider flex-1 py-1.5 border-2 border-white rounded-lg bg-clay-sand text-slate-800 text-xs font-black shadow-clay-flat cursor-pointer active" data-div="200">÷ 200</button>
+                  <button type="button" class="btn-divider flex-1 py-1.5 border-2 border-white rounded-lg bg-clay-sand text-slate-800 text-xs font-black shadow-clay-flat cursor-pointer" data-div="100">÷ 100</button>
+                  <button type="button" class="btn-divider flex-1 py-1.5 border-2 border-white rounded-lg bg-clay-sand text-slate-800 text-xs font-black shadow-clay-flat cursor-pointer" data-div="300">÷ 300</button>
+                  <button type="button" class="btn-divider flex-1 py-1.5 border-2 border-white rounded-lg bg-clay-sand text-slate-800 text-xs font-black shadow-clay-flat cursor-pointer" data-div="500">÷ 500</button>
+                  <button type="button" class="btn-divider flex-1 py-1.5 border-2 border-white rounded-lg bg-clay-sand text-slate-800 text-xs font-black shadow-clay-flat cursor-pointer" data-div="1000">÷ 1000</button>
+                </div>
+                <form id="divider-custom-form" class="flex gap-2.5 max-w-sm items-end pt-2">
+                  <div class="flex-grow flex items-center bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-1.5 shadow-clay-flat">
+                    <input type="number" id="custom-divider-val" min="1" placeholder="200" class="w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white">
+                  </div>
+                  <button type="submit" class="btn px-4 py-2 text-xs font-black border-2 border-white rounded-xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat cursor-pointer h-[32px]">저장</button>
+                </form>
+              </div>
+            </div>
+
+            <!-- 3. settings-fontsize-card (Moved here) -->
+            <div id="settings-fontsize-card" class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-5 shadow-clay-flat clay-card space-y-4 hidden text-left">
+              <h4 class="text-sm font-black text-slate-950 dark:text-white flex items-center gap-1.5"><i data-lucide="type" class="w-4 h-4 text-clay-toy"></i> 학급 전광판 글자 크기 조정</h4>
+              <p class="text-xs text-slate-400 leading-normal">
+                이 기능은 원격 전광판(대시보드 모니터) 송출 시 뷰어의 텍스트와 레이아웃 스케일을 조율합니다.
+              </p>
+              <div class="flex gap-3">
+                <button type="button" class="px-4 py-2 text-xs font-black border-2 border-white rounded-xl bg-clay-sand text-slate-800 shadow-clay-flat cursor-pointer active:scale-95" onclick="document.documentElement.style.fontSize='16px'; showToast('글자 크기 변경', '표준 폰트 스케일(16px)이 적용되었습니다.', 'info')">기본 크기 (16px)</button>
+                <button type="button" class="px-4 py-2 text-xs font-black border-2 border-white rounded-xl bg-clay-grass text-black shadow-clay-flat cursor-pointer active:scale-95" onclick="document.documentElement.style.fontSize='18.5px'; showToast('글자 크기 변경', '대형 TV용 확대 폰트 스케일(18.5px)이 적용되었습니다.', 'success')">크게 보기 (18.5px)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+      <!-- ==================== MODALS LISTS ==================== -->
+
+  <!-- 1. Authentication Modal (Login/Register Tab Switcher) -->
+  <div class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" id="auth-modal">
+    <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg w-full max-w-sm animate-scale-up text-left relative clay-card">
+      <button class="absolute right-4 top-4 w-8 h-8 rounded-lg border-2 border-white bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover" id="btn-auth-modal-close" type="button"><i data-lucide="x" class="w-4 h-4"></i></button>
+      
+      <!-- Tab headers switcher -->
+      <div class="flex border-b-2 border-white pb-2 mb-6 gap-4 text-sm font-black">
+        <button class="text-slate-400 hover:text-slate-900 dark:hover:text-white pb-2 relative cursor-pointer active" id="tab-login-trigger">로그인</button>
+        <button class="text-slate-400 hover:text-slate-900 dark:hover:text-white pb-2 relative cursor-pointer" id="tab-register-trigger">회원가입 신청</button>
+      </div>
+
+      <!-- Login tab content -->
+      <div class="space-y-4" id="auth-login-content">
+        <form id="login-form" class="space-y-4">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-black text-slate-500">계정 아이디 (Username)</label>
+            <input type="text" id="login-username" placeholder="아이디 입력" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-white">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-[10px] font-black text-slate-500">계정 비밀번호 (Password)</label>
+            <input type="password" id="login-password" placeholder="비밀번호 입력" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-white">
+          </div>
+          <button type="submit" class="w-full py-3 text-xs font-black border-4 border-white rounded-2xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer flex items-center justify-center gap-1.5" id="btn-login-submit">
+            <i data-lucide="key" class="w-4 h-4"></i>
+            <span>로그인하기</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Register tab content -->
+      <div class="space-y-4 hidden" id="auth-register-content">
+        <form id="register-form" class="space-y-3">
+          <div class="space-y-1">
+            <label class="block text-[10px] font-black text-slate-500">계정 아이디 생성</label>
+            <input type="text" id="register-username" placeholder="사용할 아이디 입력" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-white">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-[10px] font-black text-slate-500">계정 비밀번호 설정</label>
+            <input type="password" id="register-password" placeholder="비밀번호 입력" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-white">
+          </div>
+          <div class="space-y-1">
+            <label class="block text-[10px] font-black text-slate-500">비밀번호 확인 확인</label>
+            <input type="password" id="register-confirm-password" placeholder="비밀번호 다시 입력" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-white">
+          </div>
+          
+          <div class="p-2.5 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-[10px] text-slate-500 font-bold leading-normal">
+            * kfcman.link는 비인가 회원의 악의적 어뷰징을 방지하기 위해 가입 즉시 승인되지 않고, **보안 관리자가 가입 신청 목록을 심사하여 최종 승인 완료 처리한 이후부터** 서비스 로그인이 가능합니다.
+          </div>
+
+          <button type="submit" class="w-full py-3 text-xs font-black border-4 border-white rounded-2xl bg-clay-purple hover:bg-purple-600 text-white shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all cursor-pointer flex items-center justify-center gap-1.5" id="btn-register-submit">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+            <span>가입 완료하고 대기하기</span>
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 2. QR Code Display Modal -->
+  <div class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" id="qr-modal">
+    <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg w-full max-w-xs animate-scale-up text-center relative clay-card">
+      <button class="absolute right-4 top-4 w-8 h-8 rounded-lg border-2 border-white bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover" id="btn-qr-modal-close" type="button"><i data-lucide="x" class="w-4 h-4"></i></button>
+      
+      <h3 class="text-lg font-black text-slate-900 dark:text-white mb-6">모바일 QR 코드 생성</h3>
+      
+      <!-- Canvas dynamic rendering wrapper -->
+      <div class="bg-white border-4 border-white rounded-2xl p-4 inline-block shadow-clay-flat mb-6 mx-auto">
+        <canvas id="qr-canvas" class="mx-auto block"></canvas>
+      </div>
+
+      <button class="btn w-full py-3 text-xs font-black border-4 border-white rounded-2xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer" id="btn-qr-download">
+        <i data-lucide="download" class="w-4 h-4"></i>
+        <span>이미지 파일로 다운로드</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 3. Detail Click Stats Modal -->
+  <div class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" id="stats-modal">
+    <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg w-full max-w-2xl animate-scale-up text-left relative clay-card overflow-y-auto max-h-[90vh]">
+      <button class="absolute right-4 top-4 w-8 h-8 rounded-lg border-2 border-white bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover" id="btn-stats-modal-close" type="button"><i data-lucide="x" class="w-4 h-4"></i></button>
+      
+      <div class="border-b-4 border-white pb-4 mb-6">
+        <div class="flex items-center gap-2">
+          <i data-lucide="line-chart" class="text-clay-sky w-6 h-6"></i>
+          <h3 class="text-lg font-black text-slate-900 dark:text-white">단축 코드 상세 유입 관제</h3>
+        </div>
+        <div class="flex gap-2 items-center flex-wrap mt-2">
+          <span class="text-[10px] font-black border-2 border-white bg-clay-sky text-white px-2 py-0.5 rounded" id="stats-modal-code">CODE</span>
+          <a href="#" target="_blank" class="text-[11px] font-bold text-clay-purple dark:text-clay-mint hover:underline break-all truncate max-w-md" id="stats-original-url">https://original-long-path-url-destination.com</a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        
+        <!-- Big Number Stats box -->
+        <div class="bg-slate-50 dark:bg-slate-950 border-4 border-white rounded-2xl p-5 shadow-clay-flat flex flex-col justify-center items-center text-center">
+          <span class="text-[10px] font-black text-slate-400">누적 방문 수</span>
+          <div class="text-4xl font-black text-slate-900 dark:text-white mt-1"><span id="stats-clicks-total">0</span>회</div>
+        </div>
+
+        <!-- Referral channels chart list box -->
+        <div class="bg-slate-50 dark:bg-slate-950 border-4 border-white rounded-2xl p-5 shadow-clay-flat md:col-span-2 text-left">
+          <h4 class="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1 mb-3"><i data-lucide="compass" class="w-4 h-4 text-clay-purple"></i> 방문 유입 도메인 경로 (Referrer top 5)</h4>
+          <div id="stats-referrers-container" class="space-y-2.5">
+            <!-- Progress bars populated dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed logs history table box -->
+      <div class="bg-white dark:bg-slate-950 border-4 border-white rounded-2xl p-4 shadow-clay-flat text-left">
+        <h4 class="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1 mb-3"><i data-lucide="list" class="w-4 h-4 text-clay-grass"></i> 최신 방문 기록 디테일 로그 (최대 15건)</h4>
+        
+        <div class="overflow-x-auto w-full max-h-48 overflow-y-auto">
+          <table class="w-full text-[11px] text-left">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-900 border-b border-white font-black text-slate-500">
+                <th class="p-2">방문 시각</th>
+                <th class="p-2">방문 경로</th>
+                <th class="p-2">접속 IP 주소</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800/40 font-bold text-slate-700 dark:text-slate-300" id="stats-clicks-log-body">
+              <!-- Logs populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 4. Preference Poll Voting & Statistics Modal -->
+  <div class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" id="poll-vote-modal">
+    <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg w-full max-w-xl animate-scale-up text-left relative clay-card overflow-y-auto max-h-[90vh]">
+      <button class="absolute right-4 top-4 w-8 h-8 rounded-lg border-2 border-white bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover" id="btn-poll-modal-close" type="button"><i data-lucide="x" class="w-4 h-4"></i></button>
+      
+      <!-- Modal Header -->
+      <div class="border-b-4 border-white pb-4 mb-5 text-left">
+        <div class="flex gap-2 items-center flex-wrap">
+          <span class="text-[9px] font-black border-2 border-white bg-clay-grass text-black px-2 py-0.5 rounded" id="poll-modal-badge-status">진행중</span>
+          <span class="text-[9px] font-black border-2 border-white bg-clay-purple text-white px-2 py-0.5 rounded" id="poll-modal-badge-multiple">단수 선택</span>
+          <span class="text-[9px] font-black border-2 border-white bg-slate-100 dark:bg-slate-850 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded" id="poll-modal-badge-dup">평생 1회 제한</span>
+        </div>
+        <h3 class="text-xl font-black text-slate-900 dark:text-white leading-tight mt-3" id="poll-modal-title">설문 제목</h3>
+        <p class="text-[10px] text-slate-500 font-bold mt-1.5">
+          작성자: <span id="poll-modal-owner" class="text-clay-sky font-black">admin</span> | 
+          남은 기한: <span id="poll-modal-timer" class="text-clay-toy font-black animate-pulse">계산 중...</span>
+        </p>
+      </div>
+
+      <!-- A. Voting Screen (Before Vote) -->
+      <div id="poll-modal-vote-screen" class="hidden">
+        <p class="text-xs font-bold text-slate-500 mb-4">선호하시는 문항 항목에 체크하신 후 아래의 투표 제출하기 버튼을 꾹 클릭해 주세요.</p>
+        <form id="poll-vote-form">
+          <div id="poll-vote-options-list" class="space-y-3 mb-6">
+            <!-- Choice labels dynamically -->
+          </div>
+          
+          <button type="submit" class="btn w-full py-3.5 text-xs font-black border-4 border-white rounded-2xl bg-clay-purple hover:bg-purple-600 text-white shadow-clay-flat-lg hover:shadow-clay-flat hover:translate-x-1 hover:translate-y-1 transition-all flex items-center justify-center gap-1.5 cursor-pointer" id="btn-submit-vote">
+            <i data-lucide="vote" class="w-4 h-4"></i>
+            <span>나의 소중한 한 표 제출하기</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- B. Statistics Screen (After Vote / Expired) -->
+      <div id="poll-modal-stats-screen" class="hidden space-y-6">
+        
+        <!-- Alim status banner -->
+        <div id="poll-voted-notice" class="hidden bg-clay-mint/20 border-2 border-white text-clay-grass font-black p-3.5 rounded-xl flex items-center gap-2 shadow-clay-flat">
+          <i data-lucide="smile" class="w-5 h-5 flex-shrink-0 animate-bounce"></i>
+          <span class="text-xs">투표 참여가 성공적으로 등록되었습니다. 실시간 집계 결과를 공유합니다!</span>
+        </div>
+
+        <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-950 border-4 border-white p-4 rounded-2xl shadow-clay-flat w-full">
+          <span class="text-xs font-black text-slate-600 dark:text-slate-400">총 누적 투표 참여율</span>
+          <span class="text-base font-black text-clay-purple dark:text-clay-mint" id="poll-modal-total-votes">0명</span>
+        </div>
+
+        <!-- Interactive tab buttons -->
+        <div class="flex border-b-2 border-white pb-2 gap-2 text-xs font-black">
+          <button class="px-3 py-1.5 rounded-lg border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat active" id="btn-poll-view-bar">막대 그래프</button>
+          <button class="px-3 py-1.5 rounded-lg border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-poll-view-donut">원형 도넛</button>
+          <button class="px-3 py-1.5 rounded-lg border-2 border-white bg-clay-sand hover:bg-slate-200 text-slate-800 transition-all shadow-clay-flat" id="btn-poll-view-cloud">워드 클라우드</button>
+        </div>
+
+        <!-- 1. Stats Bar list -->
+        <div id="poll-stats-bars-list" class="space-y-4 text-left">
+          <!-- Bars populated dynamically -->
+        </div>
+
+        <!-- 2. Donut SVG Chart -->
+        <div id="poll-stats-donut-container" class="hidden flex flex-col md:flex-row justify-center items-center gap-6 py-4 w-full">
+          <div class="relative w-36 h-36 flex-shrink-0">
+            <svg viewBox="0 0 100 100" class="w-36 h-36 -rotate-90" id="poll-donut-svg">
+              <!-- circle segments dynamically -->
+            </svg>
+            <div class="absolute inset-0 flex flex-col justify-center items-center text-center p-2 font-sans select-none">
+              <span class="text-xs font-bold text-slate-400 block" id="donut-center-label">Winner</span>
+              <span class="text-xl font-black text-slate-900 dark:text-white block mt-0.5 leading-none" id="donut-center-percent">0%</span>
+            </div>
+          </div>
+          
+          <div id="poll-donut-legend" class="flex flex-col gap-2 w-full max-h-36 overflow-y-auto border-t-2 border-white md:border-t-0 pt-3 md:pt-0">
+            <!-- Legend items dynamically -->
+          </div>
+        </div>
+
+        <!-- 3. Word Cloud -->
+        <div id="poll-stats-wordcloud" class="hidden bg-slate-50 dark:bg-slate-950 border-4 border-white rounded-3xl p-6 min-h-[220px] flex flex-wrap justify-center items-center gap-3 shadow-clay-flat">
+          <!-- Words span dynamically -->
+        </div>
+
+        <!-- Shareable card link -->
+        <div class="bg-slate-50 dark:bg-slate-950 border-4 border-white p-4 rounded-2xl shadow-clay-flat space-y-2 text-left">
+          <label class="block text-[10px] font-black text-slate-400">비로그인 투표용 전용 단축 링크 공유 주소</label>
+          <div class="flex gap-2 items-center w-full">
+            <input type="text" id="poll-modal-share-url" readonly class="flex-grow bg-white dark:bg-clay-card border-2 border-white rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
+            <button class="w-9 h-9 rounded-lg border-2 border-white bg-clay-grass hover:bg-teal-400 text-black flex items-center justify-center shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex-shrink-0 cursor-pointer" id="btn-copy-modal-poll-url" title="주소 복사">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 7. Excel Import Mock Modal -->
+  <div class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" id="classroom-import-modal">
+    <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg w-full max-w-md animate-scale-up text-left relative clay-card">
+      <button class="absolute right-4 top-4 w-8 h-8 rounded-lg border-2 border-white bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover" id="btn-import-modal-close" type="button"><i data-lucide="x" class="w-4 h-4"></i></button>
+      
+      <h3 class="text-lg font-black text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+        <i data-lucide="download" class="text-clay-sky"></i>
+        <span>학급 점수 외부 데이터 가져오기</span>
+      </h3>
+      
+      <p class="text-xs text-slate-500 font-bold mb-4">엑셀(CSV) 형식의 텍스트 데이터를 아래 칸에 복사하여 간편하게 붙여넣으면 점수가 일괄 적용됩니다.</p>
+      
+      <div class="space-y-3">
+        <div class="bg-slate-100 dark:bg-slate-950 p-2.5 rounded-xl border border-white/5 text-[9px] font-sans text-slate-400">
+          <strong>형식 안내 (쉼표 또는 탭 구분)</strong><br>
+          번호, 이름, 누적 원점수, 지급 원점수 (이름은 생략 가능)<br>
+          예시:<br>
+          1, 홍길동, 1058, 1000<br>
+          2, 이몽룡, 960, 960
+        </div>
+        
+        <textarea id="import-csv-textarea" placeholder="1, 1058, 1000&#10;2, 960, 960" rows="6" class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl p-3 text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400 shadow-inner outline-none"></textarea>
+      </div>
+
+      <button class="btn w-full mt-4 py-3 text-xs font-black border-4 border-white rounded-2xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95" id="btn-import-submit">
+        <i data-lucide="check-circle" class="w-4 h-4"></i>
+        <span>가져와서 즉시 덮어씌우기</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 8. Assign Points to All Modal -->
+  <div class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" id="classroom-add-all-modal">
+    <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg w-full max-w-xs animate-scale-up text-left relative clay-card">
+      <button class="absolute right-4 top-4 w-8 h-8 rounded-lg border-2 border-white bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover" id="btn-add-all-modal-close" type="button"><i data-lucide="x" class="w-4 h-4"></i></button>
+      
+      <h3 class="text-base font-black text-slate-900 dark:text-white mb-3 flex items-center gap-1.5">
+        <i data-lucide="wand-2" class="text-clay-sky w-5 h-5"></i>
+        <span>전체 점수 일괄 부여</span>
+      </h3>
+      
+      <p class="text-[10px] text-slate-500 font-bold mb-4">현재 학급에 등록된 모든 학생의 누적 원점수에 일괄적으로 점수를 추가 가산합니다.</p>
+      
+      <form id="add-all-scores-form" class="space-y-4">
+        <div class="space-y-1">
+          <label class="block text-[9px] font-black text-slate-500">부여할 원점수</label>
+          <input type="number" id="add-all-score-val" placeholder="예: 50" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-white shadow-clay-flat">
+        </div>
+        
+        <button type="submit" class="btn w-full py-3 text-xs font-black border-4 border-white rounded-2xl bg-clay-sky hover:bg-cyan-400 text-white shadow-clay-flat flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+          <i data-lucide="save" class="w-4 h-4"></i>
+          <span>학급 전체에 부여하기</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 9. Transfer Student Modal -->
+  <div class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" id="classroom-add-transfer-modal">
+    <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg w-full max-w-xs animate-scale-up text-left relative clay-card">
+      <button class="absolute right-4 top-4 w-8 h-8 rounded-lg border-2 border-white bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover" id="btn-transfer-modal-close" type="button"><i data-lucide="x" class="w-4 h-4"></i></button>
+      
+      <h3 class="text-base font-black text-slate-900 dark:text-white mb-3 flex items-center gap-1.5">
+        <i data-lucide="plus-circle" class="text-clay-grass w-5 h-5"></i>
+        <span>신규 전입 학생 추가</span>
+      </h3>
+      
+      <form id="add-transfer-student-form" class="space-y-4">
+        <div class="space-y-1">
+          <label class="block text-[9px] font-black text-slate-500">학생 번호</label>
+          <input type="number" id="transfer-student-num" min="1" placeholder="예: 19" required class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-white shadow-clay-flat">
+        </div>
+        <div class="space-y-1">
+          <label class="block text-[9px] font-black text-slate-500">학생 이름</label>
+          <input type="text" id="transfer-student-name" placeholder="이름 입력 (예: 홍길동)" class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-white rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-white shadow-clay-flat">
+        </div>
+        
+        <button type="submit" class="btn w-full py-3 text-xs font-black border-4 border-white rounded-2xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>학생 슬롯 전입 등록</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. Service Introduction Modal -->
+  <div class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" id="intro-modal">
+    <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg w-full max-w-md animate-scale-up text-left relative clay-card overflow-y-auto max-h-[85vh]">
+      <button class="absolute right-4 top-4 w-8 h-8 rounded-lg border-2 border-white bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover" id="btn-intro-modal-close" type="button"><i data-lucide="x" class="w-4 h-4"></i></button>
+      
+      <div class="border-b-4 border-white pb-4 mb-4">
+        <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+          <i data-lucide="info" class="text-clay-toy w-6 h-6 animate-bounce"></i>
+          <span>kfcman.link 서비스 소개</span>
+        </h3>
+      </div>
+
+      <div class="space-y-4 text-xs font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
+        <p>
+          kfcman.link는 길고 투박한 URL을 귀여운 미니어처 감성의 단축주소로 변환하여 깔끔하게 제공하는 프리미엄 유틸리티 서비스입니다.
+        </p>
+        
+        <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white p-3.5 rounded-xl shadow-clay-flat">
+          <h4 class="font-black text-slate-950 dark:text-white flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-clay-purple inline-block"></span> 1. 초고속 및 지능형 단축 시스템</h4>
+          <p class="text-[10px] text-slate-500 mt-1 pl-3.5">
+            1초 만에 최적화된 단축 URL을 배출하며, 내 도메인 및 로컬 접속 링크를 동시 제공하여 유동적인 이동이 가능합니다.
+          </p>
+        </div>
+
+        <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white p-3.5 rounded-xl shadow-clay-flat">
+          <h4 class="font-black text-slate-950 dark:text-white flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-clay-sky inline-block"></span> 2. 정밀 유입 관제 대시보드</h4>
+          <p class="text-[10px] text-slate-500 mt-1 pl-3.5">
+            단축 링크의 누적 방문 클릭 횟수를 카운트하며, 방문자의 상세 IP 주소, 접속 유입 도메인 경로(Referrer)를 HSL 바 차트로 시각화하여 관제합니다.
+          </p>
+        </div>
+
+        <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white p-3.5 rounded-xl shadow-clay-flat">
+          <h4 class="font-black text-slate-950 dark:text-white flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-clay-grass inline-block"></span> 3. 게스트 실시간 여론조사 보드</h4>
+          <p class="text-[10px] text-slate-500 mt-1 pl-3.5">
+            비회원 친구나 고객들이 도메인에 안전하게 접속하여 클릭 즉시 득표되는 실시간 투표를 개설할 수 있습니다. 3차원 막대그래프, SVG 도넛 차트 및 워드클라우드로 결과를 보여줍니다.
+          </p>
+        </div>
+
+        <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white p-3.5 rounded-xl shadow-clay-flat">
+          <h4 class="font-black text-slate-950 dark:text-white flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-clay-toy inline-block"></span> 4. 다채널 승인 알림 연동</h4>
+          <p class="text-[10px] text-slate-500 mt-1 pl-3.5">
+            보안 위협 방지를 위한 수동 가입 승인 대기열이 작동하며, 디스코드/텔레그램 웹훅 푸시 알림, Gmail SMTP 메일 전송 및 Coolsms 카카오 알림톡으로 실시간 가입 접수를 확인합니다.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Privacy Policy Modal -->
+  <div class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" id="privacy-modal">
+    <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg w-full max-w-md animate-scale-up text-left relative clay-card overflow-y-auto max-h-[85vh]">
+      <button class="absolute right-4 top-4 w-8 h-8 rounded-lg border-2 border-white bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover" id="btn-privacy-modal-close" type="button"><i data-lucide="x" class="w-4 h-4"></i></button>
+      
+      <div class="border-b-4 border-white pb-4 mb-4">
+        <h3 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+          <i data-lucide="shield" class="text-clay-sky w-6 h-6 animate-pulse"></i>
+          <span>개인정보 처리방침</span>
+        </h3>
+      </div>
+
+      <div class="space-y-4 text-xs font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
+        <p>
+          kfcman.link는 이용자의 개인정보 및 프라이버시를 매우 중시하며, 안전하게 보호하기 위해 아래와 같이 수집 방침을 명시합니다.
+        </p>
+        
+        <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white p-3.5 rounded-xl shadow-clay-flat space-y-1.5">
+          <h4 class="font-black text-slate-950 dark:text-white">1. 수집 항목 및 목적</h4>
+          <p class="text-[10px] text-slate-500 pl-2">
+            * 회원 정보: 아이디 및 일방향 암호화 처리된 패스워드 (본인 인증 및 계정 관리 목적)<br>
+            * 링크 및 유입 로그 정보: 등록된 원본 목적지 URL, 방문자의 단속 클릭 수집 경로(Referrer) 및 임시 접속 IP 주소 (실시간 차트 시각화 및 악의적 대량 클릭 필터링 디버그 목적)
+          </p>
+        </div>
+
+        <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white p-3.5 rounded-xl shadow-clay-flat space-y-1.5">
+          <h4 class="font-black text-slate-950 dark:text-white">2. 개인정보의 보유 및 파기 절차</h4>
+          <p class="text-[10px] text-slate-500 pl-2">
+            * 회원 탈퇴 또는 계정 삭제 처리 즉시 해당 회원이 소유한 계정 정보와 단축 링크, 유입 경로 트래킹 로그 일체는 원본 데이터베이스에서 즉각적이고 물리적으로 완벽히 영구 삭제 처리되어 소멸됩니다.<br>
+            * 대시보드 내 "모든 기록 청소" 버튼 실행 시 누적 clicksData 로그 정보는 즉시 파쇄됩니다.
+          </p>
+        </div>
+
+        <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white p-3.5 rounded-xl shadow-clay-flat space-y-1.5">
+          <h4 class="font-black text-slate-950 dark:text-white">3. 알림 서비스 제공을 위한 연동 위탁</h4>
+          <p class="text-[10px] text-slate-500 pl-2">
+            * 가입 승인 요청 시 수신자 휴대폰 번호로 SMS 문자를 보낼 때 사용되는 정보(Coolsms 위탁 제공)는 단순 메신저 전송 대행 목적 외에는 타 사로 절대 보관되지 않으며, 알림 목적 달성 시 자동 휘발 삭제됩니다.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white dark:bg-clay-night border-t-4 border-white py-8 text-center transition-colors text-xs font-bold text-slate-500 pb-28 lg:pb-8">
+    <div class="max-w-7xl mx-auto px-4 md:px-6 w-full flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="text-slate-400 dark:text-slate-500">
+        &copy; 2026 kfcman.link URL Shortener Platform. All rights reserved.
+      </div>
+      
+      <!-- Footer links modal triggers -->
+      <div class="flex gap-4">
+        <a href="#" class="hover:underline text-clay-purple dark:text-clay-mint" id="link-service-intro">서비스 소개</a>
+        <span class="text-slate-300 dark:text-slate-800">|</span>
+        <a href="#" class="hover:underline text-clay-purple dark:text-clay-mint" id="link-privacy-policy">개인정보처리방침</a>
+      </div>
+    </div>
+  </footer>
+
+
+  <!-- Mobile Bottom Navigation (Visible only on mobile/tablet) -->
+  <div class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-[#161b26]/95 backdrop-blur-md border-t-2 border-white px-4 py-2 flex justify-around items-center shadow-lg transition-all">
+    
+    <!-- 1. Guest Nav Group (Visible when logged out) -->
+    <div id="mobile-nav-guest-group" class="flex justify-around items-center w-full">
+      <a href="#shortener-section" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white active" id="mobile-nav-shortener">
+        <i data-lucide="link-2" class="w-5 h-5"></i>
+        <span class="text-[9px] font-black">단축하기</span>
+      </a>
+      <a href="#dashboard-section" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-dashboard">
+        <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+        <span class="text-[9px] font-black">대시보드</span>
+      </a>
+      <a href="#polls-section" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-polls">
+        <i data-lucide="vote" class="w-5 h-5"></i>
+        <span class="text-[9px] font-black">설문광장</span>
+      </a>
+    </div>
+
+    <!-- 2. Member Classroom Nav Group (Visible when logged in) -->
+    <div id="mobile-nav-member-group" class="hidden flex justify-around items-center w-full">
+      <a href="#shortener-section" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-shortener-member">
+        <i data-lucide="link-2" class="w-5 h-5"></i>
+        <span class="text-[9px] font-black">단축주소</span>
+      </a>
+      <a href="#polls-section" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-polls-member">
+        <i data-lucide="vote" class="w-5 h-5"></i>
+        <span class="text-[9px] font-black">설문</span>
+      </a>
+      <a href="#classroom-section" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-classroom">
+        <i data-lucide="award" class="w-5 h-5"></i>
+        <span class="text-[9px] font-black">으쓱점수</span>
+      </a>
+      <a href="#settings-section" class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white" id="mobile-nav-settings">
+        <i data-lucide="settings" class="w-5 h-5"></i>
+        <span class="text-[9px] font-black">설정</span>
+      </a>
+    </div>
+    
+    <!-- Mobile Theme Toggle -->
+    <button class="flex flex-col items-center gap-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer" id="theme-toggle-btn-mobile" title="테마 변경">
+      <i data-lucide="sun" class="w-5 h-5 block dark:hidden text-clay-toy"></i>
+      <i data-lucide="moon" class="w-5 h-5 hidden dark:block text-clay-mint"></i>
+      <span class="text-[9px] font-black">테마변경</span>
+    </button>
+    
+    <!-- Mobile Log Out (Visible only when logged in) -->
+    <button class="hidden flex flex-col items-center gap-0.5 text-clay-red cursor-pointer" id="btn-logout-mobile" title="로그아웃">
+      <i data-lucide="log-out" class="w-5 h-5"></i>
+      <span class="text-[9px] font-black">로그아웃</span>
+    </button>
+  </div>
+
+  <!-- Application Frontend Logic JS -->
+  <script src="/js/app.js"></script>
+</body>
+</html>
