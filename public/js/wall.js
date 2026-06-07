@@ -3058,7 +3058,6 @@ function initWall() {
     });
   }
 }
-}
 
 // Robust, race-condition-free initialization
 if (document.readyState === 'loading') {
