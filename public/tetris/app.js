@@ -1483,11 +1483,18 @@ function initTouchControls() {
   bindings.forEach(binding => {
     const el = document.getElementById(binding.id);
     if (el) {
-      el.addEventListener('touchstart', (e) => {
+      const triggerAction = (e) => {
         e.preventDefault();
         if (!localGame || !localGame.active || isSpectator) return;
         binding.action();
-      }, { passive: false });
+      };
+      
+      if (window.PointerEvent) {
+        el.addEventListener('pointerdown', triggerAction);
+      } else {
+        el.addEventListener('touchstart', triggerAction, { passive: false });
+        el.addEventListener('mousedown', triggerAction);
+      }
     }
   });
 
@@ -1495,7 +1502,8 @@ function initTouchControls() {
   const softDropEl = document.getElementById('btn-touch-softdrop');
   if (softDropEl) {
     let softDropInterval = null;
-    softDropEl.addEventListener('touchstart', (e) => {
+    
+    const startDrop = (e) => {
       e.preventDefault();
       if (!localGame || !localGame.active || isSpectator) return;
       localGame.softDrop();
@@ -1507,7 +1515,7 @@ function initTouchControls() {
           clearInterval(softDropInterval);
         }
       }, 80);
-    }, { passive: false });
+    };
 
     const stopSoftDrop = (e) => {
       e.preventDefault();
@@ -1517,8 +1525,20 @@ function initTouchControls() {
       }
     };
 
-    softDropEl.addEventListener('touchend', stopSoftDrop, { passive: false });
-    softDropEl.addEventListener('touchcancel', stopSoftDrop, { passive: false });
+    if (window.PointerEvent) {
+      softDropEl.addEventListener('pointerdown', startDrop);
+      softDropEl.addEventListener('pointerup', stopSoftDrop);
+      softDropEl.addEventListener('pointercancel', stopSoftDrop);
+      softDropEl.addEventListener('pointerleave', stopSoftDrop);
+    } else {
+      softDropEl.addEventListener('touchstart', startDrop, { passive: false });
+      softDropEl.addEventListener('touchend', stopSoftDrop, { passive: false });
+      softDropEl.addEventListener('touchcancel', stopSoftDrop, { passive: false });
+      
+      softDropEl.addEventListener('mousedown', startDrop);
+      softDropEl.addEventListener('mouseup', stopSoftDrop);
+      softDropEl.addEventListener('mouseleave', stopSoftDrop);
+    }
   }
 }
 
