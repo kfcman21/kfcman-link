@@ -1339,9 +1339,23 @@ function initWall() {
   // Liking a comment
   window.likeComment = async (event, cardId, commentId, isDetailModal) => {
     if (event) event.stopPropagation(); // Prevent card body click when liking a comment
+    let likedComments = JSON.parse(localStorage.getItem(`liked_comments_${boardId}`) || '[]');
+    if (likedComments.includes(commentId)) {
+      alert('이미 이 댓글에 공감하셨습니다!');
+      return;
+    }
     try {
-      const res = await fetch(`/api/wall/${boardId}/cards/${cardId}/comments/${commentId}/like`, { method: 'POST' });
-      if (!res.ok) throw new Error('댓글 좋아요 실패');
+      const res = await fetch(`/api/wall/${boardId}/cards/${cardId}/comments/${commentId}/like`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientUuid })
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || '댓글 좋아요 실패');
+      }
+      likedComments.push(commentId);
+      localStorage.setItem(`liked_comments_${boardId}`, JSON.stringify(likedComments));
       
       const wRes = await fetch(`/api/wall/${boardId}`);
       const updatedWall = await wRes.json();
@@ -1353,7 +1367,7 @@ function initWall() {
         }
       }
     } catch (err) {
-      console.error(err);
+      alert(err.message);
     }
   };
 
@@ -2942,11 +2956,25 @@ function initWall() {
 
   window.likeComment = async function(cardId, commentId) {
     if (!currentWall) return;
+    let likedComments = JSON.parse(localStorage.getItem(`liked_comments_${currentWall.id}`) || '[]');
+    if (likedComments.includes(commentId)) {
+      alert('이미 이 대화에 공감하셨습니다!');
+      return;
+    }
     try {
-      const res = await fetch(`/api/wall/${currentWall.id}/cards/${cardId}/comments/${commentId}/like`, { method: 'POST' });
-      if (!res.ok) throw new Error('댓글 공감 실패');
+      const res = await fetch(`/api/wall/${currentWall.id}/cards/${cardId}/comments/${commentId}/like`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientUuid })
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || '댓글 공감 실패');
+      }
+      likedComments.push(commentId);
+      localStorage.setItem(`liked_comments_${currentWall.id}`, JSON.stringify(likedComments));
     } catch (err) {
-      console.error(err.message);
+      alert(err.message);
     }
   };
 

@@ -2047,8 +2047,9 @@ app.post('/api/wall/:id/cards/:cardId/comments/:commentId/like', async (req, res
   try {
     const wallId = req.params.id.trim().toUpperCase();
     const { cardId, commentId } = req.params;
+    const { clientUuid } = req.body;
 
-    const card = await db.likeWallCardComment(wallId, cardId, commentId);
+    const card = await db.likeWallCardComment(wallId, cardId, commentId, clientUuid);
 
     // Broadcast change to all clients
     broadcastWallUpdate(wallId);
@@ -2056,7 +2057,7 @@ app.post('/api/wall/:id/cards/:cardId/comments/:commentId/like', async (req, res
     return res.status(200).json(card);
   } catch (err) {
     console.error('Error liking comment:', err);
-    return res.status(500).json({ error: '댓글 좋아요 반영 도중 오류가 발생했습니다.' });
+    return res.status(400).json({ error: err.message || '댓글 좋아요 반영 도중 오류가 발생했습니다.' });
   }
 });
 
