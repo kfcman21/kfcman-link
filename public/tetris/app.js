@@ -120,6 +120,7 @@ let isReady = false;
 let isSpectator = false;
 let opponents = {}; // cached database of players
 let localGame = null;
+let activeGameKey = '';
 
 // ROOT VIEW CONTROLLERS
 const participantView = document.getElementById('participant-view');
@@ -264,7 +265,9 @@ participantLoginForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const username = nicknameInputLogin.value.trim();
   if (username) {
-    send({ type: 'login', username: username, isAdmin: false });
+    const urlParams = new URLSearchParams(window.location.search);
+    const joinKey = urlParams.get('key') || '';
+    send({ type: 'login', username: username, isAdmin: false, joinKey: joinKey });
   }
 });
 
@@ -319,7 +322,8 @@ readyBtn.addEventListener('click', () => {
 // Copy Invite URL (Admin only now)
 if (adminCopyUrlBtn) {
   adminCopyUrlBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(window.location.href)
+    const inviteLink = `${window.location.origin}/tetris/?key=${activeGameKey}`;
+    navigator.clipboard.writeText(inviteLink)
       .then(() => {
         addLogMessage("시스템", "초대 주소가 클립보드에 복사되었습니다! 주소를 지인들에게 공유해보세요.");
         const origText = adminCopyUrlBtn.textContent;
@@ -428,6 +432,9 @@ function handleServerMessage(data) {
         if (data.isAdmin) {
           isSpectator = true;
           isReady = false;
+          if (data.activeGameKey) {
+            activeGameKey = data.activeGameKey;
+          }
           
           participantView.classList.add('hidden');
           adminView.classList.remove('hidden');
@@ -444,6 +451,12 @@ function handleServerMessage(data) {
         }
       } else {
         alert(data.message || "로그인 실패.");
+      }
+      break;
+
+    case 'active_key_update':
+      if (data.activeGameKey) {
+        activeGameKey = data.activeGameKey;
       }
       break;
 

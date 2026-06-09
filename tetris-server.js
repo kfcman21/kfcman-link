@@ -13,6 +13,13 @@ let battleLog = [];
 let nextPlayerId = 1;
 let totalWsMessagesReceived = 0;
 
+// Dynamic join passcode for participants
+let activeGameKey = generateRandomKey();
+
+function generateRandomKey() {
+  return Math.random().toString(36).substring(2, 10);
+}
+
 // Admin authentication passcode
 const CONFIG_PATH = path.join(__dirname, 'config.json');
 let adminPassword = 'admin123';
@@ -118,7 +125,8 @@ function handleMessage(player, data) {
             success: true,
             isAdmin: true,
             playerId: player.id,
-            nickname: player.nickname
+            nickname: player.nickname,
+            activeGameKey: activeGameKey
           });
 
           addBattleLog(`👁️ ${player.nickname}님이 관리자 권한으로 로그인했습니다.`);
@@ -132,6 +140,18 @@ function handleMessage(player, data) {
           });
         }
       } else {
+        // Validate join key
+        const { joinKey } = data;
+        if (joinKey !== activeGameKey) {
+          sendToPlayer(player, {
+            type: 'login_result',
+            success: false,
+            isAdmin: false,
+            message: '유효하지 않거나 만료된 접속 링크입니다. 관리자에게 새로운 접속 링크를 받아서 접속해 주세요.'
+          });
+          return;
+        }
+
         const cleanNick = username.trim().substring(0, 12);
         if (!cleanNick) {
           sendToPlayer(player, {
@@ -219,6 +239,8 @@ function handleMessage(player, data) {
 
     case 'reset_players':
       if (player.isHost && player.isSpectator) {
+        activeGameKey = generateRandomKey();
+        
         Object.keys(players).forEach(id => {
           const p = players[id];
           if (!p.isHost) {
@@ -229,7 +251,13 @@ function handleMessage(player, data) {
             delete players[id];
           }
         });
-        addBattleLog("🛡️ 관리자가 대기실의 모든 참가자 연결을 초기화했습니다.");
+        addBattleLog("🛡️ 관리자가 대기실의 모든 참가자 연결을 초기화했습니다. (접속 코드 변경됨)");
+        
+        sendToPlayer(player, {
+          type: 'active_key_update',
+          activeGameKey: activeGameKey
+        });
+
         broadcastLobbyUpdate();
       }
       break;
