@@ -1386,8 +1386,8 @@ html:not(.dark) .theme-toggle-btn:hover {
 
 /* --- LIGHT THEME OVERRIDES --- */
 html:not(.dark) {
-  --bg-color: #f1f5f9;
-  --bg-glow: radial-gradient(circle at 50% 50%, #eff6ff 0%, #cbd5e1 100%);
+  --bg-color: #ffffff;
+  --bg-glow: none;
   --panel-bg: rgba(255, 255, 255, 0.75);
   --panel-bg-dark: rgba(241, 245, 249, 0.9);
   --panel-border: rgba(0, 0, 0, 0.08);
@@ -1402,6 +1402,14 @@ html:not(.dark) body {
   background-color: var(--bg-color);
   background-image: var(--bg-glow);
   color: var(--text-primary);
+}
+
+html:not(.dark) .login-container {
+  background: #ffffff !important;
+}
+
+html:not(.dark) .admin-container {
+  background: #ffffff !important;
 }
 
 html:not(.dark) .bg-grid {
