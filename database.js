@@ -1148,7 +1148,7 @@ class Database {
     return card;
   }
 
-  async likeWallCardComment(wallId, cardId, commentId) {
+  async likeWallCardComment(wallId, cardId, commentId, clientUuid) {
     const wall = await this.getWall(wallId);
     if (!wall) throw new Error('존재하지 않는 게시판입니다.');
 
@@ -1157,6 +1157,19 @@ class Database {
 
     const comment = (card.comments || []).find(c => c.id === commentId);
     if (!comment) throw new Error('존재하지 않는 댓글입니다.');
+
+    if (!clientUuid || typeof clientUuid !== 'string' || clientUuid.trim() === '') {
+      throw new Error('좋아요를 누르기 위한 사용자 식별자(UUID)가 필요합니다.');
+    }
+
+    if (!comment.likedUuids) {
+      comment.likedUuids = [];
+    }
+
+    if (comment.likedUuids.includes(clientUuid)) {
+      throw new Error('이미 이 댓글에 공감하셨습니다!');
+    }
+    comment.likedUuids.push(clientUuid);
 
     comment.likes = (comment.likes || 0) + 1;
     await this.save();

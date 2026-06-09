@@ -539,6 +539,15 @@
       <div class="flex flex-col items-center w-full gap-4">
 
 
+        <!-- Theme Toggle Button -->
+        <div class="flex items-center justify-center w-full px-4 mb-2">
+          <button onclick="document.documentElement.classList.toggle('dark'); localStorage.setItem('darkMode', document.documentElement.classList.contains('dark') ? 'enabled' : 'disabled')" class="w-full h-10 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 flex items-center justify-center gap-2 cursor-pointer text-slate-850 dark:text-white font-bold" id="btn-sidebar-theme-toggle" title="화면 테마 변경">
+            <i data-lucide="moon" class="w-4.5 h-4.5 dark:hidden flex-shrink-0"></i>
+            <i data-lucide="sun" class="w-4.5 h-4.5 hidden dark:block flex-shrink-0"></i>
+            <span class="text-xs font-black sidebar-text">테마 변경</span>
+          </button>
+        </div>
+
         <!-- Profile details -->
         <div id="sidebar-profile-group" class="hidden flex items-center gap-3 w-full px-4">
           <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-clay-purple to-clay-sky border-2 border-white text-white flex items-center justify-center font-black text-xs shadow-sm cursor-pointer select-none flex-shrink-0" id="sidebar-profile-circle" title="프로필">
