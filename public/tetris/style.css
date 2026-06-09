@@ -950,6 +950,7 @@ header {
 }
 
 .login-card {
+  position: relative;
   width: 100%;
   max-width: 440px;
   padding: 40px;
@@ -1342,4 +1343,156 @@ header {
 #btn-touch-hold:active {
   color: var(--neon-yellow);
   border-color: var(--neon-yellow);
+}
+.theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.theme-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+.login-card .theme-toggle-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 34px;
+  height: 34px;
+  font-size: 1rem;
+}
+
+html:not(.dark) .theme-toggle-btn {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  color: var(--text-primary) !important;
+}
+html:not(.dark) .theme-toggle-btn:hover {
+  background: rgba(0, 0, 0, 0.08) !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* --- LIGHT THEME OVERRIDES --- */
+html:not(.dark) {
+  --bg-color: #f1f5f9;
+  --bg-glow: radial-gradient(circle at 50% 50%, #eff6ff 0%, #cbd5e1 100%);
+  --panel-bg: rgba(255, 255, 255, 0.75);
+  --panel-bg-dark: rgba(241, 245, 249, 0.9);
+  --panel-border: rgba(0, 0, 0, 0.08);
+  --text-primary: #1e293b;
+  --text-muted: #475569;
+  
+  --admin-bg: rgba(255, 255, 255, 0.8);
+  --admin-border: rgba(16, 185, 129, 0.25);
+}
+
+html:not(.dark) body {
+  background-color: var(--bg-color);
+  background-image: var(--bg-glow);
+  color: var(--text-primary);
+}
+
+html:not(.dark) .bg-grid {
+  background-image: 
+    linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+}
+
+html:not(.dark) .logo h1,
+html:not(.dark) .admin-logo h1,
+html:not(.dark) .panel-title,
+html:not(.dark) .controls-title,
+html:not(.dark) .stat-value,
+html:not(.dark) .metric-val,
+html:not(.dark) .lead-name,
+html:not(.dark) .chat-msg .name,
+html:not(.dark) .mini-board-header {
+  color: var(--text-primary) !important;
+}
+
+html:not(.dark) .player-count span,
+html:not(.dark) .status-badge:not(.playing):not(.countdown):not(.finished) {
+  color: var(--text-muted) !important;
+}
+
+html:not(.dark) .identity-settings input,
+html:not(.dark) .chat-form input,
+html:not(.dark) #admin-chat-input,
+html:not(.dark) #admin-new-pw-input {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) .chat-messages,
+html:not(.dark) .battle-log,
+html:not(.dark) .admin-log-chat-wrapper,
+html:not(.dark) .hold-box,
+html:not(.dark) .next-box,
+html:not(.dark) .stats-box,
+html:not(.dark) .controls-panel,
+html:not(.dark) .audio-panel,
+html:not(.dark) .metric-card {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  color: var(--text-primary) !important;
+}
+
+html:not(.dark) .leaderboard-item,
+html:not(.dark) .mini-board-card {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+html:not(.dark) .btn-send,
+html:not(.dark) .btn-audio {
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+html:not(.dark) .btn-send:hover,
+html:not(.dark) .btn-audio:hover {
+  background: rgba(0, 0, 0, 0.1) !important;
+}
+
+html:not(.dark) .login-card {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) .login-header h1 {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .form-group label {
+  color: var(--text-muted) !important;
+}
+
+html:not(.dark) .form-group input {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) .btn-primary {
+  background: #1e293b !important;
+  color: #ffffff !important;
+}
+
+html:not(.dark) .btn-primary:hover {
+  background: #0f172a !important;
 }

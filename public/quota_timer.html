@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Antigravity Quota Timer - 모델 충전 알리미</title>
+  <!-- Google Fonts: Outfit, Noto Sans KR -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;450;600;800;900&family=Noto+Sans+KR:wght@350;400;700;900&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="/js/lucide.min.js"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            title: ['Outfit', 'Noto Sans KR', 'sans-serif'],
+            sans: ['Noto Sans KR', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #020617 100%) no-repeat fixed;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+    .glass-panel {
+      background: rgba(30, 41, 59, 0.45);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(251, 191, 36, 0.3);
+      box-shadow: 0 12px 20px -8px rgba(251, 191, 36, 0.15);
+    }
+  </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between antialiased">
+
+  <!-- Header -->
+  <header class="w-full border-b border-white/5 py-4 px-6 flex justify-between items-center bg-slate-950/20 backdrop-blur-md">
+    <div class="flex items-center gap-2.5 select-none">
+      <div class="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 font-black shadow-[0_0_15px_rgba(245,158,11,0.3)] animate-pulse">
+        <i data-lucide="hourglass" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <h1 class="text-sm font-black font-title tracking-wider bg-gradient-to-r from-amber-400 to-yellow-200 text-transparent bg-clip-text">ANTIGRAVITY</h1>
+        <p class="text-[9px] font-bold text-slate-400 -mt-0.5">Model Quota Refresh Timer</p>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="requestNotificationPermission()" class="text-xs px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 text-slate-350 flex items-center gap-1.5 transition-all cursor-pointer">
+        <i data-lucide="bell" class="w-3.5 h-3.5 text-amber-400"></i>
+        <span>푸시 알림 켜기</span>
+      </button>
+      <a href="/" class="text-xs px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-black flex items-center gap-1 transition-all">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+        <span>메인 홈</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-grow max-w-[95%] xl:max-w-[1500px] w-full mx-auto px-4 py-8 flex flex-col gap-8">
+    
+    <!-- Title Info -->
+    <div class="text-center space-y-2">
+      <h2 class="text-3xl font-black font-title text-white">모델 충전 타이머</h2>
+      <p class="text-xs text-slate-400 font-medium">Antigravity 설정창의 각 AI 모델별 남은 시간을 등록해 두시면 실시간 카운트다운과 함께 충전 완료 알림을 드립니다.</p>
+    </div>
+
+    <!-- Timer Creation Panel -->
+    <div class="glass-panel p-6 rounded-2xl shadow-xl space-y-4">
+      <h3 class="text-sm font-black text-amber-400 flex items-center gap-2">
+        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+        새 타이머 등록하기
+      </h3>
+      <form id="timer-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <!-- Model Selection -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-bold text-slate-400">대상 AI 모델</label>
+          <select id="timer-model" required class="bg-slate-900 border border-slate-750 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-amber-400">
+            <option value="Gemini 3.5 Flash (High)">Gemini 3.5 Flash (High)</option>
+            <option value="Gemini 3.5 Flash (Low)">Gemini 3.5 Flash (Low)</option>
+            <option value="Claude Sonnet 4.6">Claude Sonnet 4.6 (Thinking)</option>
+            <option value="Claude Opus 4.6">Claude Opus 4.6 (Thinking)</option>
+            <option value="GPT-OSS 120B">GPT-OSS 120B (Medium)</option>
+            <option value="Gemini 3.5 Flash (Medium)">Gemini 3.5 Flash (Medium)</option>
+            <option value="기타 모델">기타 (직접 입력)</option>
+          </select>
+        </div>
+        
+        <!-- Manual Title (Hidden unless "Other" selected) -->
+        <div id="custom-model-container" class="hidden flex flex-col gap-1.5">
+          <label class="text-[11px] font-bold text-slate-400">직접 입력 모델명</label>
+          <input type="text" id="custom-model-name" placeholder="모델명 입력" class="bg-slate-900 border border-slate-750 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-amber-400">
+        </div>
+
+        <!-- Input Quota Remaining Time -->
+        <div class="md:col-span-2 grid grid-cols-3 gap-2">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[11px] font-bold text-slate-400">남은 일(Days)</label>
+            <input type="number" id="time-days" min="0" value="0" class="bg-slate-900 border border-slate-750 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-amber-400 text-center">
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[11px] font-bold text-slate-400">시간(Hours)</label>
+            <input type="number" id="time-hours" min="0" max="23" value="0" class="bg-slate-900 border border-slate-750 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-amber-400 text-center">
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[11px] font-bold text-slate-400">분(Minutes)</label>
+            <input type="number" id="time-minutes" min="0" max="59" value="0" class="bg-slate-900 border border-slate-750 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-amber-400 text-center">
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div>
+          <button type="submit" class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+            <i data-lucide="play" class="w-3.5 h-3.5"></i>
+            <span>타이머 시작</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Active Timers Grid -->
+    <div class="space-y-4">
+      <h3 class="text-sm font-black text-white flex items-center gap-2">
+        <i data-lucide="alarm-clock" class="w-4.5 h-4.5 text-amber-400"></i>
+        활성화된 카운트다운 목록 (<span id="active-timers-count">0</span>)
+      </h3>
+      
+      <!-- Empty State -->
+      <div id="timers-empty-state" class="glass-panel py-16 text-center rounded-2xl border-dashed border-2 border-slate-750">
+        <i data-lucide="hourglass" class="w-10 h-10 text-slate-600 mx-auto mb-3 animate-bounce"></i>
+        <p class="text-xs font-bold text-slate-400">등록된 충전 타이머가 없습니다.</p>
+        <p class="text-[10px] text-slate-500 mt-1">상단에서 모델 한도 리프레시 시간을 설정하고 시작해 보세요!</p>
+      </div>
+
+      <!-- Timers container -->
+      <div id="timers-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <!-- Dynamic card injection -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="w-full border-t border-white/5 py-4 px-6 text-center bg-slate-950/40 text-[10px] text-slate-500">
+    <p>© 2026 KFC MAN-LINK. Designed for Antigravity Smart Class System.</p>
+  </footer>
+
+  <script>
+    // State management
+    let timers = JSON.parse(localStorage.getItem('antigravity_quota_timers') || '[]');
+
+    const timerForm = document.getElementById('timer-form');
+    const timerModel = document.getElementById('timer-model');
+    const customModelContainer = document.getElementById('custom-model-container');
+    const customModelName = document.getElementById('custom-model-name');
+    const timeDays = document.getElementById('time-days');
+    const timeHours = document.getElementById('time-hours');
+    const timeMinutes = document.getElementById('time-minutes');
+    const timersList = document.getElementById('timers-list');
+    const timersEmptyState = document.getElementById('timers-empty-state');
+    const activeTimersCount = document.getElementById('active-timers-count');
+
+    // Show/hide custom input
+    timerModel.addEventListener('change', () => {
+      if (timerModel.value === '기타 모델') {
+        customModelContainer.classList.remove('hidden');
+      } else {
+        customModelContainer.classList.add('hidden');
+      }
+    });
+
+    // Request Notification permission
+    function requestNotificationPermission() {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            alert('🔔 데스크톱 푸시 알림이 정상 활성화되었습니다!');
+          }
+        });
+      }
+    }
+
+    // Submit and Add Timer
+    timerForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      let modelName = timerModel.value;
+      if (modelName === '기타 모델') {
+        modelName = customModelName.value.trim() || '사용자 정의 모델';
+      }
+
+      const days = parseInt(timeDays.value, 10) || 0;
+      const hours = parseInt(timeHours.value, 10) || 0;
+      const minutes = parseInt(timeMinutes.value, 10) || 0;
+
+      if (days === 0 && hours === 0 && minutes === 0) {
+        alert('시간 한도를 입력해 주세요!');
+        return;
+      }
+
+      // Calculate end time
+      const totalMs = ((days * 24 * 60) + (hours * 60) + minutes) * 60 * 1000;
+      const endTime = Date.now() + totalMs;
+
+      const newTimer = {
+        id: 'timer-' + Math.random().toString(36).substring(2, 9),
+        name: modelName,
+        endTime: endTime,
+        totalDuration: totalMs
+      };
+
+      timers.push(newTimer);
+      saveTimers();
+      renderTimers();
+      
+      // Reset form fields
+      timerForm.reset();
+      customModelContainer.classList.add('hidden');
+    });
+
+    function saveTimers() {
+      localStorage.setItem('antigravity_quota_timers', JSON.stringify(timers));
+    }
+
+    function removeTimer(id) {
+      timers = timers.filter(t => t.id !== id);
+      saveTimers();
+      renderTimers();
+    }
+
+    function playNotificationSound() {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+      osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.15); // E6 slide
+      
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.4);
+    }
+
+    function triggerFinishAlert(name) {
+      playNotificationSound();
+      
+      // Browser notification
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('🚀 Antigravity 한도 충전 완료!', {
+          body: `축하합니다! [${name}] 모델의 한도가 다시 충전되었습니다.`,
+          icon: '/favicon.ico'
+        });
+      }
+    }
+
+    // Refresh display loop
+    function updateCountdowns() {
+      const now = Date.now();
+      let hasChanges = false;
+
+      timers.forEach(t => {
+        const remaining = t.endTime - now;
+        const card = document.getElementById(t.id);
+        
+        if (remaining <= 0) {
+          if (card) {
+            triggerFinishAlert(t.name);
+            removeTimer(t.id);
+            hasChanges = true;
+          }
+          return;
+        }
+
+        if (card) {
+          const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+          // Update text nodes
+          card.querySelector('.countdown-text').innerHTML = `
+            ${days > 0 ? `<span class="text-xl font-extrabold text-amber-400 font-title">${days}</span>일 ` : ''}
+            <span class="text-xl font-extrabold text-white font-title">${String(hours).padStart(2, '0')}</span>시 
+            <span class="text-xl font-extrabold text-white font-title">${String(minutes).padStart(2, '0')}</span>분 
+            <span class="text-lg font-bold text-slate-400 font-title">${String(seconds).padStart(2, '0')}</span>초
+          `;
+
+          // Progress bar percentage
+          const percent = Math.max(0, Math.min(100, (remaining / t.totalDuration) * 100));
+          card.querySelector('.progress-bar').style.width = percent + '%';
+        }
+      });
+
+      if (hasChanges) {
+        renderTimers();
+      }
+    }
+
+    // Render static grid cards
+    function renderTimers() {
+      activeTimersCount.textContent = timers.length;
+      
+      if (timers.length === 0) {
+        timersEmptyState.classList.remove('hidden');
+        timersList.innerHTML = '';
+        return;
+      }
+      
+      timersEmptyState.classList.add('hidden');
+      
+      // Re-render only list wrapper
+      timersList.innerHTML = timers.map(t => {
+        return `
+          <div id="${t.id}" class="glass-card p-5 rounded-2xl flex flex-col justify-between gap-4 relative overflow-hidden">
+            <!-- Background glow decoration -->
+            <div class="absolute -top-10 -right-10 w-24 h-24 bg-amber-500/5 rounded-full blur-xl pointer-events-none"></div>
+
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="inline-block px-2.5 py-0.5 rounded-full bg-slate-900 text-slate-400 text-[9px] font-black border border-slate-750">AI MODEL</span>
+                <h4 class="text-xs font-black text-slate-200 mt-1.5 truncate max-w-[200px]">${t.name}</h4>
+              </div>
+              <button onclick="removeTimer('${t.id}')" class="w-7 h-7 rounded-lg hover:bg-rose-500/10 text-rose-500 flex items-center justify-center transition-colors cursor-pointer" title="타이머 삭제">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+            <!-- Countdown Output -->
+            <div class="countdown-text text-sm font-bold text-slate-200 select-none py-1">
+              --
+            </div>
+
+            <!-- Progress bar container -->
+            <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
+              <div class="progress-bar h-full bg-gradient-to-r from-amber-500 to-yellow-350 transition-all duration-1000" style="width: 100%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Refresh icons in DOM
+      lucide.createIcons();
+    }
+
+    // Initial load
+    renderTimers();
+    setInterval(updateCountdowns, 1000);
+  </script>
+</body>
+</html>

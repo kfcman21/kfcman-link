@@ -1101,6 +1101,18 @@
     <!-- 1. Guest Landing Welcome Screen -->
     <div class="flex flex-col items-center justify-center text-center py-10 md:py-20" id="guest-content">
       
+      <!-- Sleek Guest Theme Switcher -->
+      <div class="flex items-center gap-1 p-1 bg-white/40 dark:bg-[#131824]/40 border-2 border-white dark:border-white/10 rounded-full shadow-clay-flat mb-8 backdrop-blur-md" id="guest-theme-switcher">
+        <button type="button" id="btn-guest-theme-light" class="px-4 py-1.5 rounded-full text-xs font-black transition-all flex items-center gap-1 cursor-pointer bg-white text-slate-800 shadow-sm border border-slate-100">
+          <i data-lucide="sun" class="w-3.5 h-3.5 text-orange-500"></i>
+          <span>라이트</span>
+        </button>
+        <button type="button" id="btn-guest-theme-dark" class="px-4 py-1.5 rounded-full text-xs font-black transition-all flex items-center gap-1 cursor-pointer text-slate-450 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 border border-transparent">
+          <i data-lucide="moon" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span>다크</span>
+        </button>
+      </div>
+
       <!-- Bobbing Clay Toy Illustration Header -->
       <div class="w-40 h-40 bg-gradient-to-tr from-clay-purple to-clay-sky rounded-[40px] border-4 border-white shadow-clay-flat-lg flex items-center justify-center bobbing mb-10 text-white relative">
         <!-- Premium Spinning Globe SVG -->
@@ -1260,7 +1272,7 @@
             </button>
 
             <!-- HWP Docs -->
-            <a href="/docs" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
+            <a href="/docs" id="grid-item-docs" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group" style="display: none;">
               <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-teal-500/50 group-hover:to-emerald-500/30 group-hover:shadow-[0_12px_24px_-8px_rgba(20,184,166,0.45)] transition-all duration-500 relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-tr from-teal-500/0 to-emerald-500/0 group-hover:from-teal-500/10 group-hover:to-teal-500/10 transition-all duration-500"></div>
                 <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
@@ -1280,6 +1292,26 @@
                 </div>
               </div>
               <span class="text-[12px] font-black text-slate-650 dark:text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors duration-300">HWP 문서</span>
+            </a>
+
+            <!-- 주제별 톡방 -->
+            <a href="/chat" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
+              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-yellow-500/50 group-hover:to-amber-500/30 group-hover:shadow-[0_12px_24px_-8px_rgba(234,179,8,0.45)] transition-all duration-500 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-tr from-yellow-500/0 to-amber-500/0 group-hover:from-yellow-500/10 group-hover:to-yellow-500/10 transition-all duration-500"></div>
+                <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
+                  <svg class="w-6 h-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(234,179,8,0.35)]" viewBox="0 0 24 24" fill="none" xmlns="http://www/w3.org/2000/svg">
+                    <defs>
+                      <linearGradient id="grad-chat" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#fbbf24" />
+                        <stop offset="100%" stop-color="#f59e0b" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="url(#grad-chat)" fill-opacity="0.25" stroke="url(#grad-chat)" stroke-width="1.5"/>
+                    <path d="M8 10H8.01M12 10H12.01M16 10H16.01" stroke="url(#grad-chat)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+              <span class="text-[12px] font-black text-slate-650 dark:text-slate-400 group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300">주제별 톡방</span>
             </a>
 
             <!-- Quick QR -->
@@ -2294,6 +2326,30 @@
               <span class="text-[9px] font-black text-slate-400 block">현재 대결 상태</span>
               <span class="text-xs font-black text-slate-900 dark:text-white truncate" id="monitor-tetris-state">대기실 (lobby)</span>
             </div>
+          </div>
+        </div>
+        <!-- Antigravity Quota Timer Link Card -->
+        <div class="text-left border-b-2 border-dashed border-slate-200 dark:border-white/10 pb-2 mb-4">
+          <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+            <i data-lucide="hourglass" class="text-amber-500 w-4 h-4"></i>
+            Antigravity AI 모델 관리 도구
+          </h3>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 text-left">
+          <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-5 shadow-clay-flat-lg clay-card flex flex-col justify-between">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 rounded-xl border-2 border-white bg-amber-500 text-slate-950 flex items-center justify-center shadow-md">
+                <i data-lucide="hourglass" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h4 class="text-sm font-black text-slate-900 dark:text-white">AI 모델 할당량 충전 타이머</h4>
+                <p class="text-[10px] font-bold text-slate-400">모델 충전까지 남은 시간을 카운트다운하고 푸시 알림을 줍니다.</p>
+              </div>
+            </div>
+            <a href="/quota_timer.html" target="_blank" class="w-full text-center py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs transition-all flex items-center justify-center gap-1">
+              <span>충전 타이머 열기</span>
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            </a>
           </div>
         </div>
 
@@ -3529,6 +3585,6 @@
   </div>
 
   <!-- Application Frontend Logic JS -->
-  <script src="/js/app.js?v=202606041804"></script>
+  <script src="/js/app.js?v=202606081911"></script>
 </body>
 </html>

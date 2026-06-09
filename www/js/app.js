@@ -122,6 +122,20 @@ document.addEventListener('DOMContentLoaded', () => {
   let cachedLinks = [];
 
   // --- 1. Theme Module (Light / Dark Mode Option) ---
+  function updateGuestThemeButtons(isLight) {
+    const btnLight = document.getElementById('btn-guest-theme-light');
+    const btnDark = document.getElementById('btn-guest-theme-dark');
+    if (btnLight && btnDark) {
+      if (isLight) {
+        btnLight.className = "px-4 py-1.5 rounded-full text-xs font-black transition-all flex items-center gap-1 cursor-pointer bg-white text-slate-800 shadow-sm border border-slate-100";
+        btnDark.className = "px-4 py-1.5 rounded-full text-xs font-black transition-all flex items-center gap-1 cursor-pointer text-slate-450 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 border border-transparent";
+      } else {
+        btnLight.className = "px-4 py-1.5 rounded-full text-xs font-black transition-all flex items-center gap-1 cursor-pointer text-slate-450 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 border border-transparent";
+        btnDark.className = "px-4 py-1.5 rounded-full text-xs font-black transition-all flex items-center gap-1 cursor-pointer bg-slate-950 text-white shadow-sm border border-slate-800";
+      }
+    }
+  }
+
   function updateThemeRadioState(isLight) {
     const lightRadio = document.querySelector('input[name="theme-preference"][value="light"]');
     const darkRadio = document.querySelector('input[name="theme-preference"][value="dark"]');
@@ -132,6 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
         darkRadio.checked = true;
       }
     }
+    updateGuestThemeButtons(isLight);
   }
 
   function initTheme() {
@@ -173,6 +188,26 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   initTheme();
+
+  // Guest theme button click listeners
+  const btnGuestThemeLight = document.getElementById('btn-guest-theme-light');
+  const btnGuestThemeDark = document.getElementById('btn-guest-theme-dark');
+  if (btnGuestThemeLight) {
+    btnGuestThemeLight.addEventListener('click', () => {
+      const isCurrentlyLight = document.body.classList.contains('light-theme');
+      if (!isCurrentlyLight) {
+        window.toggleThemeAction();
+      }
+    });
+  }
+  if (btnGuestThemeDark) {
+    btnGuestThemeDark.addEventListener('click', () => {
+      const isCurrentlyLight = document.body.classList.contains('light-theme');
+      if (isCurrentlyLight) {
+        window.toggleThemeAction();
+      }
+    });
+  }
 
   // Theme settings radio change listeners
   document.addEventListener('change', (e) => {
@@ -288,11 +323,29 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
-        // Hide/Show HWP shared storage & editor nav items for all logged-in members
-        const navItemDocs = document.getElementById('nav-item-docs');
+        // Hide/Show HWP shared storage & editor nav items (Restricted to Admin ONLY)
+        const isUserAdmin = (data.role === 'admin');
+        const navItemDocsSide = document.getElementById('nav-item-docs-side');
+        const navItemTetrisSide = document.getElementById('nav-item-tetris-side');
+        const docsHeaderBtn = document.getElementById('nav-item-docs-header');
+        const docsHeroBtn = document.getElementById('nav-item-docs-hero');
+        const gridItemDocs = document.getElementById('grid-item-docs');
+
+        if (navItemDocsSide) navItemDocsSide.style.display = isUserAdmin ? 'flex' : 'none';
+        if (navItemTetrisSide) navItemTetrisSide.style.display = isUserAdmin ? 'flex' : 'none';
+        if (gridItemDocs) gridItemDocs.style.display = isUserAdmin ? 'flex' : 'none';
+
         const mobileNavDocs = document.getElementById('mobile-nav-docs');
-        if (navItemDocs) navItemDocs.style.display = 'flex';
-        if (mobileNavDocs) mobileNavDocs.style.display = 'flex';
+        if (mobileNavDocs) mobileNavDocs.style.display = isUserAdmin ? 'flex' : 'none';
+
+        if (docsHeaderBtn) {
+          if (isUserAdmin) docsHeaderBtn.classList.remove('hidden');
+          else docsHeaderBtn.classList.add('hidden');
+        }
+        if (docsHeroBtn) {
+          if (isUserAdmin) docsHeroBtn.classList.remove('hidden');
+          else docsHeroBtn.classList.add('hidden');
+        }
 
         // Hide/Show Wall mobile bottom nav item based on user role (Restricted to VIP, Manager, Admin)
         const mobileNavWall = document.getElementById('mobile-nav-wall');
@@ -304,22 +357,11 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
-        // Toggle HWP shared storage header button and landing welcome hero button based on login status
-        const docsHeaderBtn = document.getElementById('nav-item-docs-header');
-        const docsHeroBtn = document.getElementById('nav-item-docs-hero');
-        if (docsHeaderBtn) docsHeaderBtn.classList.remove('hidden');
-        if (docsHeroBtn) docsHeroBtn.classList.remove('hidden');
-
-        // Hide/Show settings navigation items based on user role (Hide completely for general 'user')
+        // Show settings navigation items for all logged-in users (including general 'user' role for theme settings)
         const navItemSettings = document.getElementById('nav-item-settings');
         const mNavSettings = document.getElementById('mobile-nav-settings');
-        if (data.role === 'user') {
-          if (navItemSettings) navItemSettings.style.display = 'none';
-          if (mNavSettings) mNavSettings.style.display = 'none';
-        } else {
-          if (navItemSettings) navItemSettings.style.display = 'flex';
-          if (mNavSettings) mNavSettings.style.display = 'flex';
-        }
+        if (navItemSettings) navItemSettings.style.display = 'flex';
+        if (mNavSettings) mNavSettings.style.display = 'flex';
 
         renderDashboard();
 
@@ -378,6 +420,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const mNavWall = document.getElementById('mobile-nav-wall');
     if (mNavDocs) mNavDocs.style.display = 'none';
     if (mNavWall) mNavWall.style.display = 'none';
+
+    // Hide sidebar and grid links for guest users
+    const navItemDocsSide = document.getElementById('nav-item-docs-side');
+    const navItemTetrisSide = document.getElementById('nav-item-tetris-side');
+    const gridItemDocs = document.getElementById('grid-item-docs');
+    if (navItemDocsSide) navItemDocsSide.style.display = 'none';
+    if (navItemTetrisSide) navItemTetrisSide.style.display = 'none';
+    if (gridItemDocs) gridItemDocs.style.display = 'none';
 
     // 학급 전용 섹션들 일괄 숨김 처리
     const classroomSection = document.getElementById('classroom-section');
@@ -2038,11 +2088,13 @@ document.addEventListener('DOMContentLoaded', () => {
       // Load classroom settings data
       renderSettingsView();
       
-      // Default to Admin subtab if admin/manager, otherwise classroom settings subtab
+      // Default settings subtab based on role
       if (currentUserRole === 'admin' || currentUserRole === 'manager') {
         switchSettingsSubTab('admin');
-      } else {
+      } else if (currentUserRole === 'vip') {
         switchSettingsSubTab('classroom');
+      } else {
+        switchSettingsSubTab('shortcut');
       }
     }
 

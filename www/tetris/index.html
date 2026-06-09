@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>테트리스 배틀로얄 - 50인 멀티플레이어</title>
+
   <!-- Google Fonts for premium retro-futuristic styling -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,12 +21,13 @@
   <!-- ========================================== -->
   <div class="login-container" id="login-screen">
     <div class="login-card glass-panel-neon">
+      <button type="button" class="theme-toggle-btn" id="login-theme-toggle" title="테마 변경">☀️</button>
       <div class="login-header">
         <h1>TETRIS <span class="highlight">BATTLE</span></h1>
         <div class="subtitle">50인 실시간 멀티플레이어 아레나</div>
       </div>
       
-      <div class="login-tabs">
+      <div class="login-tabs" style="display: none !important;">
         <button id="tab-participant" class="tab-btn active">참가자 접속</button>
         <button id="tab-admin" class="tab-btn">관리자 로그인</button>
       </div>
@@ -68,6 +70,7 @@
         <div class="subtitle">50인 실시간 멀티플레이어 아레나</div>
       </div>
       <div class="game-status">
+        <button type="button" class="theme-toggle-btn" id="participant-theme-toggle" title="테마 변경" style="width: 34px; height: 34px; font-size: 1rem;"></button>
         <span class="status-badge" id="status-badge">대기실</span>
         <span class="player-count">
           <span id="online-count">0</span>명 접속 중 
@@ -253,6 +256,8 @@
         
         <!-- Host manual trigger -->
         <div class="admin-actions" style="display: flex; gap: 8px; align-items: center;">
+          <button type="button" class="theme-toggle-btn" id="admin-theme-toggle" title="테마 변경" style="width: 34px; height: 34px; font-size: 1rem;"></button>
+          <button id="admin-copy-url-btn" class="btn btn-spectate" style="background: rgba(0, 242, 254, 0.08); border: 1px solid rgba(0, 242, 254, 0.2); color: var(--neon-cyan); font-size: 0.85rem; padding: 9px 12px;">참가자 접속 링크 복사</button>
           <button id="admin-reset-players-btn" class="btn btn-spectate" style="background: rgba(255, 0, 127, 0.08); border: 1px solid rgba(255, 0, 127, 0.2); color: var(--neon-magenta); font-size: 0.85rem; padding: 9px 12px;">참가자 초기화</button>
           <button id="admin-start-game-btn" class="btn btn-admin-start hidden">🎮 게임 시작</button>
         </div>

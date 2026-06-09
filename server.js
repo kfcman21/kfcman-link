@@ -803,12 +803,24 @@ app.post('/api/admin/config/gemini/test', authenticate, requireAdmin, async (req
 
 
 // Endpoint: Generate AI topics using Google Gemini API (Admin Only)
-app.post('/api/admin/generate-topics', authenticate, requireAdmin, async (req, res) => {
+app.post('/api/admin/generate-topics', authenticate, async (req, res) => {
+  if (req.role !== 'admin' && req.role !== 'manager' && req.role !== 'vip') {
+    return res.status(403).json({ error: '우수회원 이상 권한이 필요한 기능입니다.' });
+  }
   try {
     const { wallId, prompt } = req.body;
     if (!wallId || !prompt || prompt.trim() === '') {
       return res.status(400).json({ error: '게시판 ID와 프롬프트 내용을 모두 입력해 주세요.' });
     }
+
+    const wall = await db.getWall(wallId);
+    if (!wall) {
+      return res.status(404).json({ error: '존재하지 않는 게시판입니다.' });
+    }
+    
+    // Save overall prompt as the board topic
+    wall.topic = prompt.trim();
+    await db.save();
 
     // 1. Get stored API key
     const configPath = path.join(__dirname, 'config.json');
@@ -832,9 +844,10 @@ app.post('/api/admin/generate-topics', authenticate, requireAdmin, async (req, r
 Your goal is to help brainstorm topic chatrooms for a school board based on this request: "${prompt}".
 Please generate exactly 5-6 distinct topic chatroom ideas.
 For each topic, provide:
-1. "title": A very short title in Korean (under 8 characters, e.g. "행정업무", "생활지도", "수업혁신", "동아리").
+1. "title": A detailed and descriptive topic title in Korean that represents the specific sub-topic (around 10-18 characters, e.g. "교무 행정 자동화 아이디어", "생활지도 기록 및 통계 관리", "AI 기반 개별 맞춤 수업", "동아리 선점 자동 배정").
 2. "description": A short explanation of the room's purpose in Korean (1-2 sentences).
 3. "emoji": A single representative emoji (e.g. 📝, 🏫, 🎨).
+4. "welcome": An engaging opening message or starting question in Korean (1-2 sentences) to kickstart discussion in this room (e.g. "엑셀 대량 업무 등 행정 처리에 시간이 오래 걸려 곤혹스러웠던 순간을 나눠주세요!").
 
 Return ONLY a valid JSON object matching this exact schema:
 {
@@ -842,7 +855,8 @@ Return ONLY a valid JSON object matching this exact schema:
     {
       "title": "...",
       "description": "...",
-      "emoji": "..."
+      "emoji": "...",
+      "welcome": "..."
     }
   ]
 }
@@ -921,6 +935,12 @@ Ensure the response contains absolutely NO markdown, NO code fences (like \`\`\`
         false, 
         ''
       );
+      
+      // Create initial conversation message inside this chatroom
+      if (t.welcome && t.welcome.trim() !== '') {
+        await db.commentWallCard(wallId, card.id, '📢 안내 로봇', t.welcome.trim());
+      }
+      
       createdCards.push(card);
     }
 
@@ -1959,8 +1979,9 @@ app.post('/api/wall/:id/cards/:cardId/like', async (req, res) => {
   try {
     const wallId = req.params.id.trim().toUpperCase();
     const { cardId } = req.params;
+    const { clientUuid } = req.body;
 
-    const card = await db.likeWallCard(wallId, cardId);
+    const card = await db.likeWallCard(wallId, cardId, clientUuid);
 
     // Broadcast change to all clients
     broadcastWallUpdate(wallId);
@@ -1968,7 +1989,7 @@ app.post('/api/wall/:id/cards/:cardId/like', async (req, res) => {
     return res.status(200).json(card);
   } catch (err) {
     console.error('Error liking wall card:', err);
-    return res.status(500).json({ error: '좋아요 반영 도중 오류가 발생했습니다.' });
+    return res.status(400).json({ error: err.message || '좋아요 반영 도중 오류가 발생했습니다.' });
   }
 });
 
@@ -1997,6 +2018,15 @@ app.post('/api/wall/:id/cards/:cardId/comments', async (req, res) => {
       const myMember = members.find(m => m.clientUuid === clientUuid);
       if (!myMember) {
         return res.status(403).json({ error: '번호 로그인(이모지 및 이름 등록) 후 대화에 참여할 수 있습니다. 🌸' });
+      }
+    }
+
+    // Prevent duplicate consecutive comments
+    const targetCard = wall.cards && wall.cards[cardId];
+    if (targetCard && targetCard.comments && targetCard.comments.length > 0) {
+      const lastComment = targetCard.comments[targetCard.comments.length - 1];
+      if (lastComment.author === author && lastComment.text === text) {
+        return res.status(400).json({ error: '동일한 내용의 메시지를 연속해서 전송할 수 없습니다.' });
       }
     }
 
@@ -2203,6 +2233,85 @@ app.post('/api/wall/:id/max-users', optionalAuthenticate, async (req, res) => {
   } catch (err) {
     console.error('Error changing wall max users:', err);
     return res.status(500).json({ error: '인원 제한 설정 변경 도중 오류가 발생했습니다.' });
+  }
+});
+
+// Update wall topic (admins only)
+app.put('/api/wall/:id/topic', optionalAuthenticate, async (req, res) => {
+  try {
+    const wallId = req.params.id.trim().toUpperCase();
+    const { topic } = req.body;
+    const wall = await db.getWall(wallId);
+    if (!wall) {
+      return res.status(404).json({ error: '존재하지 않는 게시판입니다.' });
+    }
+    const cleanUser = (req.username || '').toLowerCase();
+    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin' || wall.creator === cleanUser;
+    if (!isAdmin) {
+      return res.status(403).json({ error: '게시판 관리자만 전체 주제를 수정할 수 있습니다.' });
+    }
+    if (containsProfanity(topic)) {
+      return res.status(400).json({ error: '부적절한 표현이 포함되어 있어 수정할 수 없습니다.' });
+    }
+    wall.topic = (topic || '').trim();
+    await db.save();
+    broadcastWallUpdate(wallId);
+    return res.status(200).json({ message: '전체 주제가 변경되었습니다.', wall });
+  } catch (err) {
+    console.error('Error changing wall topic:', err);
+    return res.status(500).json({ error: '전체 주제 변경 도중 오류가 발생했습니다.' });
+  }
+});
+
+// Save current board snapshot as archive (VIP or above)
+app.post('/api/wall/:id/save-archive', optionalAuthenticate, async (req, res) => {
+  try {
+    const wallId = req.params.id.trim().toUpperCase();
+    const { archiveName } = req.body;
+    
+    const wall = await db.getWall(wallId);
+    if (!wall) return res.status(404).json({ error: '존재하지 않는 게시판입니다.' });
+    
+    const cleanUser = (req.username || '').toLowerCase();
+    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin' || wall.creator === cleanUser;
+    
+    if (!isAdmin && req.role !== 'vip' && req.role !== 'manager') {
+      return res.status(403).json({ error: '우수회원 이상 권한이 필요한 기능입니다.' });
+    }
+    
+    const newId = 'TALK_' + Date.now().toString(36).toUpperCase();
+    
+    // Deep copy wall object
+    const newWall = JSON.parse(JSON.stringify(wall));
+    newWall.id = newId;
+    newWall.title = (archiveName || wall.topic || '저장된 톡방').trim();
+    newWall.creator = req.username || 'anonymous';
+    newWall.createdAt = new Date().toISOString();
+    newWall.isArchive = true;
+    newWall.parentWallId = wallId;
+    
+    db.cache.walls[newId] = newWall;
+    await db.save();
+    
+    return res.status(200).json({ success: true, newId, title: newWall.title });
+  } catch (err) {
+    console.error('Error saving wall archive:', err);
+    return res.status(500).json({ error: '톡방 저장 도중 오류가 발생했습니다.' });
+  }
+});
+
+// Get saved archives for a board
+app.get('/api/wall/:id/archives', async (req, res) => {
+  try {
+    const wallId = req.params.id.trim().toUpperCase();
+    const walls = Object.values(db.cache.walls || {});
+    const archives = walls.filter(w => w.isArchive && w.parentWallId === wallId)
+                          .map(w => ({ id: w.id, title: w.title, createdAt: w.createdAt, topic: w.topic }));
+    archives.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return res.status(200).json(archives);
+  } catch (err) {
+    console.error('Error retrieving wall archives:', err);
+    return res.status(500).json({ error: '톡방 기록 목록을 불러오는 도중 오류가 발생했습니다.' });
   }
 });
 

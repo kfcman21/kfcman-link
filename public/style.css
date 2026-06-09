@@ -371,46 +371,29 @@ main {
   justify-content: center;
   gap: 8px;
   font-weight: 600;
-  font-size: 15px;
-  padding: 14px 28px;
-  border-radius: 10px;
-  border: none;
+  font-size: 14px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: 1px solid transparent;
   cursor: pointer;
-  transition: var(--transition-smooth);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
 }
 
 .btn-primary {
   background: var(--primary-gradient);
   color: #ffffff;
-  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-primary::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -50%;
-  width: 200%;
-  height: 100%;
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transform: skewX(-30deg);
-  transition: 0.75s;
-}
-
-.btn-primary:hover::after {
-  left: 120%;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(6, 182, 212, 0.45);
+  transform: translateY(-1.5px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(6, 182, 212, 0.45);
+  filter: brightness(1.1);
 }
 
 .btn-primary:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
 
 .btn-secondary {
@@ -422,7 +405,8 @@ main {
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: var(--border-glass-hover);
-  transform: translateY(-2px);
+  transform: translateY(-1.5px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .btn-glass {
@@ -433,7 +417,9 @@ main {
 
 .btn-glass:hover {
   background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
+  border-color: var(--border-glass-hover);
+  transform: translateY(-1.5px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .btn-glass-danger {
@@ -448,6 +434,7 @@ main {
   background: rgba(239, 68, 68, 0.25);
   border-color: rgba(239, 68, 68, 0.4);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
 }
 
 .btn-sm {
@@ -467,14 +454,15 @@ main {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-action-icon:hover {
   background: rgba(255, 255, 255, 0.12);
   color: var(--text-main);
   border-color: var(--color-cyan);
-  box-shadow: 0 0 12px rgba(6, 182, 212, 0.3);
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.35);
+  transform: translateY(-1.5px) scale(1.05);
 }
 
 .w-full {

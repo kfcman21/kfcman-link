@@ -105,7 +105,7 @@ class Database {
 
         this.cache.walls['TALK'] = {
           id: 'TALK',
-          title: '주제별 광장 톡방',
+          title: '주제별 톡방',
           topic: '모두가 함께 의견을 나누는 주제별 소통 광장입니다.',
           description: '자유롭게 메시지를 보내 공통주제 톡방에 참여해 보세요!',
           creator: 'system',
@@ -117,6 +117,12 @@ class Database {
           members: {}
         };
         this.save();
+      }
+      if (this.cache.walls && this.cache.walls['TALK']) {
+        if (this.cache.walls['TALK'].title === '주제별 광장 톡방') {
+          this.cache.walls['TALK'].title = '주제별 톡방';
+          this.save();
+        }
       }
       if (!this.cache.docs) this.cache.docs = {};
       
@@ -1093,12 +1099,23 @@ class Database {
     return newCard;
   }
 
-  async likeWallCard(wallId, cardId) {
+  async likeWallCard(wallId, cardId, clientUuid) {
     const wall = await this.getWall(wallId);
     if (!wall) throw new Error('존재하지 않는 게시판입니다.');
 
     const card = wall.cards[cardId];
     if (!card) throw new Error('존재하지 않는 카드입니다.');
+
+    if (!card.likedUuids) {
+      card.likedUuids = [];
+    }
+
+    if (clientUuid) {
+      if (card.likedUuids.includes(clientUuid)) {
+        throw new Error('이미 이 카드에 좋아요를 누르셨습니다!');
+      }
+      card.likedUuids.push(clientUuid);
+    }
 
     card.likes = (card.likes || 0) + 1;
     await this.save();

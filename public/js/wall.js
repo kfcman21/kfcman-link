@@ -84,8 +84,18 @@ function initWall() {
           renderBoard(currentWall);
         }
         updateSidebarProfile(data.username, data.role);
+        
+        const isUserAdmin = (data.role === 'admin');
+        const navItemDocsSide = document.getElementById('nav-item-docs-side');
+        const navItemTetrisSide = document.getElementById('nav-item-tetris-side');
+        if (navItemDocsSide) navItemDocsSide.style.display = isUserAdmin ? 'flex' : 'none';
+        if (navItemTetrisSide) navItemTetrisSide.style.display = isUserAdmin ? 'flex' : 'none';
       } else {
         updateSidebarProfile(null);
+        const navItemDocsSide = document.getElementById('nav-item-docs-side');
+        const navItemTetrisSide = document.getElementById('nav-item-tetris-side');
+        if (navItemDocsSide) navItemDocsSide.style.display = 'none';
+        if (navItemTetrisSide) navItemTetrisSide.style.display = 'none';
       }
     })
     .catch(err => {
@@ -94,6 +104,10 @@ function initWall() {
     });
   } else {
     updateSidebarProfile(null);
+    const navItemDocsSide = document.getElementById('nav-item-docs-side');
+    const navItemTetrisSide = document.getElementById('nav-item-tetris-side');
+    if (navItemDocsSide) navItemDocsSide.style.display = 'none';
+    if (navItemTetrisSide) navItemTetrisSide.style.display = 'none';
   }
 
   // DOM Elements
@@ -478,12 +492,51 @@ function initWall() {
 
     document.getElementById('board-title').textContent = wall.title;
     const boardTopicEl = document.getElementById('board-topic');
+    const btnEditBoardTopic = document.getElementById('btn-edit-board-topic');
     if (boardTopicEl) {
-      boardTopicEl.textContent = wall.topic || '';
-      if (wall.topic) {
+      boardTopicEl.textContent = wall.topic || (isBoardAdmin() ? '전체 주제 없음 (클릭하여 설정)' : '');
+      if (wall.topic || isBoardAdmin()) {
         boardTopicEl.classList.remove('hidden');
       } else {
         boardTopicEl.classList.add('hidden');
+      }
+    }
+    if (btnEditBoardTopic) {
+      if (isBoardAdmin()) {
+        btnEditBoardTopic.classList.remove('hidden');
+        const triggerEdit = async () => {
+          const newTopic = prompt('이 게시판의 전체 주제를 입력해주세요:', wall.topic || '');
+          if (newTopic === null) return;
+          
+          const token = localStorage.getItem('kfcman_auth_token');
+          const headers = { 'Content-Type': 'application/json' };
+          if (token) headers['X-KFCMan-Auth'] = token;
+          
+          try {
+            const res = await fetch(`/api/wall/${wall.id}/topic`, {
+              method: 'PUT',
+              headers,
+              body: JSON.stringify({ topic: newTopic })
+            });
+            if (!res.ok) {
+              const data = await res.json();
+              throw new Error(data.error || '주제 수정 실패');
+            }
+          } catch (err) {
+            alert(err.message);
+          }
+        };
+        btnEditBoardTopic.onclick = triggerEdit;
+        if (boardTopicEl) {
+          boardTopicEl.style.cursor = 'pointer';
+          boardTopicEl.onclick = triggerEdit;
+        }
+      } else {
+        btnEditBoardTopic.classList.add('hidden');
+        if (boardTopicEl) {
+          boardTopicEl.style.cursor = 'default';
+          boardTopicEl.onclick = null;
+        }
       }
     }
     document.getElementById('board-desc').textContent = wall.description;
@@ -1211,8 +1264,15 @@ function initWall() {
     }
 
     try {
-      const res = await fetch(`/api/wall/${boardId}/cards/${cardId}/like`, { method: 'POST' });
-      if (!res.ok) throw new Error('좋아요 실패');
+      const res = await fetch(`/api/wall/${boardId}/cards/${cardId}/like`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientUuid })
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || '좋아요 실패');
+      }
       
       likedCards.push(cardId);
       localStorage.setItem(`liked_cards_${boardId}`, JSON.stringify(likedCards));
@@ -2466,6 +2526,73 @@ function initWall() {
     return '일상';
   }
 
+  const renderSidebarArchivesList = async () => {
+    const listContainer = document.getElementById('chat-saved-archives-list');
+    if (!listContainer) return;
+    
+    const targetParentId = boardId.startsWith('TALK') ? 'TALK' : boardId;
+    try {
+      const res = await fetch(`/api/wall/${targetParentId}/archives`);
+      if (!res.ok) throw new Error('목록 조회 실패');
+      const data = await res.json();
+      
+      if (data.length === 0) {
+        listContainer.innerHTML = '<div class="text-center text-[10px] text-slate-400 py-6">저장된 기록이 없습니다.</div>';
+        return;
+      }
+      
+      listContainer.innerHTML = '';
+      const token = localStorage.getItem('kfcman_auth_token');
+      const isAdmin = isBoardAdmin();
+      
+      data.forEach(arc => {
+        const dateStr = new Date(arc.createdAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const div = document.createElement('div');
+        div.className = "flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-150 dark:border-slate-800/80 gap-2";
+        div.innerHTML = `
+          <div class="min-w-0 flex-grow text-left cursor-pointer" onclick="window.location.href = '/wall/${arc.id}'">
+            <h4 class="text-[11px] font-black text-slate-700 dark:text-slate-300 truncate" title="${arc.title}">${arc.title}</h4>
+            <p class="text-[8px] text-slate-400 mt-0.5 font-bold">${dateStr}</p>
+          </div>
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <button class="btn-go px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-[9px] font-black cursor-pointer shadow-sm transition-all" data-id="${arc.id}">이동</button>
+            ${isAdmin ? `<button class="btn-del px-2 py-1 bg-rose-500 hover:bg-rose-600 text-white rounded-md text-[9px] font-black cursor-pointer shadow-sm transition-all" data-id="${arc.id}">삭제</button>` : ''}
+          </div>
+        `;
+        
+        div.querySelector('.btn-go').onclick = (e) => {
+          e.stopPropagation();
+          window.location.href = `/wall/${arc.id}`;
+        };
+        
+        const delBtn = div.querySelector('.btn-del');
+        if (delBtn) {
+          delBtn.onclick = async (e) => {
+            e.stopPropagation();
+            if (!confirm(`'${arc.title}' 기록을 정말 삭제하시겠습니까?`)) return;
+            try {
+              const headers = {};
+              if (token) headers['X-KFCMan-Auth'] = token;
+              const delRes = await fetch(`/api/wall/${arc.id}`, {
+                method: 'DELETE',
+                headers
+              });
+              if (!delRes.ok) throw new Error('삭제 실패');
+              renderSidebarArchivesList();
+              if (typeof renderArchivesList === 'function') renderArchivesList();
+            } catch (err) {
+              alert(err.message);
+            }
+          };
+        }
+        
+        listContainer.appendChild(div);
+      });
+    } catch (err) {
+      listContainer.innerHTML = `<div class="text-center text-[10px] text-rose-500 py-4">${err.message}</div>`;
+    }
+  };
+
   function renderChatLayout(wall) {
     const chatRoomsList = document.getElementById('chat-rooms-list');
     const chatRoomsCount = document.getElementById('chat-rooms-count');
@@ -2480,11 +2607,21 @@ function initWall() {
         btnChatCreateRoom.classList.add('hidden');
       }
     }
+    const btnChatSaveArchive = document.getElementById('btn-chat-save-archive');
+    const userRole = (currentUser && currentUser.role) || '';
+    const isVipOrAbove = userRole === 'admin' || userRole === 'manager' || userRole === 'vip' || isAdmin;
     if (btnChatAiRooms) {
-      if (isAdmin) {
+      if (isVipOrAbove) {
         btnChatAiRooms.classList.remove('hidden');
       } else {
         btnChatAiRooms.classList.add('hidden');
+      }
+    }
+    if (btnChatSaveArchive) {
+      if (isVipOrAbove) {
+        btnChatSaveArchive.classList.remove('hidden');
+      } else {
+        btnChatSaveArchive.classList.add('hidden');
       }
     }
     
@@ -2577,8 +2714,16 @@ function initWall() {
         `;
         
         roomDiv.onclick = () => {
-          activeChatRoomCardId = room.id;
-          renderChatLayout(wall);
+          try {
+            activeChatRoomCardId = room.id;
+            const container = document.getElementById('chat-layout-container');
+            if (container) {
+              container.classList.add('show-chat-room');
+            }
+            renderChatLayout(wall);
+          } catch (err) {
+            alert("대화방 클릭 오류: " + err.message + "\n" + err.stack);
+          }
         };
         
         chatRoomsList.appendChild(roomDiv);
@@ -2593,6 +2738,8 @@ function initWall() {
     const chatActiveRoomDesc = document.getElementById('chat-active-room-desc');
     const chatActiveRoomLikeBtn = document.getElementById('chat-active-room-like-btn');
     const chatActiveRoomLikes = document.getElementById('chat-active-room-likes');
+    const chatActiveRoomEditBtn = document.getElementById('chat-active-room-edit-btn');
+    const chatActiveRoomDeleteBtn = document.getElementById('chat-active-room-delete-btn');
     const chatConversationEmpty = document.getElementById('chat-conversation-empty');
     const chatMessagesArea = document.getElementById('chat-messages-area');
     const chatMessageInputContainer = document.getElementById('chat-message-input-container');
@@ -2603,6 +2750,8 @@ function initWall() {
       if (chatMessageInputContainer) chatMessageInputContainer.classList.add('hidden');
       if (chatActiveRoomTag) chatActiveRoomTag.classList.add('hidden');
       if (chatActiveRoomLikeBtn) chatActiveRoomLikeBtn.classList.add('hidden');
+      if (chatActiveRoomEditBtn) chatActiveRoomEditBtn.classList.add('hidden');
+      if (chatActiveRoomDeleteBtn) chatActiveRoomDeleteBtn.classList.add('hidden');
       if (chatActiveRoomTitle) chatActiveRoomTitle.textContent = "톡방을 선택하거나 메시지를 남겨보세요";
       if (chatActiveRoomDesc) chatActiveRoomDesc.textContent = "주제 톡방을 클릭하면 대화에 참여할 수 있습니다.";
     } else {
@@ -2619,14 +2768,89 @@ function initWall() {
         
         chatActiveRoomLikeBtn.onclick = async () => {
           try {
-            const res = await fetch(`/api/wall/${wall.id}/cards/${activeRoom.id}/like`, { method: 'POST' });
-            if (!res.ok) throw new Error('좋아요 반영 실패');
+            const res = await fetch(`/api/wall/${wall.id}/cards/${activeRoom.id}/like`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ clientUuid })
+            });
+            if (!res.ok) {
+              const data = await res.json();
+              throw new Error(data.error || '좋아요 반영 실패');
+            }
             const updatedCard = await res.json();
             chatActiveRoomLikes.textContent = updatedCard.likes || 0;
           } catch (err) {
-            console.error(err.message);
+            alert(err.message);
           }
         };
+      }
+      if (chatActiveRoomEditBtn) {
+        if (isAdmin) {
+          chatActiveRoomEditBtn.classList.remove('hidden');
+          chatActiveRoomEditBtn.onclick = async () => {
+            const newTitle = prompt('새로운 주제(제목)를 입력해주세요:', activeRoom.title);
+            if (newTitle === null) return;
+            const trimmedTitle = newTitle.trim();
+            if (!trimmedTitle) {
+              alert('주제 제목을 입력해 주세요.');
+              return;
+            }
+            const newDesc = prompt('새로운 주제 설명을 입력해주세요:', activeRoom.content || '');
+            if (newDesc === null) return;
+            const trimmedDesc = newDesc.trim();
+
+            const token = localStorage.getItem('kfcman_auth_token');
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers['X-KFCMan-Auth'] = token;
+
+            try {
+              const res = await fetch(`/api/wall/${wall.id}/cards/${activeRoom.id}`, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify({
+                  title: trimmedTitle,
+                  content: trimmedDesc
+                })
+              });
+              if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || '수정 실패');
+              }
+            } catch (err) {
+              alert(err.message);
+            }
+          };
+        } else {
+          chatActiveRoomEditBtn.classList.add('hidden');
+        }
+      }
+      if (chatActiveRoomDeleteBtn) {
+        if (isAdmin) {
+          chatActiveRoomDeleteBtn.classList.remove('hidden');
+          chatActiveRoomDeleteBtn.onclick = async () => {
+            if (!confirm(`'${activeRoom.title}' 주제 톡방을 정말 삭제하시겠습니까?\n이 방의 모든 대화 내용이 함께 삭제됩니다.`)) return;
+
+            const token = localStorage.getItem('kfcman_auth_token');
+            const headers = {};
+            if (token) headers['X-KFCMan-Auth'] = token;
+
+            try {
+              const res = await fetch(`/api/wall/${wall.id}/cards/${activeRoom.id}`, {
+                method: 'DELETE',
+                headers
+              });
+              if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || '삭제 실패');
+              }
+              activeChatRoomCardId = null;
+            } catch (err) {
+              alert(err.message);
+            }
+          };
+        } else {
+          chatActiveRoomDeleteBtn.classList.add('hidden');
+        }
       }
       if (chatActiveRoomTitle) chatActiveRoomTitle.textContent = `#${activeRoom.title} 주제 톡방`;
       if (chatActiveRoomDesc) chatActiveRoomDesc.textContent = activeRoom.content || `${activeRoom.title}에 대해 자유롭게 이야기 나누는 공간입니다.`;
@@ -2709,6 +2933,9 @@ function initWall() {
         }
       }
     }
+    
+    // Render Saved Archives List in Sidebar
+    renderSidebarArchivesList();
     
     updateIcons();
   }
@@ -2795,6 +3022,30 @@ function initWall() {
       }
 
       const topic = extractTopic(text);
+
+      // Prevent duplicate consecutive comments locally
+      if (currentWall && currentWall.cards) {
+        const rooms = Object.values(currentWall.cards || {});
+        const targetRoom = rooms.find(r => r.title.toLowerCase() === topic.toLowerCase());
+        if (targetRoom) {
+          const comments = targetRoom.comments || [];
+          if (comments.length > 0) {
+            const lastComment = comments[comments.length - 1];
+            if (lastComment.author === author && lastComment.text.trim() === text) {
+              alert('📢 동일한 내용의 메시지를 연속해서 전송할 수 없습니다.');
+              return;
+            }
+          }
+        }
+      }
+
+      const submitBtn = chatGlobalInputForm.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.dataset.originalText = submitBtn.textContent;
+        submitBtn.textContent = '전송 중...';
+      }
+      chatGlobalInput.disabled = true;
       
       try {
         const rooms = Object.values(currentWall.cards || {});
@@ -2842,6 +3093,12 @@ function initWall() {
         chatGlobalInput.value = '';
       } catch (err) {
         alert(err.message);
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = submitBtn.dataset.originalText || '전송';
+        }
+        chatGlobalInput.disabled = false;
       }
     });
   }
@@ -2853,10 +3110,8 @@ function initWall() {
       if (!text || !activeChatRoomCardId) return;
 
       const author = getUserChatNickname();
-      if (author === '익명' || !author.trim()) {
-        alert('📢 메시지 전송을 위해 대화명(별명)을 지정해 주세요! 상단의 대화명 입력란을 채우시면 됩니다. 🌸');
-        const nickInput = document.getElementById('chat-nickname-input');
-        if (nickInput) nickInput.focus();
+      if (!author.trim()) {
+        alert('📢 메시지 전송을 위해 대화명을 입력해 주세요! 🌸');
         return;
       }
       
@@ -2864,6 +3119,27 @@ function initWall() {
         alert('부적절한 표현(욕설, 비하, 성적 표현 등)이 감지되어 메시지를 보낼 수 없습니다. 서로 배려하는 예쁜 언어를 사용해 주세요! 🌸');
         return;
       }
+
+      // Prevent duplicate consecutive comments locally
+      if (currentWall && currentWall.cards && currentWall.cards[activeChatRoomCardId]) {
+        const activeRoom = currentWall.cards[activeChatRoomCardId];
+        const comments = activeRoom.comments || [];
+        if (comments.length > 0) {
+          const lastComment = comments[comments.length - 1];
+          if (lastComment.author === author && lastComment.text.trim() === text) {
+            alert('📢 동일한 내용의 메시지를 연속해서 전송할 수 없습니다.');
+            return;
+          }
+        }
+      }
+
+      const submitBtn = chatRoomInputForm.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.dataset.originalText = submitBtn.textContent;
+        submitBtn.textContent = '전송 중...';
+      }
+      chatRoomInput.disabled = true;
       
       try {
         const commentRes = await fetch(`/api/wall/${currentWall.id}/cards/${activeChatRoomCardId}/comments`, {
@@ -2882,6 +3158,12 @@ function initWall() {
         chatRoomInput.value = '';
       } catch (err) {
         alert(err.message);
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = submitBtn.dataset.originalText || '전송';
+        }
+        chatRoomInput.disabled = false;
       }
     });
   }
@@ -3057,6 +3339,147 @@ function initWall() {
       }
     });
   }
+  // --- ARCHIVE SAVE & LISTING EVENT LISTENERS ---
+  const btnChatSaveArchive = document.getElementById('btn-chat-save-archive');
+  const btnChatShowArchives = document.getElementById('btn-chat-show-archives');
+  const archiveListModal = document.getElementById('archive-list-modal');
+  const archiveListModalContent = document.getElementById('archive-list-modal-content');
+  const btnCloseArchiveModal = document.getElementById('btn-close-archive-modal');
+  const archiveModalList = document.getElementById('archive-modal-list');
+
+  const closeArchiveModal = () => {
+    if (archiveListModalContent) {
+      archiveListModalContent.classList.remove('scale-100', 'opacity-100');
+      archiveListModalContent.classList.add('scale-95', 'opacity-0');
+      setTimeout(() => {
+        archiveListModal.classList.add('hidden');
+      }, 150);
+    }
+  };
+
+  if (btnCloseArchiveModal) {
+    btnCloseArchiveModal.addEventListener('click', closeArchiveModal);
+  }
+
+  // Mobile Back Button click handler
+  const chatMobileBackBtn = document.getElementById('chat-mobile-back-btn');
+  if (chatMobileBackBtn) {
+    chatMobileBackBtn.addEventListener('click', () => {
+      const layoutContainer = document.getElementById('chat-layout-container');
+      if (layoutContainer) {
+        layoutContainer.classList.remove('show-chat-room');
+      }
+      activeChatRoomCardId = null;
+      renderChatLayout(currentWall);
+    });
+  }
+
+  if (btnChatSaveArchive) {
+    btnChatSaveArchive.addEventListener('click', async () => {
+      const defaultName = (currentWall && currentWall.topic) ? currentWall.topic : '저장된 톡방';
+      const archiveName = prompt('현재 톡방 상태를 저장할 이름을 입력해주세요:', defaultName);
+      if (archiveName === null) return;
+
+      const token = localStorage.getItem('kfcman_auth_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['X-KFCMan-Auth'] = token;
+
+      try {
+        const res = await fetch(`/api/wall/${boardId}/save-archive`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ archiveName })
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || '저장 실패');
+        }
+        alert('현재 톡방이 성공적으로 저장되었습니다!');
+        renderSidebarArchivesList();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  }
+
+  const renderArchivesList = async () => {
+    if (!archiveModalList) return;
+    archiveModalList.innerHTML = '<div class="text-center text-xs text-slate-400 py-4">불러오는 중...</div>';
+    
+    const targetParentId = boardId.startsWith('TALK') ? 'TALK' : boardId;
+    try {
+      const res = await fetch(`/api/wall/${targetParentId}/archives`);
+      if (!res.ok) throw new Error('목록 조회 실패');
+      const data = await res.json();
+      
+      if (data.length === 0) {
+        archiveModalList.innerHTML = '<div class="text-center text-xs text-slate-400 py-6">저장된 기록이 없습니다.</div>';
+        return;
+      }
+      
+      archiveModalList.innerHTML = '';
+      const token = localStorage.getItem('kfcman_auth_token');
+      const isAdmin = isBoardAdmin();
+      
+      data.forEach(arc => {
+        const dateStr = new Date(arc.createdAt).toLocaleString('ko-KR');
+        const div = document.createElement('div');
+        div.className = "flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-150 dark:border-slate-800/80 gap-3";
+        div.innerHTML = `
+          <div class="min-w-0 flex-grow text-left">
+            <h4 class="text-xs font-black text-slate-800 dark:text-slate-200 truncate" title="${arc.title}">${arc.title}</h4>
+            <p class="text-[9px] text-slate-450 mt-1 font-bold">${dateStr}</p>
+          </div>
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <button class="btn-go px-2.5 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-[10px] font-black cursor-pointer shadow-sm transition-all" data-id="${arc.id}">이동</button>
+            ${isAdmin ? `<button class="btn-del px-2.5 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-[10px] font-black cursor-pointer shadow-sm transition-all" data-id="${arc.id}">삭제</button>` : ''}
+          </div>
+        `;
+        
+        div.querySelector('.btn-go').onclick = () => {
+          window.location.href = `/wall/${arc.id}`;
+        };
+        
+        const delBtn = div.querySelector('.btn-del');
+        if (delBtn) {
+          delBtn.onclick = async () => {
+            if (!confirm(`'${arc.title}' 기록을 정말 삭제하시겠습니까?`)) return;
+            try {
+              const headers = {};
+              if (token) headers['X-KFCMan-Auth'] = token;
+              const delRes = await fetch(`/api/wall/${arc.id}`, {
+                method: 'DELETE',
+                headers
+              });
+              if (!delRes.ok) throw new Error('삭제 실패');
+              renderArchivesList();
+            } catch (err) {
+              alert(err.message);
+            }
+          };
+        }
+        
+        archiveModalList.appendChild(div);
+      });
+    } catch (err) {
+      archiveModalList.innerHTML = `<div class="text-center text-xs text-rose-500 py-4">${err.message}</div>`;
+    }
+  };
+
+  if (btnChatShowArchives && archiveListModal) {
+    btnChatShowArchives.addEventListener('click', () => {
+      archiveListModal.classList.remove('hidden');
+      setTimeout(() => {
+        if (archiveListModalContent) {
+          archiveListModalContent.classList.remove('scale-95', 'opacity-0');
+          archiveListModalContent.classList.add('scale-100', 'opacity-100');
+        }
+      }, 50);
+      renderArchivesList();
+    });
+  }
+  
+  if (window.lucide) window.lucide.createIcons();
 }
 
 // Robust, race-condition-free initialization

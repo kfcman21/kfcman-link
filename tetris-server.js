@@ -1,6 +1,7 @@
 const WebSocket = require('ws');
 const path = require('path');
 const fs = require('fs');
+const db = require('./database');
 
 let wss;
 let players = {}; // id -> player object
@@ -91,13 +92,26 @@ function sendToPlayer(player, data) {
 function handleMessage(player, data) {
   switch (data.type) {
     case 'login':
-      const { username, password, isAdmin } = data;
+      const { username, password, isAdmin, token } = data;
       if (isAdmin) {
-        if (username === 'admin' && password === adminPassword) {
+        let isTokenAdmin = false;
+        let adminUser = 'admin';
+        if (token) {
+          const verifiedUsername = db.getUsernameBySession(token);
+          if (verifiedUsername) {
+            const user = db.cache.users[verifiedUsername.toLowerCase()];
+            if (user && (user.role === 'admin' || user.role === 'manager')) {
+              isTokenAdmin = true;
+              adminUser = user.username;
+            }
+          }
+        }
+
+        if (isTokenAdmin || (username === 'admin' && password === adminPassword)) {
           player.loggedIn = true;
           player.isSpectator = true;
           player.isHost = true;
-          player.nickname = `관리자 (${username})`;
+          player.nickname = `관리자 (${adminUser})`;
           
           sendToPlayer(player, {
             type: 'login_result',
@@ -114,7 +128,7 @@ function handleMessage(player, data) {
             type: 'login_result',
             success: false,
             isAdmin: true,
-            message: '관리자 ID 또는 비밀번호가 올바르지 않습니다.'
+            message: '관리자 권한 인증에 실패했습니다.'
           });
         }
       } else {
@@ -207,7 +221,7 @@ function handleMessage(player, data) {
       if (player.isHost && player.isSpectator) {
         Object.keys(players).forEach(id => {
           const p = players[id];
-          if (!p.isSpectator) {
+          if (!p.isHost) {
             sendToPlayer(p, { type: 'force_logout', message: '관리자가 참가자 정보를 초기화했습니다.' });
             setTimeout(() => {
               try { p.socket.close(); } catch(e) {}

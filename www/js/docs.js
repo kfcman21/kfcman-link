@@ -193,7 +193,13 @@ async function loadExplorer() {
       const meRes = await fetch('/api/me', { headers: { 'x-kfcman-auth': token } });
       const meData = await meRes.json();
       if (meData.username) {
-        document.getElementById('docs-username').textContent = meData.username + (meData.role === 'vip' || meData.role === 'admin' ? ' 👑' : '');
+        if (meData.role !== 'admin') {
+          alert('한글 문서 보관함은 관리자만 이용할 수 있습니다.');
+          window.location.href = '/';
+          return;
+        }
+
+        document.getElementById('docs-username').textContent = meData.username + ' 👑';
         document.getElementById('docs-user-welcome').classList.remove('hidden');
         
         // Ensure local storage role is synchronized
@@ -201,10 +207,20 @@ async function loadExplorer() {
         
         // Update sidebar profile
         updateSidebarProfile(meData.username, meData.role);
+
+        const navItemDocsSide = document.getElementById('nav-item-docs-side');
+        const navItemTetrisSide = document.getElementById('nav-item-tetris-side');
+        if (navItemDocsSide) navItemDocsSide.style.display = 'flex';
+        if (navItemTetrisSide) navItemTetrisSide.style.display = 'flex';
+      } else {
+        alert('한글 문서 보관함은 관리자만 이용할 수 있습니다.');
+        window.location.href = '/';
+        return;
       }
     } else {
-      document.getElementById('docs-user-welcome').classList.add('hidden');
-      updateSidebarProfile(null);
+      alert('한글 문서 보관함은 관리자만 이용할 수 있습니다.');
+      window.location.href = '/';
+      return;
     }
     
     if (res.ok) {

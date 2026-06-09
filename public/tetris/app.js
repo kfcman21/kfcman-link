@@ -191,6 +191,25 @@ function connect() {
 
   socket.onopen = () => {
     console.log("배틀 서버에 연결되었습니다.");
+    // Auto admin login check
+    const token = localStorage.getItem('kfcman_auth_token');
+    if (token) {
+      fetch('/api/me', {
+        headers: { 'X-KFCMan-Auth': token }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Unauthorized');
+        return res.json();
+      })
+      .then(data => {
+        if (data && (data.role === 'admin' || data.role === 'manager')) {
+          send({ type: 'login', token: token, isAdmin: true });
+        }
+      })
+      .catch(err => {
+        console.warn('Auto admin login check failed:', err);
+      });
+    }
   };
 
   socket.onmessage = (event) => {
@@ -1492,5 +1511,40 @@ function initTouchControls() {
   }
 }
 
+// --- THEME MANAGEMENT ---
+function initTheme() {
+  const isDark = localStorage.getItem('darkMode') !== 'disabled';
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+  updateThemeButtons();
+}
+
+function toggleTheme() {
+  document.documentElement.classList.toggle('dark');
+  const isDark = document.documentElement.classList.contains('dark');
+  localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+  updateThemeButtons();
+}
+
+function updateThemeButtons() {
+  const isDark = document.documentElement.classList.contains('dark');
+  const buttons = document.querySelectorAll('.theme-toggle-btn');
+  buttons.forEach(btn => {
+    btn.textContent = isDark ? '☀️' : '🌙';
+  });
+}
+
+// Bind theme events
+document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+  btn.addEventListener('click', toggleTheme);
+});
+
+// Initialize theme on load
+initTheme();
+
 initTouchControls();
 connect();
+
