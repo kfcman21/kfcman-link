@@ -1106,16 +1106,18 @@ class Database {
     const card = wall.cards[cardId];
     if (!card) throw new Error('존재하지 않는 카드입니다.');
 
+    if (!clientUuid || typeof clientUuid !== 'string' || clientUuid.trim() === '') {
+      throw new Error('좋아요를 누르기 위한 사용자 식별자(UUID)가 필요합니다.');
+    }
+
     if (!card.likedUuids) {
       card.likedUuids = [];
     }
 
-    if (clientUuid) {
-      if (card.likedUuids.includes(clientUuid)) {
-        throw new Error('이미 이 카드에 좋아요를 누르셨습니다!');
-      }
-      card.likedUuids.push(clientUuid);
+    if (card.likedUuids.includes(clientUuid)) {
+      throw new Error('이미 이 카드에 좋아요를 누르셨습니다!');
     }
+    card.likedUuids.push(clientUuid);
 
     card.likes = (card.likes || 0) + 1;
     await this.save();
