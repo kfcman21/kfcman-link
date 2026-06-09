@@ -1384,6 +1384,41 @@ html:not(.dark) .theme-toggle-btn:hover {
   border-color: rgba(0, 0, 0, 0.15) !important;
 }
 
+.rules-box {
+  margin-top: 24px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.rules-box h3 {
+  font-size: 0.8rem;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.rules-box ul {
+  padding-left: 14px;
+}
+.rules-box li {
+  margin-bottom: 4px;
+}
+.rules-box li strong {
+  color: #fff;
+}
+
+html:not(.dark) .rules-box {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  color: var(--text-primary) !important;
+}
+html:not(.dark) .rules-box h3,
+html:not(.dark) .rules-box li strong {
+  color: var(--text-primary) !important;
+}
+
 /* --- LIGHT THEME OVERRIDES --- */
 html:not(.dark) {
   --bg-color: #ffffff;

@@ -186,6 +186,13 @@ function handleMessage(player, data) {
           nickname: player.nickname
         });
 
+        // Send a direct system message with rules
+        sendToPlayer(player, {
+          type: 'chat',
+          nickname: '📢 아레나 규칙',
+          text: '최후의 1인이 남을 때까지 벌이는 서바이벌 배틀로얄입니다. 2줄 이상(2줄:1, 3줄:2, 4줄:4) 지우면 상대방에게 장애물이 공격으로 넘어갑니다.'
+        });
+
         addBattleLog(`🎮 ${player.nickname}님이 대기실에 입장했습니다.`);
         broadcastLobbyUpdate();
       }
