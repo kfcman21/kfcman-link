@@ -1281,12 +1281,10 @@ class TetrisGame {
   gameOver() {
     this.active = false;
     send({ 
-      type: 'game_over', 
-      killer: this.killerName, 
-      killerId: this.killerId 
+      type: 'game_over' 
     });
     
-    const subtitleText = this.killerName ? `공격자: ${this.killerName}` : '다음 라운드가 시작될 때까지 기다려 주세요...';
+    const subtitleText = '다음 라운드가 시작될 때까지 기다려 주세요...';
     showOverlay("게임 오버", subtitleText);
     synth.gameOver();
   }

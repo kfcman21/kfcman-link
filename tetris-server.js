@@ -311,19 +311,14 @@ function handleMessage(player, data) {
         const alivePlayers = Object.values(players).filter(p => p.isAlive && !p.isSpectator);
         player.rank = alivePlayers.length + 1;
 
-        const killerMsg = data.killer ? ` (공격자: ${data.killer})` : '';
-        addBattleLog(`💀 ${player.nickname}님이 탈락했습니다!${killerMsg} (최종 순위 #${player.rank})`);
-
-        if (data.killerId && players[data.killerId]) {
-          players[data.killerId].koCount++;
-        }
+        addBattleLog(`💀 ${player.nickname}님이 탈락했습니다! (최종 순위 #${player.rank})`);
 
         broadcast({
           type: 'player_ko',
           playerId: player.id,
           nickname: player.nickname,
           rank: player.rank,
-          killerNickname: data.killer || null
+          killerNickname: null
         });
 
         checkGameStatus();
@@ -351,11 +346,9 @@ function sendGarbage(attacker, lines) {
     sendToPlayer(target, {
       type: 'garbage',
       lines: lines,
-      attackerId: attacker.id,
-      attackerName: attacker.nickname
+      attackerId: null,
+      attackerName: null
     });
-
-    addBattleLog(`⚔️ ${attacker.nickname}님이 ${target.nickname}님에게 ${lines}줄의 쓰레기 블록을 보냈습니다!`);
   }
 }
 
