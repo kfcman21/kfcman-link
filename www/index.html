@@ -1204,7 +1204,7 @@
             </button>
 
             <!-- Live Kanban Board -->
-            <a href="/wall" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
+            <a href="/wall" id="grid-item-kanban" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
               <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-orange-500/50 group-hover:to-amber-500/30 group-hover:shadow-[0_12px_24px_-8px_rgba(249,115,22,0.45)] transition-all duration-500 relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-tr from-orange-500/0 to-amber-500/0 group-hover:from-orange-500/10 group-hover:to-amber-500/10 transition-all duration-500"></div>
                 <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
@@ -1295,7 +1295,7 @@
             </a>
 
             <!-- 주제별 톡방 -->
-            <a href="/chat" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
+            <a href="/chat" id="grid-item-chat" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
               <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-yellow-500/50 group-hover:to-amber-500/30 group-hover:shadow-[0_12px_24px_-8px_rgba(234,179,8,0.45)] transition-all duration-500 relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-tr from-yellow-500/0 to-amber-500/0 group-hover:from-yellow-500/10 group-hover:to-yellow-500/10 transition-all duration-500"></div>
                 <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
@@ -2844,6 +2844,54 @@
 
       <!-- ==================== MODALS LISTS ==================== -->
 
+  <!-- 0-a. Permission Denied Modal (일반회원 접근 제한 팝업) -->
+  <div class="modal-overlay hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in" id="permission-denied-modal">
+    <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-7 shadow-clay-flat-lg w-full max-w-sm animate-scale-up text-center relative clay-card">
+      <!-- 닫기 버튼 -->
+      <button class="absolute right-4 top-4 w-8 h-8 rounded-lg border-2 border-white bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover transition-all" id="btn-permission-modal-close" type="button">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+
+      <!-- 잠금 아이콘 -->
+      <div class="w-16 h-16 rounded-2xl border-4 border-white bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-5 shadow-clay-flat">
+        <i data-lucide="lock" class="w-8 h-8 text-white"></i>
+      </div>
+
+      <!-- 제목 -->
+      <h3 class="text-lg font-black text-slate-900 dark:text-white mb-2">접근 권한이 없습니다</h3>
+
+      <!-- 설명 -->
+      <p class="text-xs font-bold text-slate-500 dark:text-slate-400 leading-relaxed mb-1">
+        이 기능은 <span class="text-amber-500 dark:text-amber-400 font-black">👑 우수회원 이상</span>만 이용 가능합니다.
+      </p>
+      <p class="text-[11px] text-slate-400 leading-relaxed mb-6">
+        현재 계정은 <strong class="text-slate-600 dark:text-slate-300">일반회원</strong>입니다.<br>관리자에게 등급 업그레이드를 요청해 주세요!
+      </p>
+
+      <!-- 잠긴 기능 배지 -->
+      <div class="flex justify-center gap-2 mb-6 flex-wrap" id="permission-denied-feature-badge">
+        <!-- JS로 동적 삽입 -->
+      </div>
+
+      <!-- 안내 박스 -->
+      <div class="bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-700/40 rounded-2xl p-3 mb-5 text-left">
+        <div class="flex items-start gap-2">
+          <i data-lucide="info" class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5"></i>
+          <p class="text-[10px] font-bold text-amber-700 dark:text-amber-400 leading-relaxed">
+            <span class="font-black block mb-0.5">일반회원 이용 가능 기능</span>
+            단축 주소 생성 (최대 50개), 링크 통계 확인, QR 코드 다운로드
+          </p>
+        </div>
+      </div>
+
+      <!-- 닫기 버튼 -->
+      <button class="w-full py-3 text-xs font-black border-4 border-white rounded-2xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer" id="btn-permission-modal-ok">
+        <i data-lucide="check" class="w-4 h-4"></i>
+        <span>확인했습니다</span>
+      </button>
+    </div>
+  </div>
+
   <!-- 0. Canva Style URL Shortener Modal -->
   <div class="modal-overlay hidden fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm animate-fade-in" id="shortener-modal">
     <div class="bg-white dark:bg-[#161b26] w-full h-full p-6 md:p-10 shadow-lg animate-scale-up text-left relative overflow-y-auto flex flex-col justify-start" id="shortener-modal-content">
@@ -2893,13 +2941,24 @@
             </div>
           </div>
 
-          <div class="space-y-1.5">
+          <div class="space-y-1.5" id="custom-code-section">
             <label class="block text-[10px] font-black text-slate-600 dark:text-slate-300">나만의 커스텀 단축 코드 (선택 사항)</label>
             <div class="flex items-center bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-2xl px-3 py-2.5 gap-2 shadow-inner focus-within:border-clay-sky focus-within:ring-2 focus-within:ring-clay-sky/20 transition-all">
               <span class="text-xs font-black text-slate-500 border-r-2 border-slate-300 dark:border-slate-800 pr-2 select-none">kfcman.link /</span>
               <input type="text" id="custom-alias-input" placeholder="custom-name" autocomplete="off" class="w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400">
             </div>
             <p class="text-[9px] font-bold text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1"><i data-lucide="info" class="w-3.5 h-3.5 text-clay-sky flex-shrink-0"></i> <span>한글 단축 코드 입력이 가능합니다!</span></p>
+          </div>
+
+          <!-- 일반회원 커스텀 코드 잠금 안내 (hidden by default, shown for 'user' role) -->
+          <div class="space-y-1.5 hidden" id="custom-code-locked-section">
+            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-300">나만의 커스텀 단축 코드</label>
+            <div class="flex items-center bg-slate-100 dark:bg-slate-900/50 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl px-3 py-2.5 gap-2 opacity-60 cursor-not-allowed select-none">
+              <span class="text-xs font-black text-slate-400 border-r-2 border-slate-300 dark:border-slate-700 pr-2">kfcman.link /</span>
+              <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0"></i>
+              <span class="text-xs font-bold text-slate-400">우수회원👑 전용 기능</span>
+            </div>
+            <p class="text-[9px] font-bold text-amber-500 dark:text-amber-400 mt-1 flex items-center gap-1"><i data-lucide="crown" class="w-3.5 h-3.5 flex-shrink-0"></i> <span>일반회원은 자동 생성된 단축 주소만 사용 가능합니다. 관리자에게 문의하여 우수회원으로 등급업 후 이용해 주세요!</span></p>
           </div>
 
           <button type="submit" class="w-full py-3.5 text-xs font-black border-2 border-white dark:border-slate-800 rounded-2xl bg-clay-grass hover:bg-teal-400 text-black shadow-clay-flat hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer" id="shorten-btn">
@@ -3585,6 +3644,6 @@
   </div>
 
   <!-- Application Frontend Logic JS -->
-  <script src="/js/app.js?v=202606081911"></script>
+  <script src="/js/app.js?v=202606101000"></script>
 </body>
 </html>

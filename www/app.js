@@ -176,6 +176,115 @@ document.addEventListener('DOMContentLoaded', () => {
             window.adminMetricsInterval = null;
           }
         }
+
+        // Custom code section visibility: regular users see the locked notice only
+        const customCodeSection = document.getElementById('custom-code-section');
+        const customCodeLockedSection = document.getElementById('custom-code-locked-section');
+        if (customCodeSection && customCodeLockedSection) {
+          if (data.role === 'user') {
+            // 일반회원: 커스텀 코드 입력 숨기고 잠금 안내 표시
+            customCodeSection.classList.add('hidden');
+            customCodeLockedSection.classList.remove('hidden');
+          } else {
+            // VIP·관리자: 커스텀 코드 입력 표시
+            customCodeSection.classList.remove('hidden');
+            customCodeLockedSection.classList.add('hidden');
+          }
+        }
+
+        // 칸반보드·주제톡방 접근 제한 (일반회원 잠금) - 모든 /wall, /chat 링크 포괄 처리
+        const permissionDeniedModal = document.getElementById('permission-denied-modal');
+        const btnPermissionClose = document.getElementById('btn-permission-modal-close');
+        const btnPermissionOk = document.getElementById('btn-permission-modal-ok');
+        const permissionFeatureBadge = document.getElementById('permission-denied-feature-badge');
+
+        // 권한없음 모달 표시 함수
+        function showPermissionDeniedModal(featureName, featureIcon) {
+          if (!permissionDeniedModal) return;
+          // 기능 배지 설정
+          if (permissionFeatureBadge) {
+            permissionFeatureBadge.innerHTML = `
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border-2 border-white bg-slate-100 dark:bg-slate-800 text-xs font-black text-slate-600 dark:text-slate-300 shadow-sm">
+                <i data-lucide="${featureIcon}" class="w-3.5 h-3.5"></i>
+                ${featureName}
+              </span>
+              <span class="inline-flex items-center gap-1 px-3 py-1 rounded-xl border-2 border-amber-200 dark:border-amber-700/50 bg-amber-50 dark:bg-amber-900/30 text-xs font-black text-amber-600 dark:text-amber-400">
+                <i data-lucide="lock" class="w-3 h-3"></i>
+                우수회원 전용
+              </span>
+            `;
+            lucide.createIcons();
+          }
+          permissionDeniedModal.classList.remove('hidden');
+        }
+
+        function closePermissionDeniedModal() {
+          if (permissionDeniedModal) {
+            permissionDeniedModal.classList.add('hidden');
+          }
+        }
+
+        // 모달 닫기 버튼 이벤트
+        if (btnPermissionClose) {
+          btnPermissionClose.addEventListener('click', closePermissionDeniedModal);
+        }
+        if (btnPermissionOk) {
+          btnPermissionOk.addEventListener('click', closePermissionDeniedModal);
+        }
+        // 모달 외부 클릭 시 닫기
+        if (permissionDeniedModal) {
+          permissionDeniedModal.addEventListener('click', (e) => {
+            if (e.target === permissionDeniedModal) closePermissionDeniedModal();
+          });
+        }
+
+        if (data.role === 'user') {
+          // 1) 특정 ID 요소 잠금 (사이드바·그리드 아이템)
+          const namedWallItems = [
+            { el: document.getElementById('grid-item-kanban'), name: '칸반보드', icon: 'layout-kanban' },
+            { el: document.getElementById('grid-item-chat'),   name: '주제 톡방', icon: 'message-circle' },
+            { el: document.getElementById('nav-item-wall-side'), name: '칸반보드', icon: 'layout-kanban' },
+            { el: document.getElementById('nav-item-chat-side'), name: '주제 톡방', icon: 'message-circle' },
+          ];
+
+          namedWallItems.forEach(({ el, name, icon }) => {
+            if (!el) return;
+            el.removeAttribute('href');
+            el.style.cursor = 'not-allowed';
+            el.style.opacity = '0.45';
+            el.title = `👑 우수회원 전용 기능입니다.`;
+            // 기존 이벤트 제거 후 재등록
+            const newEl = el.cloneNode(true);
+            el.parentNode.replaceChild(newEl, el);
+            newEl.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              showPermissionDeniedModal(name, icon);
+            });
+          });
+
+          // 2) href="/wall" 또는 href="/chat" 로 이동하는 나머지 모든 링크 일괄 차단
+          document.querySelectorAll('a[href="/wall"], a[href="/chat"]').forEach((el) => {
+            // 이미 처리된 요소 (opacity 처리된 것) 스킵
+            if (el.style.opacity === '0.45') return;
+            const isChat = el.getAttribute('href') === '/chat';
+            const name = isChat ? '주제 톡방' : '칸반보드';
+            const icon = isChat ? 'message-circle' : 'layout-kanban';
+            el.removeAttribute('href');
+            el.style.cursor = 'not-allowed';
+            el.style.opacity = '0.45';
+            el.title = `👑 우수회원 전용 기능입니다.`;
+            el.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              showPermissionDeniedModal(name, icon);
+            });
+          });
+
+          // 3) onclick 방식 버튼 (switchMainTab 없는 wall/chat 전용 버튼) 처리는
+          //    위 querySelectorAll이 a 태그를 모두 커버하므로 충분함
+        }
+
         
         renderDashboard();
 
@@ -448,15 +557,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function checkUrlErrors() {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('error') === 'notfound') {
-    }, 4500);
-  }
-
-  // --- 6. URL Error Handler from Redirect Routes ---
-  function checkUrlErrors() {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('error') === 'notfound') {
       const missingCode = urlParams.get('code');
       showToast('주소를 찾을 수 없음', `요청하신 단축 주소코드 [${missingCode}]는 존재하지 않거나 만료되었습니다.`, 'error');
+      const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+      window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+    }
+    // 일반회원이 칸반/톡방 접근 시도 후 리다이렉트된 경우
+    if (urlParams.get('blocked') === 'wall') {
+      showToast('접근 제한', '칸반보드 및 주제 톡방은 <strong>우수회원👑 이상</strong>만 이용할 수 있습니다. 관리자에게 등급업을 요청해 주세요!', 'error');
       const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
       window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
     }
