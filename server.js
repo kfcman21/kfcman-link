@@ -6,7 +6,12 @@ const os = require('os');
 const { execSync } = require('child_process');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const rateLimit = require('express-rate-limit');
 const db = require('./database');
+
+// 운영환경 여부 (PM2에서는 NODE_ENV=production 설정 권장)
+const isProd = process.env.NODE_ENV === 'production';
+const log = (...args) => { if (!isProd) console.log(...args); };
 
 // Swear Word & Profanity Filtering Engine (insults, sexual slurs, bypass detection)
 const PROFANITY_WORDS = [
@@ -30,6 +35,51 @@ function containsProfanity(text) {
   return acronyms.some(acr => originalClean.includes(acr));
 }
 
+// Helper to decode base64 file payloads and save them to server disk statically
+function saveBase64ToDisk(dataStr, defaultExt = 'bin') {
+  if (!dataStr || typeof dataStr !== 'string') return dataStr;
+  if (!dataStr.startsWith('data:')) return dataStr;
+
+  try {
+    const match = dataStr.match(/^data:([^;]+);base64,(.+)$/);
+    if (!match) return dataStr;
+
+    const mimeType = match[1];
+    const base64Data = match[2];
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    // Determine file extension from MIME type
+    let ext = defaultExt;
+    if (mimeType.includes('png')) ext = 'png';
+    else if (mimeType.includes('jpeg') || mimeType.includes('jpg')) ext = 'jpg';
+    else if (mimeType.includes('gif')) ext = 'gif';
+    else if (mimeType.includes('webp')) ext = 'webp';
+    else if (mimeType.includes('svg')) ext = 'svg';
+    else if (mimeType.includes('hwp')) ext = 'hwp';
+    else if (mimeType.includes('pdf')) ext = 'pdf';
+    else if (mimeType.includes('zip')) ext = 'zip';
+    else {
+      const parts = mimeType.split('/');
+      if (parts.length === 2) ext = parts[1];
+    }
+
+    const uploadsDir = path.join(__dirname, 'public', 'uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    const uniqueName = crypto.randomUUID() + '.' + ext;
+    const filePath = path.join(uploadsDir, uniqueName);
+
+    fs.writeFileSync(filePath, buffer);
+    log(`[upload] 파일 저장: /uploads/${uniqueName} (${buffer.length} bytes)`);
+    return `/uploads/${uniqueName}`;
+  } catch (err) {
+    console.error('Failed to save base64 to disk:', err);
+    return dataStr;
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const http = require('http');
@@ -37,18 +87,49 @@ const server = http.createServer(app);
 const { initTetris, getStats } = require('./tetris-server');
 initTetris(server);
 
+// Nginx 리버스 프록시 뒤에서 실행 중 — X-Forwarded-For 신뢰 설정
+// express-rate-limit이 실제 클라이언트 IP를 올바르게 읽기 위해 필요
+app.set('trust proxy', 1);
+
 // Enable dynamic CORS for all origins (including chrome-extension:// schemes) and allow credentials
 app.use(cors({
   origin: function (origin, callback) {
-    // If there is no origin (e.g. server-to-server or local file), allow it
     if (!origin) return callback(null, true);
-    // Allow any origin dynamically to bypass CORS blocks in extensions
     callback(null, true);
   },
   credentials: true
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// --------------------------------------------------------------------------
+// RATE LIMITING — 브루트포스/남용 방지
+// --------------------------------------------------------------------------
+// 로그인: 15분 내 10회
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: '로그인 시도가 너무 많습니다. 15분 후 다시 시도해 주세요.' }
+});
+// 회원가입: 1시간 내 5회
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: '가입 시도가 너무 많습니다. 1시간 후 다시 시도해 주세요.' }
+});
+// 일반 API: 1분 내 120회
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' }
+});
+app.use('/api/', apiLimiter);
 
 // Serve static frontend files from the public folder
 app.use(express.static(path.join(__dirname, 'public'), {
@@ -144,6 +225,19 @@ function optionalAuthenticate(req, res, next) {
 function requireAdmin(req, res, next) {
   if (req.role !== 'admin' && req.role !== 'manager') {
     return res.status(403).json({ error: '관리자 및 부관리자 권한이 필요한 메뉴입니다.' });
+  }
+  next();
+}
+
+// 일반회원(user/guest)은 VIP 이상 전용 기능에 접근 불가
+function requireVipOrAbove(req, res, next) {
+  if (req.role === 'user' || req.role === 'guest' || !req.role) {
+    // HTML 페이지 요청인지 API 요청인지 구분
+    const acceptsHtml = req.headers['accept'] && req.headers['accept'].includes('text/html');
+    if (acceptsHtml) {
+      return res.redirect('/?blocked=wall');
+    }
+    return res.status(403).json({ error: '우수회원👑 이상 권한이 필요한 기능입니다. 관리자에게 등급업을 요청해 주세요.' });
   }
   next();
 }
@@ -280,7 +374,7 @@ app.post('/api/client-error', (req, res) => {
 });
 
 // Endpoint: Register User
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', registerLimiter, async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -315,7 +409,7 @@ app.post('/api/register', async (req, res) => {
 });
 
 // Endpoint: Login User
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', loginLimiter, async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -430,9 +524,23 @@ app.get('/api/me', authenticate, async (req, res) => {
     username: req.username, 
     role: user ? user.role : req.role,
     warning: user ? (user.warning || '') : '',
+    adminMessage: user ? (user.adminMessage || '') : '',
     totalLinks,
     totalClicks
   });
+});
+
+// Endpoint: Dismiss/Clear active admin message
+app.post('/api/me/clear-message', authenticate, async (req, res) => {
+  try {
+    const user = await db.clearUserAdminMessage(req.username);
+    if (!user) {
+      return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+    }
+    return res.status(200).json({ message: '관리자 메시지를 성공적으로 읽음 처리했습니다.', adminMessage: '' });
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
 });
 
 // --------------------------------------------------------------------------
@@ -499,6 +607,26 @@ app.get('/api/admin/users', authenticate, requireAdmin, (req, res) => {
   }
 });
 
+// Endpoint: Get detailed usage statistics (links and click logs) for a specific user (Admin Only)
+app.get('/api/admin/users/:username/usage', authenticate, requireAdmin, (req, res) => {
+  try {
+    const { username } = req.params;
+    const cleanUsername = username.trim().toLowerCase();
+    const user = db.cache.users[cleanUsername];
+    if (!user) {
+      return res.status(404).json({ error: '존재하지 않는 회원입니다.' });
+    }
+    
+    // Get links owned by this user
+    const links = db.getUserLinks(cleanUsername);
+    return res.status(200).json({ username: cleanUsername, links });
+  } catch (err) {
+    console.error('Error fetching user usage stats:', err);
+    return res.status(500).json({ error: '회원 사용 내역을 불러오는데 실패했습니다.' });
+  }
+});
+
+
 // Endpoint: Toggle user block/active status (Admin Only)
 app.post('/api/admin/users/toggle-block', authenticate, requireAdmin, async (req, res) => {
   const { username } = req.body;
@@ -546,6 +674,44 @@ app.post('/api/admin/users/warn', authenticate, requireAdmin, async (req, res) =
       return res.status(404).json({ error: '해당 회원을 찾을 수 없습니다.' });
     }
     const msgStatus = message ? '경고가 전송' : '경고가 해제';
+    return res.status(200).json({ message: `사용자 [${username}] 계정에 ${msgStatus}되었습니다.`, user });
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+});
+
+// Endpoint: Reset user password (Admin Only)
+app.post('/api/admin/users/reset-password', authenticate, requireAdmin, async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: '대상 회원 아이디 및 새 비밀번호가 누락되었습니다.' });
+  }
+  if (password.length < 4) {
+    return res.status(400).json({ error: '비밀번호는 최소 4자 이상이어야 합니다.' });
+  }
+  try {
+    const user = await db.resetUserPassword(username, password);
+    if (!user) {
+      return res.status(404).json({ error: '해당 회원을 찾을 수 없습니다.' });
+    }
+    return res.status(200).json({ message: `사용자 [${username}]의 비밀번호가 성공적으로 재설정되었습니다.` });
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+});
+
+// Endpoint: Send or clear user admin message (Admin Only)
+app.post('/api/admin/users/message', authenticate, requireAdmin, async (req, res) => {
+  const { username, message } = req.body;
+  if (!username) {
+    return res.status(400).json({ error: '대상 회원 아이디가 누락되었습니다.' });
+  }
+  try {
+    const user = await db.setUserAdminMessage(username, message);
+    if (!user) {
+      return res.status(404).json({ error: '해당 회원을 찾을 수 없습니다.' });
+    }
+    const msgStatus = message ? '메시지가 전송' : '메시지가 해제';
     return res.status(200).json({ message: `사용자 [${username}] 계정에 ${msgStatus}되었습니다.`, user });
   } catch (err) {
     return res.status(400).json({ error: err.message });
@@ -765,16 +931,23 @@ app.post('/api/admin/config/gemini/test', authenticate, requireAdmin, async (req
       }]
     });
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    let geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(requestBody)
+    };
+
+    if (apiKey.startsWith('AQ.')) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    } else {
+      geminiUrl += `?key=${apiKey}`;
+    }
 
     const testCall = () => {
       return new Promise((resolve, reject) => {
         const reqObj = https.request(geminiUrl, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(requestBody)
-          }
+          headers: headers
         }, (resp) => {
           let data = '';
           resp.on('data', chunk => data += chunk);
@@ -801,6 +974,88 @@ app.post('/api/admin/config/gemini/test', authenticate, requireAdmin, async (req
   }
 });
 
+
+// Helper to generate an image using Imagen 4 and save it to disk
+function generateAndSaveTopicImage(title, apiKey) {
+  return new Promise((resolve) => {
+    try {
+      const https = require('https');
+      const crypto = require('crypto');
+      const cleanTitle = title.replace(/[^\w\sㄱ-힣]/g, '').trim();
+      const finalPrompt = `A wide landscape widescreen webtoon banner illustration representing the theme: "${cleanTitle}". Beautiful Korean webtoon art style, wide-angle view, clean line art, vivid digital coloring, expressive cartoon characters, educational and friendly classroom scene, no text, clean background, perfectly designed as a 16:9 header banner`;
+
+      const postData = JSON.stringify({
+        instances: [{ prompt: finalPrompt }],
+        parameters: {
+          sampleCount: 1,
+          aspectRatio: "16:9",
+          outputMimeType: "image/jpeg"
+        }
+      });
+
+      let apiPath = `/v1beta/models/imagen-4.0-generate-001:predict`;
+      const headers = {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData)
+      };
+
+      if (apiKey.startsWith('AQ.')) {
+        headers['Authorization'] = `Bearer ${apiKey}`;
+      } else {
+        apiPath += `?key=${apiKey}`;
+      }
+
+      const options = {
+        hostname: 'generativelanguage.googleapis.com',
+        port: 443,
+        path: apiPath,
+        method: 'POST',
+        headers: headers
+      };
+
+      const apiReq = https.request(options, (apiRes) => {
+        let body = '';
+        apiRes.on('data', (chunk) => body += chunk);
+        apiRes.on('end', () => {
+          try {
+            if (apiRes.statusCode !== 200) {
+              console.error(`Imagen API error during topic generation: Status ${apiRes.statusCode}`);
+              return resolve('');
+            }
+            const resObj = JSON.parse(body);
+            const base64Image = resObj.predictions?.[0]?.bytesBase64Encoded;
+            if (!base64Image) {
+              return resolve('');
+            }
+            
+            const uploadsDir = path.join(__dirname, 'public', 'uploads');
+            if (!fs.existsSync(uploadsDir)) {
+              fs.mkdirSync(uploadsDir, { recursive: true });
+            }
+            const filename = crypto.randomUUID() + '.jpg';
+            const filePath = path.join(uploadsDir, filename);
+            fs.writeFileSync(filePath, Buffer.from(base64Image, 'base64'));
+            resolve(`/uploads/${filename}`);
+          } catch (e) {
+            console.error('Error parsing Imagen response for topic:', e);
+            resolve('');
+          }
+        });
+      });
+
+      apiReq.on('error', (e) => {
+        console.error('HTTP Request error for Imagen for topic:', e);
+        resolve('');
+      });
+
+      apiReq.write(postData);
+      apiReq.end();
+    } catch (err) {
+      console.error('Unexpected error in generateAndSaveTopicImage:', err);
+      resolve('');
+    }
+  });
+}
 
 // Endpoint: Generate AI topics using Google Gemini API (Admin Only)
 app.post('/api/admin/generate-topics', authenticate, async (req, res) => {
@@ -869,16 +1124,23 @@ Ensure the response contains absolutely NO markdown, NO code fences (like \`\`\`
       }]
     });
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    let geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(requestBody)
+    };
+
+    if (apiKey.startsWith('AQ.')) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    } else {
+      geminiUrl += `?key=${apiKey}`;
+    }
 
     const callGemini = () => {
       return new Promise((resolve, reject) => {
         const reqObj = https.request(geminiUrl, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(requestBody)
-          }
+          headers: headers
         }, (resp) => {
           let data = '';
           resp.on('data', chunk => data += chunk);
@@ -920,9 +1182,15 @@ Ensure the response contains absolutely NO markdown, NO code fences (like \`\`\`
       throw new Error('Invalid JSON format returned from Gemini.');
     }
 
-    // 3. Create cards automatically in database
+    // 3. Create cards automatically in database with custom generated images in parallel
     const createdCards = [];
-    for (const t of resultObj.topics) {
+    console.log(`Generating images for ${resultObj.topics.length} topics...`);
+    const imagePromises = resultObj.topics.map(t => generateAndSaveTopicImage(t.title, apiKey));
+    const imageUrls = await Promise.all(imagePromises);
+
+    for (let i = 0; i < resultObj.topics.length; i++) {
+      const t = resultObj.topics[i];
+      const imageUrl = imageUrls[i] || '';
       const title = `${t.emoji || '💬'} ${t.title}`;
       const content = t.description;
       const card = await db.addWallCard(
@@ -931,7 +1199,8 @@ Ensure the response contains absolutely NO markdown, NO code fences (like \`\`\`
         title, 
         content, 
         'bg-pastel-blue', 
-        '', '', '', '', '', 
+        imageUrl, 
+        '', '', '', '', 
         false, 
         ''
       );
@@ -990,6 +1259,28 @@ function isValidUrl(urlString) {
   }
 }
 
+// Harmful site filters (Adult, Illegal Gambling, Copyright Infringement portals)
+const HARMFUL_KEYWORDS = [
+  'porn', 'xvideos', 'pornhub', 'redtube', 'youporn', 'stripchat', 'chaturbate',
+  'casino', 'baccarat', 'baccara', 'gambling', 'totoland', 'totosite',
+  'toonkor', 'newtoki', 'manatoki', 'bamtoki', 'linkkf',
+  '야동', '성인물', '야애니', '야겜', 'avgle', 'javmix', 'javmost', 'fc2',
+  '카지노', '바카라', '토토사이트', '사설토토', '스포츠토토', '야마토게임', '바다이야기', '릴게임', '홀덤사이트', '홀덤바',
+  '툰코', '뉴토끼', '마나토끼', '밤토끼', '소나기툰'
+];
+
+function isHarmfulUrl(urlString) {
+  if (!urlString) return false;
+  try {
+    const decodedUrl = decodeURIComponent(urlString).toLowerCase();
+    const cleanUrlString = decodedUrl.replace(/[\s_\-+%]+/g, '');
+    return HARMFUL_KEYWORDS.some(keyword => cleanUrlString.includes(keyword));
+  } catch (err) {
+    const cleanStr = urlString.toLowerCase().replace(/[\s_\-+%]+/g, '');
+    return HARMFUL_KEYWORDS.some(keyword => cleanStr.includes(keyword));
+  }
+}
+
 // Helper: Clean custom codes (Supports Korean Hangul!)
 function isValidCustomCode(code) {
   // \uAC00-\uD7A3 matches all complete Hangul syllables natively in JavaScript!
@@ -1006,6 +1297,12 @@ app.post('/api/shorten', authenticate, async (req, res) => {
   }
 
   if (req.role === 'user') {
+    // 일반회원은 맞춤 단축 코드 사용 불가 (자동 생성 코드만 허용)
+    if (customCode) {
+      return res.status(403).json({
+        error: '일반회원은 맞춤 단축 코드를 사용할 수 없습니다. 자동으로 생성된 단축 주소만 이용 가능합니다. \'우수회원👑\'으로 등급업 시 나만의 커스텀 코드를 자유롭게 설정할 수 있습니다!'
+      });
+    }
     const userLinks = db.getUserLinks(req.username) || [];
     if (userLinks.length >= 50) {
       return res.status(403).json({
@@ -1024,6 +1321,12 @@ app.post('/api/shorten', authenticate, async (req, res) => {
 
   if (!isValidUrl(url)) {
     return res.status(400).json({ error: '올바른 HTTP 또는 HTTPS URL 주소를 입력해 주세요.' });
+  }
+
+  if (isHarmfulUrl(url)) {
+    return res.status(400).json({ 
+      error: '유해 사이트(음란물, 불법 도박, 저작권 침해 사이트 등)는 단축 주소 공유 금지 원칙에 따라 링크를 생성할 수 없습니다.' 
+    });
   }
 
   let code;
@@ -1722,14 +2025,14 @@ app.post('/api/wall', authenticate, async (req, res) => {
   }
 
   try {
-    const { title, topic, description, maxUsers, layout } = req.body;
+    const { title, topic, description, maxUsers, layout, isPrivate, password } = req.body;
 
     if (containsProfanity(title) || (topic && containsProfanity(topic)) || containsProfanity(description)) {
       return res.status(400).json({ error: '부적절한 표현(욕설, 비하, 성적 표현 등)이 감지되어 게시판을 개설할 수 없습니다.' });
     }
 
     const creator = req.username || 'anonymous'; 
-    const wall = await db.createWall(title, topic || '', description, creator, maxUsers, layout);
+    const wall = await db.createWall(title, topic || '', description, creator, maxUsers, layout, isPrivate, password);
     return res.status(201).json(wall);
   } catch (err) {
     console.error('Error creating wall:', err);
@@ -1770,17 +2073,81 @@ app.get('/api/my-walls', authenticate, async (req, res) => {
 });
 
 // 3. Fetch board details (including card list)
-app.get('/api/wall/:id', async (req, res) => {
+app.get('/api/wall/:id', optionalAuthenticate, async (req, res) => {
   try {
     const wallId = req.params.id.trim().toUpperCase();
     const wall = await db.getWall(wallId);
     if (!wall) {
       return res.status(404).json({ error: '존재하지 않는 게시판입니다.' });
     }
+
+    // Privacy check
+    if (wall.isPrivate) {
+      const cleanUser = (req.username || '').toLowerCase();
+      const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin';
+      const isCreator = wall.creator === cleanUser;
+
+      // Creator and site admin always have full access
+      if (!isCreator && !isAdmin) {
+        if (wall.password) {
+          // Password-locked board: check supplied password header
+          const suppliedPw = req.headers['x-wall-password'] || '';
+          if (suppliedPw !== wall.password) {
+            return res.status(403).json({
+              error: 'PASSWORD_REQUIRED',
+              title: wall.title,
+              description: wall.description || ''
+            });
+          }
+        } else {
+          // Owner-only private board (no password)
+          return res.status(403).json({
+            error: 'PRIVATE_BOARD',
+            title: wall.title,
+            description: wall.description || ''
+          });
+        }
+      }
+    }
+
     return res.status(200).json(wall);
   } catch (err) {
     console.error('Error fetching wall:', err);
     return res.status(500).json({ error: '게시판 정보를 불러오는 도중 오류가 발생했습니다.' });
+  }
+});
+
+// 3.5. Update wall privacy settings (owner or admin only)
+app.put('/api/wall/:id/privacy', optionalAuthenticate, async (req, res) => {
+  try {
+    const wallId = req.params.id.trim().toUpperCase();
+    const { isPrivate, password } = req.body;
+
+    const wall = await db.getWall(wallId);
+    if (!wall) return res.status(404).json({ error: '존재하지 않는 게시판입니다.' });
+
+    const cleanUser = (req.username || '').toLowerCase();
+    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin';
+    const isCreator = wall.creator === cleanUser;
+
+    if (!isCreator && !isAdmin) {
+      return res.status(403).json({ error: '게시판 공개/비공개 설정 권한이 없습니다.' });
+    }
+
+    wall.isPrivate = !!isPrivate;
+    wall.password = (password && password.trim()) ? password.trim() : '';
+    await db.save();
+
+    broadcastWallUpdate(wallId);
+
+    return res.status(200).json({
+      success: true,
+      isPrivate: wall.isPrivate,
+      hasPassword: !!wall.password
+    });
+  } catch (err) {
+    console.error('Error updating wall privacy:', err);
+    return res.status(500).json({ error: '공개/비공개 설정 변경 도중 오류가 발생했습니다.' });
   }
 });
 
@@ -1840,7 +2207,9 @@ app.post('/api/wall/:id/cards', optionalAuthenticate, async (req, res) => {
     }
 
     const finalIsNotice = isNotice || (sectionId === 'notice-section');
-    const card = await db.addWallCard(wallId, author, title, content, bgColor, image, previewUrl, previewTitle, previewDesc, previewImage, finalIsNotice, sectionId, attachmentName, attachmentData);
+    const finalImage = saveBase64ToDisk(image, 'png');
+    const finalAttachmentData = saveBase64ToDisk(attachmentData, 'bin');
+    const card = await db.addWallCard(wallId, author, title, content, bgColor, finalImage, previewUrl, previewTitle, previewDesc, previewImage, finalIsNotice, sectionId, attachmentName, finalAttachmentData);
     
     // Broadcast change to all clients
     broadcastWallUpdate(wallId);
@@ -2127,7 +2496,9 @@ app.put('/api/wall/:id/cards/:cardId', optionalAuthenticate, async (req, res) =>
       return res.status(403).json({ error: '공지사항은 게시판 개설자(관리자)만 고정할 수 있습니다.' });
     }
 
-    const card = await db.editWallCard(wallId, cardId, author, title, content, bgColor, image, previewUrl, previewTitle, previewDesc, previewImage, isNotice, sectionId, attachmentName, attachmentData);
+    const finalImage = saveBase64ToDisk(image, 'png');
+    const finalAttachmentData = saveBase64ToDisk(attachmentData, 'bin');
+    const card = await db.editWallCard(wallId, cardId, author, title, content, bgColor, finalImage, previewUrl, previewTitle, previewDesc, previewImage, isNotice, sectionId, attachmentName, finalAttachmentData);
 
     // Broadcast change to all clients
     broadcastWallUpdate(wallId);
@@ -2136,6 +2507,57 @@ app.put('/api/wall/:id/cards/:cardId', optionalAuthenticate, async (req, res) =>
   } catch (err) {
     console.error('Error editing wall card:', err);
     return res.status(500).json({ error: '카드 수정 도중 오류가 발생했습니다.' });
+  }
+});
+
+// 7.3. Generate AI image for a specific card (using Imagen 4)
+app.post('/api/wall/:id/cards/:cardId/generate-image', async (req, res) => {
+  try {
+    const wallId = req.params.id.trim().toUpperCase();
+    const { cardId } = req.params;
+
+    const wall = await db.getWall(wallId);
+    if (!wall) {
+      return res.status(404).json({ error: '존재하지 않는 게시판입니다.' });
+    }
+
+    const card = wall.cards && wall.cards[cardId];
+    if (!card) {
+      return res.status(404).json({ error: '존재하지 않는 대화방입니다.' });
+    }
+
+    // Get stored API key
+    const configPath = path.join(__dirname, 'config.json');
+    let apiKey = '';
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (config.geminiApiKey) {
+        apiKey = config.geminiApiKey;
+      }
+    }
+
+    if (!apiKey) {
+      return res.status(400).json({ error: 'Gemini API Key가 등록되지 않았습니다. 관리자 설정에서 API Key를 먼저 등록해 주세요.' });
+    }
+
+    console.log(`Generating AI image for room: "${card.title}"...`);
+    const imageUrl = await generateAndSaveTopicImage(card.title, apiKey);
+    
+    if (!imageUrl) {
+      return res.status(500).json({ error: 'AI 이미지 생성에 실패했습니다. API 설정을 확인해 주세요.' });
+    }
+
+    // Save image to card
+    card.image = imageUrl;
+    await db.save();
+
+    // Broadcast update
+    broadcastWallUpdate(wallId);
+
+    return res.status(200).json({ success: true, image: imageUrl });
+  } catch (err) {
+    console.error('Error generating image for room:', err);
+    return res.status(500).json({ error: `AI 이미지 생성 실패: ${err.message}` });
   }
 });
 
@@ -2301,6 +2723,242 @@ app.post('/api/wall/:id/save-archive', optionalAuthenticate, async (req, res) =>
   }
 });
 
+// Endpoint: Generate webtoon image using Google Gemini (Imagen 3) API
+app.post('/api/wall/:id/generate-webtoon-image', async (req, res) => {
+  try {
+    const cleanTitle = req.body.cleanTitle;
+    if (!cleanTitle) {
+      return res.status(400).json({ error: 'cleanTitle이 누락되었습니다.' });
+    }
+
+    const configPath = path.join(__dirname, 'config.json');
+    let apiKey = '';
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (config.geminiApiKey) {
+        apiKey = config.geminiApiKey;
+      }
+    }
+
+    if (!apiKey) {
+      return res.status(400).json({ error: 'Gemini API Key가 등록되지 않았습니다. 먼저 관리자 페이지에서 API Key를 등록해 주세요.' });
+    }
+
+    const https = require('https');
+    const finalPrompt = `A wide landscape widescreen webtoon banner illustration representing the theme: "${cleanTitle}". Beautiful Korean webtoon art style, wide-angle view, clean line art, vivid digital coloring, expressive cartoon characters, educational and friendly classroom scene, no text, clean background, perfectly designed as a 16:9 header banner`;
+
+    const postData = JSON.stringify({
+      instances: [
+        {
+          prompt: finalPrompt
+        }
+      ],
+      parameters: {
+        sampleCount: 1,
+        aspectRatio: "16:9",
+        outputMimeType: "image/jpeg"
+      }
+    });
+
+    let apiPath = `/v1beta/models/imagen-4.0-generate-001:predict`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(postData)
+    };
+
+    if (apiKey.startsWith('AQ.')) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    } else {
+      apiPath += `?key=${apiKey}`;
+    }
+
+    const options = {
+      hostname: 'generativelanguage.googleapis.com',
+      port: 443,
+      path: apiPath,
+      method: 'POST',
+      headers: headers
+    };
+
+    const apiReq = https.request(options, (apiRes) => {
+      let body = '';
+      apiRes.on('data', (chunk) => body += chunk);
+      apiRes.on('end', () => {
+        try {
+          if (apiRes.statusCode !== 200) {
+            const errObj = JSON.parse(body);
+            console.error('Gemini Imagen error:', errObj);
+            return res.status(apiRes.statusCode).json({ error: errObj.error?.message || 'Gemini Imagen API 호출 오류' });
+          }
+          const resObj = JSON.parse(body);
+          const base64Image = resObj.predictions?.[0]?.bytesBase64Encoded;
+          if (!base64Image) {
+            return res.status(500).json({ error: 'Gemini Imagen API에서 이미지를 반환하지 않았습니다.' });
+          }
+          const dataUrl = `data:image/jpeg;base64,${base64Image}`;
+          return res.status(200).json({ success: true, url: dataUrl });
+        } catch (e) {
+          console.error('JSON parse error in Gemini Imagen response:', e);
+          return res.status(500).json({ error: 'Gemini Imagen 응답 분석 도중 오류가 발생했습니다.' });
+        }
+      });
+    });
+
+    apiReq.on('error', (e) => {
+      console.error('HTTP Request error for Gemini Imagen:', e);
+      return res.status(500).json({ error: 'Gemini API 연결에 실패했습니다.' });
+    });
+
+    apiReq.write(postData);
+    apiReq.end();
+
+  } catch (err) {
+    console.error('Error in /api/wall/:id/generate-webtoon-image:', err);
+    return res.status(500).json({ error: '서버 내부 오류로 만화 생성에 실패했습니다.' });
+  }
+});
+
+// Endpoint: Generate overall NotebookLM style summary for the entire board (all chatrooms and comments)
+app.post('/api/wall/:id/overall-notebook-summary', async (req, res) => {
+  try {
+    const wallId = req.params.id.trim().toUpperCase();
+    const wall = await db.getWall(wallId);
+    if (!wall) return res.status(404).json({ error: '존재하지 않는 게시판입니다.' });
+
+    // Retrieve all cards (chat rooms) and their comments
+    const cards = wall.cards || [];
+    if (cards.length === 0) {
+      return res.status(400).json({ error: '게시판에 개설된 토론방이 없어 요약을 생성할 수 없습니다.' });
+    }
+
+    let allChatContent = '';
+    let hasComments = false;
+
+    cards.forEach(card => {
+      const title = card.title || '이름 없음';
+      const description = card.description || '';
+      const comments = card.comments || [];
+      
+      allChatContent += `### 💬 토론방: [${title}] (${description})\n`;
+      if (comments.length > 0) {
+        hasComments = true;
+        comments.forEach(c => {
+          allChatContent += `- [${c.author}]: ${c.content}\n`;
+        });
+      } else {
+        allChatContent += `(이 방에는 나눈 의견이 없습니다.)\n`;
+      }
+      allChatContent += `\n`;
+    });
+
+    if (!hasComments) {
+      return res.status(400).json({ error: '모든 토론방의 대화 내역이 비어 있어 전체 요약을 생성할 수 없습니다.' });
+    }
+
+    // 1. Get stored API key
+    const configPath = path.join(__dirname, 'config.json');
+    let apiKey = '';
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (config.geminiApiKey) {
+        apiKey = config.geminiApiKey;
+      }
+    }
+
+    if (!apiKey) {
+      return res.status(400).json({ error: 'Gemini API Key가 등록되지 않았습니다. 먼저 API Key를 등록해 주세요.' });
+    }
+
+    // 2. Prepare Gemini prompt
+    const systemPrompt = `You are a professional educational consultant and a head AI Notebook director similar to Google's NotebookLM.
+Your task is to analyze the complete set of chat room logs and participant discussions from the learning board titled "${wall.title || '토론 게시판'}". 
+Compile these discussions into a single, comprehensive, highly structured, and inspiring "Overall Notebook Summary & Educational Guide".
+
+Formatting Guidelines:
+- Use Markdown format with Korean language.
+- Provide a clear, clean, and extremely premium structure.
+- Focus on extracting and cross-referencing ideas from different rooms.
+- Organize the content into the following sections:
+
+# 📌 [${wall.title || '토론 게시판'}] 종합 AI Notebook 가이드
+
+## 🎯 1. 전체 토론 핵심 요약 (Executive Summary)
+Provide a high-level summary synthesizing the overall goals, common themes, and shared consensus across all discussion rooms.
+
+## 💡 2. 토론방별 핵심 도출 아이디어
+For each active chat room, detail the most valuable and concrete ideas, practices, tools, or strategies proposed by the participants.
+
+## 🛠️ 3. 융합 시너지 및 연계 방안 (Synergy & Integration)
+Discuss how the ideas from different rooms can be combined or integrated for real classroom / school application.
+
+## 🚀 4. 종합 실천 로드맵 (Comprehensive Action Roadmap)
+Provide a clear, step-by-step roadmap (e.g. Planning -> Trial -> Sharing) for teachers to implement these findings in their schools.
+
+Discussion Transcript Logs:
+${allChatContent}`;
+
+    // 3. Call Gemini API
+    const https = require('https');
+    const postData = JSON.stringify({
+      contents: [{
+        parts: [{ text: systemPrompt }]
+      }]
+    });
+
+    let apiPath = `/v1beta/models/gemini-2.5-flash:generateContent`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(postData)
+    };
+
+    if (apiKey.startsWith('AQ.')) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    } else {
+      apiPath += `?key=${apiKey}`;
+    }
+
+    const options = {
+      hostname: 'generativelanguage.googleapis.com',
+      port: 443,
+      path: apiPath,
+      method: 'POST',
+      headers: headers
+    };
+
+    const apiReq = https.request(options, (apiRes) => {
+      let body = '';
+      apiRes.on('data', (chunk) => body += chunk);
+      apiRes.on('end', () => {
+        try {
+          if (apiRes.statusCode !== 200) {
+            const errObj = JSON.parse(body);
+            console.error('Gemini overall summary error:', errObj);
+            return res.status(apiRes.statusCode).json({ error: errObj.error?.message || 'Gemini API 호출 오류' });
+          }
+          const resObj = JSON.parse(body);
+          const responseText = resObj.candidates?.[0]?.content?.parts?.[0]?.text || '요약을 생성할 수 없습니다.';
+          return res.status(200).json({ success: true, summary: responseText });
+        } catch (e) {
+          console.error('JSON parse error in Gemini response:', e);
+          return res.status(500).json({ error: 'Gemini 응답 분석 도중 오류가 발생했습니다.' });
+        }
+      });
+    });
+
+    apiReq.on('error', (e) => {
+      console.error('HTTP Request error:', e);
+      return res.status(500).json({ error: 'Gemini API 연결에 실패했습니다.' });
+    });
+
+    apiReq.write(postData);
+    apiReq.end();
+
+  } catch (err) {
+    console.error('Error generating overall notebook summary:', err);
+    return res.status(500).json({ error: '종합 요약 생성 도중 서버 내부 오류가 발생했습니다.' });
+  }
+});
+
 // Get saved archives for a board
 app.get('/api/wall/:id/archives', async (req, res) => {
   try {
@@ -2341,6 +2999,7 @@ app.delete('/api/wall/:id', authenticate, async (req, res) => {
 });
 
 // Dedicated HTML page routers for cleaner URLs
+// 페이지는 모두 접근 허용, 권한 체크는 wall.js 프론트에서 처리 (잠금 토스트 표시)
 app.get('/wall', (req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
@@ -2381,7 +3040,8 @@ app.post('/api/docs', authenticate, async (req, res) => {
       return res.status(403).json({ error: '일반회원은 문서를 최대 10개까지만 생성할 수 있습니다. 무제한 생성을 원하시면 우수회원으로 등급업해 주세요.' });
     }
 
-    const doc = await db.createDoc(title, content, req.username, password, isPublic, hwpData, hwpName);
+    const finalHwpData = saveBase64ToDisk(hwpData, 'hwp');
+    const doc = await db.createDoc(title, content, req.username, password, isPublic, finalHwpData, hwpName);
     return res.status(201).json(doc);
   } catch (err) {
     console.error('Error creating doc:', err);
@@ -2447,14 +3107,23 @@ app.get('/api/docs/:id/download', optionalAuthenticate, async (req, res) => {
       }
     }
 
-    const match = doc.hwpData.match(/^data:(.+);base64,(.+)$/);
+    let binaryBuffer;
     let mimeType = 'application/x-hwp';
-    let base64Data = doc.hwpData;
-    if (match) {
-      mimeType = match[1];
-      base64Data = match[2];
+    if (doc.hwpData && doc.hwpData.startsWith('/uploads/')) {
+      const filePath = path.join(__dirname, 'public', doc.hwpData);
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).send('HWP 파일을 디스크에서 찾을 수 없습니다.');
+      }
+      binaryBuffer = fs.readFileSync(filePath);
+    } else {
+      const match = doc.hwpData.match(/^data:(.+);base64,(.+)$/);
+      let base64Data = doc.hwpData;
+      if (match) {
+        mimeType = match[1];
+        base64Data = match[2];
+      }
+      binaryBuffer = Buffer.from(base64Data, 'base64');
     }
-    const binaryBuffer = Buffer.from(base64Data, 'base64');
     const filename = encodeURIComponent(doc.hwpName || doc.title + '.hwp');
 
     res.setHeader('Content-Type', mimeType);
@@ -2500,7 +3169,8 @@ app.put('/api/docs/:id', optionalAuthenticate, async (req, res) => {
       return res.status(403).json({ error: '비공개 문서이며 편집 권한이 없습니다.' });
     }
 
-    const updated = await db.updateDoc(docId, title, content, req.username || '익명 편집자', hwpData, hwpName);
+    const finalHwpData = saveBase64ToDisk(hwpData, 'hwp');
+    const updated = await db.updateDoc(docId, title, content, req.username || '익명 편집자', finalHwpData, hwpName);
     return res.status(200).json(updated);
   } catch (err) {
     console.error('Error updating doc:', err);
@@ -2539,9 +3209,15 @@ app.get('/docs/:id', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'docs.html'));
 });
 
-// Dedicated HTML page routers for tetris-battle
-app.use('/tetris', express.static(path.join(__dirname, 'public', 'tetris')));
-app.get('/tetris', (req, res) => {
+// Dedicated HTML page routers for tetris-battle (admin only)
+function requireAdminForPage(req, res, next) {
+  if (req.role !== 'admin' && req.role !== 'manager') {
+    return res.redirect('/?blocked=tetris');
+  }
+  next();
+}
+app.use('/tetris', optionalAuthenticate, requireAdminForPage, express.static(path.join(__dirname, 'public', 'tetris')));
+app.get('/tetris', optionalAuthenticate, requireAdminForPage, (req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
@@ -2565,8 +3241,5 @@ app.get('*', (req, res) => {
 
 // Start Server
 server.listen(PORT, () => {
-  console.log(`=========================================`);
-  console.log(`🚀 KFCMan.link Server running on port ${PORT}`);
-  console.log(`🔗 Local Address: http://localhost:${PORT}`);
-  console.log(`=========================================`);
+  console.log(`🚀 KFCMan.link Server | port:${PORT} | env:${process.env.NODE_ENV || 'development'}`);
 });
