@@ -80,6 +80,16 @@ function initWall() {
     .then(data => {
       if (data) {
         currentUser = data;
+
+        // Check if user is VIP or admin
+        const userRole = data.role || 'user';
+        const isVipOrAbove = userRole === 'admin' || userRole === 'manager' || userRole === 'vip';
+        if (!isVipOrAbove) {
+          const isChat = window.location.pathname.includes('/chat');
+          window.location.href = isChat ? '/?blocked=chat' : '/?blocked=wall';
+          return;
+        }
+
         if (currentWall) {
           renderBoard(currentWall);
         }
@@ -88,26 +98,28 @@ function initWall() {
         const isUserAdmin = (data.role === 'admin');
         const navItemDocsSide = document.getElementById('nav-item-docs-side');
         const navItemTetrisSide = document.getElementById('nav-item-tetris-side');
+        const navItemClassroomSide = document.getElementById('nav-item-classroom-side');
         if (navItemDocsSide) navItemDocsSide.style.display = isUserAdmin ? 'flex' : 'none';
         if (navItemTetrisSide) navItemTetrisSide.style.display = isUserAdmin ? 'flex' : 'none';
+        if (navItemClassroomSide) navItemClassroomSide.style.display = isUserAdmin ? 'flex' : 'none';
+
+        const navItemWallSide = document.getElementById('nav-item-wall-side');
+        const navItemChatSide = document.getElementById('nav-item-chat-side');
+        if (navItemWallSide) navItemWallSide.style.display = 'flex';
+        if (navItemChatSide) navItemChatSide.style.display = 'flex';
       } else {
-        updateSidebarProfile(null);
-        const navItemDocsSide = document.getElementById('nav-item-docs-side');
-        const navItemTetrisSide = document.getElementById('nav-item-tetris-side');
-        if (navItemDocsSide) navItemDocsSide.style.display = 'none';
-        if (navItemTetrisSide) navItemTetrisSide.style.display = 'none';
+        const isChat = window.location.pathname.includes('/chat');
+        window.location.href = isChat ? '/?blocked=chat' : '/?blocked=wall';
       }
     })
     .catch(err => {
       console.error('Failed to load user context:', err);
-      updateSidebarProfile(null);
+      const isChat = window.location.pathname.includes('/chat');
+      window.location.href = isChat ? '/?blocked=chat' : '/?blocked=wall';
     });
   } else {
-    updateSidebarProfile(null);
-    const navItemDocsSide = document.getElementById('nav-item-docs-side');
-    const navItemTetrisSide = document.getElementById('nav-item-tetris-side');
-    if (navItemDocsSide) navItemDocsSide.style.display = 'none';
-    if (navItemTetrisSide) navItemTetrisSide.style.display = 'none';
+    const isChat = window.location.pathname.includes('/chat');
+    window.location.href = isChat ? '/?blocked=chat' : '/?blocked=wall';
   }
 
   // DOM Elements
@@ -181,32 +193,161 @@ function initWall() {
   }
 
   // --- ROUTING FLOW AND BOARD VALIDATION ---
-  if (boardId) {
-    // Verify if this board actually exists in the database
-    fetch(`/api/wall/${boardId}`)
-      .then(res => {
+  // 세션 단위로 비밀번호 저장 (비공개 게시판 접근 시)
+  let walletStoredPassword = sessionStorage.getItem('wall_pw_' + boardId) || '';
+
+  function showLockScreen(errorType, title, desc) {
+    const lockScreen = document.getElementById('wall-lock-screen');
+    const lockTitle = document.getElementById('lock-screen-title');
+    const lockDesc = document.getElementById('lock-screen-desc');
+    const lockPasswordForm = document.getElementById('lock-password-form');
+    const lockPrivateOnly = document.getElementById('lock-private-only');
+    if (!lockScreen) return;
+
+    landingScreen.classList.add('hidden');
+    boardScreen.classList.add('hidden');
+    btnFloatingAdd.classList.add('hidden');
+    lockScreen.classList.remove('hidden');
+
+    if (lockTitle) lockTitle.textContent = title || '비공개 게시판';
+    if (lockDesc) lockDesc.textContent = desc || '';
+
+    if (errorType === 'PASSWORD_REQUIRED') {
+      if (lockPasswordForm) lockPasswordForm.classList.remove('hidden');
+      if (lockPrivateOnly) lockPrivateOnly.classList.add('hidden');
+    } else {
+      if (lockPasswordForm) lockPasswordForm.classList.add('hidden');
+      if (lockPrivateOnly) lockPrivateOnly.classList.remove('hidden');
+    }
+    updateIcons();
+  }
+
+  function loadBoard(password) {
+    const token = localStorage.getItem('kfcman_auth_token');
+    const headers = {};
+    if (token) headers['X-KFCMan-Auth'] = token;
+    if (password) headers['X-Wall-Password'] = password;
+
+    fetch('/api/wall/' + boardId, { headers })
+      .then(function(res) {
+        if (res.status === 403) {
+          return res.json().then(function(data) {
+            showLockScreen(data.error, data.title, data.description);
+            throw new Error('locked');
+          });
+        }
         if (!res.ok) {
           throw new Error('존재하지 않는 게시판 고유 코드입니다. 로비로 이동합니다.');
         }
         return res.json();
       })
-      .then(wall => {
-        // Board exists! Hide landing, show board elements
+      .then(function(wall) {
+        if (!wall) return;
+        const lockScreen = document.getElementById('wall-lock-screen');
+        if (lockScreen) lockScreen.classList.add('hidden');
         landingScreen.classList.add('hidden');
         boardScreen.classList.remove('hidden');
         btnFloatingAdd.classList.remove('hidden');
-        
-        // Save to my board list
-        saveBoardToHistory(wall);
 
-        // Render initial data and connect to real-time SSE stream
+        if (password) sessionStorage.setItem('wall_pw_' + boardId, password);
+        walletStoredPassword = password || '';
+
+        saveBoardToHistory(wall);
         renderBoard(wall);
         connectToStream(boardId);
       })
-      .catch(err => {
+      .catch(function(err) {
+        if (err.message === 'locked') return;
         alert(err.message);
-        window.location.href = '/wall'; // Redirect to the wall creation lobby
+        window.location.href = '/wall';
       });
+  }
+
+  // 비밀번호 잠금 화면 제출 버튼
+  const btnLockSubmit = document.getElementById('btn-lock-submit');
+  const lockPasswordInput = document.getElementById('lock-password-input');
+  const lockPasswordError = document.getElementById('lock-password-error');
+  if (btnLockSubmit && lockPasswordInput) {
+    btnLockSubmit.addEventListener('click', function() {
+      const pw = lockPasswordInput.value.trim();
+      if (!pw) return;
+      if (lockPasswordError) lockPasswordError.classList.add('hidden');
+
+      const token = localStorage.getItem('kfcman_auth_token');
+      const hdrs = { 'X-Wall-Password': pw };
+      if (token) hdrs['X-KFCMan-Auth'] = token;
+
+      fetch('/api/wall/' + boardId, { headers: hdrs })
+        .then(function(res) {
+          if (res.status === 403) {
+            if (lockPasswordError) lockPasswordError.classList.remove('hidden');
+            lockPasswordInput.value = '';
+            return null;
+          }
+          if (!res.ok) throw new Error('오류가 발생했습니다.');
+          return res.json();
+        })
+        .then(function(wall) {
+          if (!wall) return;
+          sessionStorage.setItem('wall_pw_' + boardId, pw);
+          walletStoredPassword = pw;
+          const lockScreen = document.getElementById('wall-lock-screen');
+          if (lockScreen) lockScreen.classList.add('hidden');
+          landingScreen.classList.add('hidden');
+          boardScreen.classList.remove('hidden');
+          btnFloatingAdd.classList.remove('hidden');
+          saveBoardToHistory(wall);
+          renderBoard(wall);
+          connectToStream(boardId);
+          updateIcons();
+        })
+        .catch(function(err) { alert(err.message); });
+    });
+    lockPasswordInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') btnLockSubmit.click();
+    });
+  }
+
+  // 공개/비공개 전환 버튼 (관리자/개설자 전용, renderBoard에서 show)
+  const btnTogglePrivacy = document.getElementById('btn-toggle-privacy');
+  if (btnTogglePrivacy) {
+    btnTogglePrivacy.addEventListener('click', async function() {
+      if (!currentWall) return;
+      const isCurrentlyPrivate = !!currentWall.isPrivate;
+      const newIsPrivate = !isCurrentlyPrivate;
+
+      let newPassword = '';
+      if (newIsPrivate) {
+        const pw = prompt('비밀번호를 설정하세요.\n(비워두면 개설자만 접근 가능)', currentWall.password || '');
+        if (pw === null) return;
+        newPassword = pw;
+      }
+
+      const token = localStorage.getItem('kfcman_auth_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['X-KFCMan-Auth'] = token;
+      if (walletStoredPassword) headers['X-Wall-Password'] = walletStoredPassword;
+
+      try {
+        const res = await fetch('/api/wall/' + boardId + '/privacy', {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ isPrivate: newIsPrivate, password: newPassword })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '설정 변경 실패');
+        const msg = newIsPrivate
+          ? (newPassword ? '\uD83D\uDD12 비공개(비밀번호: ' + newPassword + ')로 변경되었습니다.' : '\uD83D\uDD12 비공개(개설자 전용)로 변경되었습니다.')
+          : '\uD83C\uDF10 공개 게시판으로 변경되었습니다.';
+        alert(msg);
+      } catch(err) {
+        alert(err.message);
+      }
+    });
+  }
+
+  if (boardId) {
+    loadBoard(walletStoredPassword);
   } else {
     // Show landing
     landingScreen.classList.remove('hidden');
@@ -374,6 +515,10 @@ function initWall() {
       const maxUsers = maxUsersInput ? parseInt(maxUsersInput.value) || 0 : 0;
       const layoutEl = document.querySelector('input[name="wall-layout-picker"]:checked');
       const layout = layoutEl ? layoutEl.value : 'grid';
+      const privacyEl = document.querySelector('input[name="wall-privacy-picker"]:checked');
+      const isPrivate = privacyEl ? privacyEl.value === 'private' : false;
+      const passwordInput = document.getElementById('wall-password-input');
+      const password = (isPrivate && passwordInput) ? passwordInput.value.trim() : '';
 
       const token = localStorage.getItem('kfcman_auth_token');
       const headers = { 'Content-Type': 'application/json' };
@@ -385,7 +530,7 @@ function initWall() {
         const res = await fetch('/api/wall', {
           method: 'POST',
           headers: headers,
-          body: JSON.stringify({ title, topic, description, maxUsers, layout })
+          body: JSON.stringify({ title, topic, description, maxUsers, layout, isPrivate, password })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '게시판 생성에 실패했습니다.');
@@ -491,6 +636,29 @@ function initWall() {
     }
 
     document.getElementById('board-title').textContent = wall.title;
+
+    // Privacy badge + toggle button (관리자/개설자만 표시)
+    const btnTogglePrivacyBadge = document.getElementById('btn-toggle-privacy');
+    const privacyBadgeIcon = document.getElementById('privacy-badge-icon');
+    const privacyBadgeText = document.getElementById('privacy-badge-text');
+    if (btnTogglePrivacyBadge) {
+      const amAdmin = isBoardAdmin();
+      if (amAdmin) {
+        btnTogglePrivacyBadge.classList.remove('hidden');
+        if (wall.isPrivate) {
+          btnTogglePrivacyBadge.className = 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-black transition-all cursor-pointer hover:scale-105';
+          if (privacyBadgeIcon) privacyBadgeIcon.setAttribute('data-lucide', wall.password ? 'lock' : 'eye-off');
+          if (privacyBadgeText) privacyBadgeText.textContent = wall.password ? '비공개 (비밀번호)' : '비공개 (개설자 전용)';
+        } else {
+          btnTogglePrivacyBadge.className = 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 text-xs font-black transition-all cursor-pointer hover:scale-105';
+          if (privacyBadgeIcon) privacyBadgeIcon.setAttribute('data-lucide', 'globe');
+          if (privacyBadgeText) privacyBadgeText.textContent = '공개';
+        }
+        if (window.lucide) window.lucide.createIcons();
+      } else {
+        btnTogglePrivacyBadge.classList.add('hidden');
+      }
+    }
     const boardTopicEl = document.getElementById('board-topic');
     const btnEditBoardTopic = document.getElementById('btn-edit-board-topic');
     if (boardTopicEl) {
@@ -2872,23 +3040,91 @@ function initWall() {
       // Render messages
       if (chatMessagesArea) {
         chatMessagesArea.innerHTML = '';
+
+        // 1. Generate and Render 4-Cut Webtoon at the top
+        const cleanTitle = activeRoom.title.replace(/[#\p{Emoji}]/gu, '').trim();
+        function hashString(str) {
+          let hash = 0;
+          for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+          }
+          return hash;
+        }
+
+        const cachedWebtoon = localStorage.getItem(`webtoon_room_${activeRoom.id}`);
+        let panels = [];
+        if (cachedWebtoon) {
+          try {
+            panels = JSON.parse(cachedWebtoon);
+          } catch(e) {
+            panels = [];
+          }
+        }
+
+        if (!panels || panels.length === 0) {
+          let keywords = ['school', 'education'];
+          const titleLower = cleanTitle.toLowerCase();
+          if (titleLower.includes('수업') || titleLower.includes('공부') || titleLower.includes('교육')) {
+            keywords = ['classroom', 'learning', 'students'];
+          } else if (titleLower.includes('피드백') || titleLower.includes('평가') || titleLower.includes('검토') || titleLower.includes('전략')) {
+            keywords = ['feedback', 'writing', 'board'];
+          } else if (titleLower.includes('동기') || titleLower.includes('참여') || titleLower.includes('유도') || titleLower.includes('비법')) {
+            keywords = ['happy', 'students', 'raising-hand'];
+          } else if (titleLower.includes('창의') || titleLower.includes('아이디어') || titleLower.includes('공유')) {
+            keywords = ['ideas', 'creative', 'design'];
+          } else if (titleLower.includes('활동') || titleLower.includes('놀이') || titleLower.includes('게임')) {
+            keywords = ['activity', 'classroom-game', 'children'];
+          }
+
+          const modifiers = ['start', 'process', 'climax', 'end'];
+          panels = [
+            { title: "🎬 1. 준비 및 계획", url: `https://loremflickr.com/640/480/school,${keywords[0]},${modifiers[0]}?lock=${Math.abs(hashString(cleanTitle) + 1) % 1000}` },
+            { title: "⚡ 2. 활동 진행", url: `https://loremflickr.com/640/480/classroom,${keywords.length > 1 ? keywords[1] : 'learning'},${modifiers[1]}?lock=${Math.abs(hashString(cleanTitle) + 2) % 1000}` },
+            { title: "🔥 3. 심화 학습", url: `https://loremflickr.com/640/480/education,${keywords.length > 2 ? keywords[2] : 'students'},${modifiers[2]}?lock=${Math.abs(hashString(cleanTitle) + 3) % 1000}` },
+            { title: "💖 4. 나눔과 성찰", url: `https://loremflickr.com/640/480/happy,classroom,${modifiers[3]}?lock=${Math.abs(hashString(cleanTitle) + 4) % 1000}` }
+          ];
+          localStorage.setItem(`webtoon_room_${activeRoom.id}`, JSON.stringify(panels));
+        }
+
+        const webtoonDiv = document.createElement('div');
+        webtoonDiv.className = 'mb-6 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-4 shadow-sm';
+        webtoonDiv.innerHTML = `
+          <div class="flex items-center justify-between mb-3 border-b border-slate-200 dark:border-slate-850 pb-2">
+            <span class="text-xs font-black text-amber-500 flex items-center gap-1">
+              <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+              📖 주제 매칭 4컷 웹툰
+            </span>
+            <span class="text-[9px] font-bold text-slate-400">주제: ${escapeHTML(activeRoom.title)}</span>
+          </div>
+          <div class="grid grid-cols-4 gap-3">
+            ${panels.map(p => `
+              <div class="flex flex-col bg-white dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800/80 rounded-xl overflow-hidden shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-250">
+                <div class="aspect-square bg-cover bg-center cursor-zoom-in" style="background-image: url('${p.url}')" onclick="window.open('${p.url}', '_blank')"></div>
+                <div class="p-1.5 text-center text-[8px] font-black bg-slate-50/80 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 truncate">${p.title}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        chatMessagesArea.appendChild(webtoonDiv);
+
+        // 2. Render comments
         const comments = (activeRoom.comments || []).slice().sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-        
         const myName = getUserChatNickname();
 
         if (comments.length === 0) {
-          chatMessagesArea.innerHTML = `
-            <div class="py-12 text-center text-slate-500/80 dark:text-slate-400 select-none">
-              <p class="text-xs font-black">이 방의 대화가 비어 있습니다.</p>
-              <p class="text-[10px] mt-0.5">첫 마디를 나누며 대화를 시작해 보세요!</p>
-            </div>
+          const emptyDiv = document.createElement('div');
+          emptyDiv.className = 'py-12 text-center text-slate-500/80 dark:text-slate-400 select-none';
+          emptyDiv.innerHTML = `
+            <p class="text-xs font-black">이 방의 대화가 비어 있습니다.</p>
+            <p class="text-[10px] mt-0.5">첫 마디를 나누며 대화를 시작해 보세요!</p>
           `;
+          chatMessagesArea.appendChild(emptyDiv);
         } else {
           comments.forEach(comment => {
             const isSelf = comment.author === myName;
             
             const msgRow = document.createElement('div');
-            msgRow.className = `flex gap-2.5 ${isSelf ? 'justify-end' : 'justify-start'}`;
+            msgRow.className = `flex gap-2.5 mb-3.5 ${isSelf ? 'justify-end' : 'justify-start'}`;
             
             let avatarContent = escapeHTML(comment.author.substring(0, 1).toUpperCase());
             const emojiMatch = comment.author.match(/^([\uD800-\uDBFF][\uDC00-\uDFFF])/);
@@ -2940,11 +3176,11 @@ function initWall() {
             
             chatMessagesArea.appendChild(msgRow);
           });
-          
-          setTimeout(() => {
-            chatMessagesArea.scrollTop = chatMessagesArea.scrollHeight;
-          }, 50);
         }
+        
+        setTimeout(() => {
+          chatMessagesArea.scrollTop = chatMessagesArea.scrollHeight;
+        }, 50);
       }
     }
     
