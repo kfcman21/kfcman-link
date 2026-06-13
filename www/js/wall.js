@@ -3107,6 +3107,158 @@ function initWall() {
         `;
         chatMessagesArea.appendChild(webtoonDiv);
 
+        // 1.5. Generate and Render NotebookLM Infographic Card
+        function getNotebookLMSummary(title) {
+          const clean = title.replace(/[#\p{Emoji}]/gu, '').trim();
+          const lower = clean.toLowerCase();
+          
+          if (lower.includes('수업') || lower.includes('공부') || lower.includes('교육') || lower.includes('사례')) {
+            return {
+              goals: [
+                "에듀테크 도구 활용의 실질적 시너지 창출",
+                "학생들의 자기주도적 몰입도 향상 방안 강구",
+                "모범적인 온/오프라인 융합 수업 모델 구체화"
+              ],
+              steps: [
+                "도구 선정 및 세팅: 활동 성격에 알맞은 온라인 협업 도구 사전 매칭",
+                "피어 피드백 설계: 동료 간 게시판 투표 및 댓글을 통한 상호 성장 유도",
+                "배움 성찰 일지: 최종 결과물과 느낀 점을 기록하고 학급에 공유"
+              ],
+              tips: {
+                do: "학생들이 도구 사용법에 익숙해지도록 사전 5분 미니 튜토리얼 진행",
+                dont: "화려한 기능 자랑에 치우쳐 수업 성취 기준을 놓치지 마세요."
+              }
+            };
+          } else if (lower.includes('피드백') || lower.includes('평가') || lower.includes('전략')) {
+            return {
+              goals: [
+                "동료 피드백 문화를 통한 소통 중심 교실 구현",
+                "과정 중심 평가의 다원화 및 객관화 체계 마련",
+                "학생 맞춤형 포트폴리오 진단 및 코칭 연계"
+              ],
+              steps: [
+                "평가 루브릭 공유: 게시판 상단 공지로 명확한 기준 사전 제시",
+                "실시간 과정 코칭: 모둠별 보드를 순회하며 오해 교정 및 촉진 질문",
+                "성찰 환류 배정: 피드백 반영 후 보완 및 다듬는 시간 확보"
+              ],
+              tips: {
+                do: "질적 성장(단점 지적보다 잘한 점 칭찬)을 유도하는 피드백 장려",
+                dont: "점수 매기기 방식의 피드백으로 학급 서열화를 부추기지 마세요."
+              }
+            };
+          } else if (lower.includes('동기') || lower.includes('참여') || lower.includes('유도') || lower.includes('비법')) {
+            return {
+              goals: [
+                "학습자 흥미 기반 참여 기회 다양화",
+                "수줍은 학생들의 비대면 목소리 보장 및 참여 유도",
+                "자기효능감(Self-Efficacy)을 키우는 보상 시스템 마련"
+              ],
+              steps: [
+                "아이스브레이킹: 본 대화 전 가벼운 투표나 이모지 퀴즈로 분위기 완화",
+                "익명 의견 개진: 비대면 익명 토론 기능으로 자유로운 의견 표출 장려",
+                "긍정 피드백: 좋은 제안에 하트(공감)와 이모지로 즉각 보상"
+              ],
+              tips: {
+                do: "모든 학생이 1회 이상 의견을 남길 수 있도록 골고루 발언권 주기",
+                dont: "정답이 정해진 질문만 던져 학생들의 능동적 사고를 방해하지 마세요."
+              }
+            };
+          } else if (lower.includes('창의') || lower.includes('아이디어') || lower.includes('공유')) {
+            return {
+              goals: [
+                "아이디어 브레인스토밍 극대화를 위한 다각도 발상 촉진",
+                "집단 지성 기반 혁신적 융합 교육 아이디어 도출",
+                "질문과 반론이 자유로운 개방형 토의 문화 확립"
+              ],
+              steps: [
+                "발산적 생각 모으기: 생각나는 아이디어를 한 장의 카드에 모두 기록",
+                "분류 및 범주화: 유사한 제안끼리 묶어 핵심 줄기 파악",
+                "실현 가능성 점검: 투표 기능을 활용해 가장 실용적인 아이디어 선정"
+              ],
+              tips: {
+                do: "비판 금지! 엉뚱한 아이디어에서도 융합적 가치를 발견하세요.",
+                dont: "첫 15분 동안 기존의 틀에 박힌 형식에 얽매여 비판하지 마세요."
+              }
+            };
+          } else {
+            return {
+              goals: [
+                "지식 공유를 통한 교육 혁신 아이디어 발굴",
+                "참여자들의 자발적 협력 및 의견 교환 장려",
+                "핵심 주제에 관한 학술적 인사이트 요약"
+              ],
+              steps: [
+                "주제 분석: 관련 개념 및 용어 파악 및 토론 주제 설정",
+                "토의 진행: 자유 질문과 아이디어 공유를 통한 배움 나눔",
+                "결과 성찰: 대화 결과를 정리하여 톡방의 학습 가이드로 축적"
+              ],
+              tips: {
+                do: "서로 배려하고 경청하며 예쁜 언어로 즐겁게 토론해 보세요.",
+                dont: "편견이나 선입견을 갖고 다른 구성원의 의견을 배척하지 마세요."
+              }
+            };
+          }
+        }
+
+        const summaryData = getNotebookLMSummary(activeRoom.title);
+        const notebooklmDiv = document.createElement('div');
+        notebooklmDiv.className = 'mb-6 bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 shadow-sm text-left';
+        notebooklmDiv.innerHTML = `
+          <div class="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-800 pb-2.5">
+            <span class="text-xs font-black text-indigo-500 dark:text-indigo-400 flex items-center gap-1.5 select-none">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 animate-pulse text-indigo-500"></i>
+              NotebookLM AI 핵심 분석 가이드
+            </span>
+            <span class="text-[8px] bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-bold px-2 py-0.5 rounded-full select-none">실시간 웹 검색/요약 기반</span>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- 🎯 3가지 주요 목표 -->
+            <div class="bg-white dark:bg-slate-950 p-4 border border-slate-200/60 dark:border-slate-800/80 rounded-xl shadow-sm">
+              <h4 class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5 select-none">
+                <i data-lucide="target" class="w-3 h-3 text-rose-500"></i> 주요 목표
+              </h4>
+              <ul class="text-[9.5px] font-bold text-slate-600 dark:text-slate-350 space-y-2 list-disc list-inside leading-relaxed">
+                ${summaryData.goals.map(g => `<li>${g}</li>`).join('')}
+              </ul>
+            </div>
+            
+            <!-- 🚦 3단계 실천 로드맵 -->
+            <div class="bg-white dark:bg-slate-950 p-4 border border-slate-200/60 dark:border-slate-800/80 rounded-xl shadow-sm">
+              <h4 class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5 select-none">
+                <i data-lucide="milestone" class="w-3 h-3 text-emerald-500"></i> 실천 로드맵
+              </h4>
+              <div class="space-y-2.5">
+                ${summaryData.steps.map((s, idx) => `
+                  <div class="flex items-start gap-1.5">
+                    <span class="text-[8.5px] font-black bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 w-3.5 h-3.5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 select-none">${idx+1}</span>
+                    <div class="text-[9.5px] font-bold text-slate-600 dark:text-slate-350 leading-relaxed">${s}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            
+            <!-- 💡 주의 사항 & 꿀팁 -->
+            <div class="bg-white dark:bg-slate-950 p-4 border border-slate-200/60 dark:border-slate-800/80 rounded-xl shadow-sm">
+              <h4 class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5 select-none">
+                <i data-lucide="lightbulb" class="w-3 h-3 text-amber-500"></i> 주의 사항 & 꿀팁
+              </h4>
+              <div class="space-y-2 text-[9.5px] font-bold leading-relaxed">
+                <div class="flex items-start gap-1.5 text-slate-700 dark:text-slate-300">
+                  <span class="text-xs text-blue-500 select-none">✔</span> 
+                  <span><strong>Do:</strong> ${summaryData.tips.do}</span>
+                </div>
+                <div class="flex items-start gap-1.5 text-slate-700 dark:text-slate-300">
+                  <span class="text-xs text-rose-500 select-none">✖</span> 
+                  <span><strong>Don't:</strong> ${summaryData.tips.dont}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        `;
+        chatMessagesArea.appendChild(notebooklmDiv);
+
         // 2. Render comments
         const comments = (activeRoom.comments || []).slice().sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
         const myName = getUserChatNickname();
@@ -3441,6 +3593,9 @@ function initWall() {
   const aiApiKeyInput = document.getElementById('ai-api-key-input');
   const btnSaveApiKey = document.getElementById('btn-save-api-key');
   const btnTestApiKey = document.getElementById('btn-test-api-key');
+  const nanobananaApiKeyInput = document.getElementById('nanobanana-api-key-input');
+  const btnSaveNanobananaKey = document.getElementById('btn-save-nanobanana-key');
+  const btnTestNanobananaKey = document.getElementById('btn-test-nanobanana-key');
   const aiPromptInput = document.getElementById('ai-prompt-input');
   const btnAiGenerateSubmit = document.getElementById('btn-ai-generate-submit');
 
@@ -3500,7 +3655,7 @@ function initWall() {
         }
       }, 50);
 
-      // Check key configuration status on server
+      // Check Gemini key configuration status on server
       try {
         const token = localStorage.getItem('kfcman_auth_token');
         const headers = {};
@@ -3518,6 +3673,15 @@ function initWall() {
         }
       } catch (e) {
         console.error('Failed to fetch Gemini API status', e);
+      }
+
+      // Check NanoBanana key configuration status in localStorage
+      const savedNanobananaKey = localStorage.getItem('nanobanana_api_key');
+      if (savedNanobananaKey) {
+        nanobananaApiKeyInput.placeholder = '🔑 NanoBanana API Key가 등록되어 있습니다.';
+        nanobananaApiKeyInput.value = '';
+      } else {
+        nanobananaApiKeyInput.placeholder = 'NanoBanana API Key 입력';
       }
     });
   }
@@ -3555,6 +3719,65 @@ function initWall() {
         aiApiKeyInput.placeholder = '🔑 API Key가 이미 등록되어 있습니다.';
       } catch (e) {
         alert(e.message);
+      }
+    });
+  }
+
+  if (btnTestNanobananaKey && nanobananaApiKeyInput) {
+    btnTestNanobananaKey.addEventListener('click', async () => {
+      const apiKey = nanobananaApiKeyInput.value.trim() || localStorage.getItem('nanobanana_api_key');
+      if (!apiKey) {
+        alert('API Key를 입력해 주세요.');
+        return;
+      }
+      
+      const originalText = btnTestNanobananaKey.textContent;
+      btnTestNanobananaKey.disabled = true;
+      btnTestNanobananaKey.textContent = '테스트 중...';
+
+      try {
+        const response = await fetch('https://api.nanobanana.com/v1/images/generations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            prompt: 'a simple green dot',
+            n: 1,
+            size: '256x256',
+            response_format: 'url'
+          })
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error?.message || errData.message || `API 오류 (코드: ${response.status})`);
+        }
+
+        alert('연결 성공! NanoBanana API 키가 유효합니다.');
+      } catch (e) {
+        alert('연결 실패: ' + e.message);
+      } finally {
+        btnTestNanobananaKey.disabled = false;
+        btnTestNanobananaKey.textContent = originalText;
+      }
+    });
+  }
+
+  if (btnSaveNanobananaKey && nanobananaApiKeyInput) {
+    btnSaveNanobananaKey.addEventListener('click', () => {
+      const apiKey = nanobananaApiKeyInput.value.trim();
+      if (!apiKey) {
+        alert('API Key를 입력해 주세요.');
+        return;
+      }
+      localStorage.setItem('nanobanana_api_key', apiKey);
+      alert('NanoBanana API Key가 로컬 브라우저에 성공적으로 저장되었습니다!');
+      nanobananaApiKeyInput.value = '';
+      nanobananaApiKeyInput.placeholder = '🔑 NanoBanana API Key가 등록되어 있습니다.';
+      if (activeChatRoomCardId) {
+        renderChatLayout(currentWall);
       }
     });
   }
