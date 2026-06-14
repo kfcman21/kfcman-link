@@ -1003,6 +1003,18 @@
               <button id="chat-active-room-delete-btn" class="hidden w-8 h-8 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-500 flex items-center justify-center cursor-pointer transition-all" title="주제 삭제">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
               </button>
+              <button id="chat-active-room-ai-img-btn" class="hidden px-2.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/20 dark:hover:bg-purple-950/40 text-[10px] font-black border border-purple-200 dark:border-purple-900/50 text-purple-650 dark:text-purple-400 flex items-center gap-1.5 cursor-pointer transition-all" title="AI 이미지 생성">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                <span>이미지 생성</span>
+              </button>
+              <button id="chat-active-room-summary-btn" class="hidden px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-950/40 text-[10px] font-black border border-indigo-200 dark:border-indigo-900/50 text-indigo-650 dark:text-indigo-400 flex items-center gap-1.5 cursor-pointer transition-all" title="AI 의견 요약">
+                <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+                <span>의견 요약</span>
+              </button>
+              <button id="chat-active-room-share-btn" class="hidden px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 text-[10px] font-black border border-emerald-200 dark:border-emerald-900/50 text-emerald-650 dark:text-emerald-400 flex items-center gap-1.5 cursor-pointer transition-all" title="주소 공유">
+                <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+                <span>공유하기</span>
+              </button>
               <button id="chat-active-room-like-btn" class="hidden px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-[10px] font-black border border-rose-200 dark:border-rose-900/50 text-rose-500 flex items-center gap-1 cursor-pointer transition-all">
                 <i data-lucide="heart" class="w-3.5 h-3.5 fill-rose-500"></i>
                 <span id="chat-active-room-likes">0</span>
@@ -1264,7 +1276,7 @@
 
       <form id="ai-generate-form" class="space-y-4">
         <!-- Gemini API Key configuration field -->
-        <div class="space-y-1.5">
+        <div class="space-y-1.5" id="gemini-key-section">
           <label class="text-xs font-black text-slate-500 dark:text-slate-400">Gemini API Key 등록 (최초 1회)</label>
           <div class="flex gap-2">
             <input type="password" id="ai-api-key-input" placeholder="Google Gemini API Key 입력" class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-805 dark:text-white focus:outline-none">
@@ -1272,17 +1284,6 @@
             <button type="button" id="btn-save-api-key" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border-2 border-slate-200 dark:border-slate-800 rounded-xl text-xs font-black transition-colors cursor-pointer whitespace-nowrap">저장</button>
           </div>
           <p class="text-[9px] font-bold text-slate-400 mt-1">🔑 API 키가 없으시면 Google AI Studio에서 무료로 발급받으실 수 있습니다.</p>
-        </div>
-
-        <!-- NanoBanana API Key configuration field -->
-        <div class="space-y-1.5">
-          <label class="text-xs font-black text-slate-500 dark:text-slate-400">NanoBanana API Key 등록</label>
-          <div class="flex gap-2">
-            <input type="password" id="nanobanana-api-key-input" placeholder="NanoBanana API Key 입력" class="w-full bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-805 dark:text-white focus:outline-none">
-            <button type="button" id="btn-test-nanobanana-key" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border-2 border-slate-200 dark:border-slate-800 rounded-xl text-xs font-black transition-colors cursor-pointer whitespace-nowrap">연결 테스트</button>
-            <button type="button" id="btn-save-nanobanana-key" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border-2 border-slate-200 dark:border-slate-800 rounded-xl text-xs font-black transition-colors cursor-pointer whitespace-nowrap">저장</button>
-          </div>
-          <p class="text-[9px] font-bold text-slate-400 mt-1">🔑 API 키는 NanoBanana 대시보드(<a href="https://nanobanana.com" target="_blank" class="text-purple-650 hover:underline">nanobanana.com</a>)에서 발급받으실 수 있습니다.</p>
         </div>
 
         <div class="space-y-1.5">
@@ -1379,7 +1380,7 @@
     <img id="lightbox-img" src="" alt="Fullscreen view" class="max-w-full max-h-full object-contain p-4 select-none transform transition-all duration-300 scale-95 opacity-0">
   </div>
 
-  <script src="/js/wall.js?v=1.0.12"></script>
+  <script src="/js/wall.js?v=1.0.23"></script>
   <script>
     window.addEventListener('load', () => {
       if (window.lucide) {

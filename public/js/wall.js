@@ -253,6 +253,14 @@ function initWall() {
         walletStoredPassword = password || '';
 
         saveBoardToHistory(wall);
+        
+        // Auto-select chatroom if cardId parameter is present in the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlCardId = urlParams.get('cardId');
+        if (urlCardId && wall.cards && wall.cards[urlCardId]) {
+          activeChatRoomCardId = urlCardId;
+        }
+
         renderBoard(wall);
         connectToStream(boardId);
       })
@@ -765,50 +773,7 @@ function initWall() {
       }
     }
 
-    // Handle Overall AI Notebook Generation (전체 AI 노트북 생성)
-    const btnGenOverallNotebook = document.getElementById('btn-generate-overall-notebook');
-    if (btnGenOverallNotebook) {
-      btnGenOverallNotebook.onclick = async () => {
-        const cards = wall.cards || [];
-        if (cards.length === 0) {
-          alert('게시판에 개설된 토론방이 없어 요약을 생성할 수 없습니다.');
-          return;
-        }
-
-        const hasComments = cards.some(c => c.comments && c.comments.length > 0);
-        if (!hasComments) {
-          alert('모든 토론방의 대화 내역이 비어 있어 전체 요약을 생성할 수 없습니다. 대화를 나눈 후에 실행해 주세요!');
-          return;
-        }
-
-        const originalContent = btnGenOverallNotebook.innerHTML;
-        btnGenOverallNotebook.disabled = true;
-        btnGenOverallNotebook.innerHTML = `
-          <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-          <span>요약 생성 중...</span>
-        `;
-
-        try {
-          const response = await fetch(`/api/wall/${wall.id}/overall-notebook-summary`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-          });
-
-          if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error || '종합 요약 생성 실패');
-          }
-
-          const resData = await response.json();
-          showNotebookSummaryModal(wall.title || '토론 게시판', resData.summary);
-        } catch (err) {
-          alert('오류 발생: ' + err.message);
-        } finally {
-          btnGenOverallNotebook.disabled = false;
-          btnGenOverallNotebook.innerHTML = originalContent;
-        }
-      };
-    }
+    // Handle Overall AI Notebook Generation removed by request
 
     // Handle board limit setting (인원 제한 설정)
     const changeMaxUsersBtn = document.getElementById('btn-change-max-users');
@@ -2968,6 +2933,8 @@ function initWall() {
     const chatActiveRoomEditBtn = document.getElementById('chat-active-room-edit-btn');
     const chatActiveRoomDeleteBtn = document.getElementById('chat-active-room-delete-btn');
     const chatActiveRoomAiImgBtn = document.getElementById('chat-active-room-ai-img-btn');
+    const chatActiveRoomSummaryBtn = document.getElementById('chat-active-room-summary-btn');
+    const chatActiveRoomShareBtn = document.getElementById('chat-active-room-share-btn');
     const chatConversationEmpty = document.getElementById('chat-conversation-empty');
     const chatMessagesArea = document.getElementById('chat-messages-area');
     const chatMessageInputContainer = document.getElementById('chat-message-input-container');
@@ -2981,6 +2948,8 @@ function initWall() {
       if (chatActiveRoomEditBtn) chatActiveRoomEditBtn.classList.add('hidden');
       if (chatActiveRoomDeleteBtn) chatActiveRoomDeleteBtn.classList.add('hidden');
       if (chatActiveRoomAiImgBtn) chatActiveRoomAiImgBtn.classList.add('hidden');
+      if (chatActiveRoomSummaryBtn) chatActiveRoomSummaryBtn.classList.add('hidden');
+      if (chatActiveRoomShareBtn) chatActiveRoomShareBtn.classList.add('hidden');
       if (chatActiveRoomTitle) chatActiveRoomTitle.textContent = "톡방을 선택하거나 메시지를 남겨보세요";
       if (chatActiveRoomDesc) chatActiveRoomDesc.textContent = "주제 톡방을 클릭하면 대화에 참여할 수 있습니다.";
     } else {
@@ -3114,6 +3083,139 @@ function initWall() {
           chatActiveRoomAiImgBtn.classList.add('hidden');
         }
       }
+      if (chatActiveRoomSummaryBtn) {
+        chatActiveRoomSummaryBtn.classList.remove('hidden');
+        chatActiveRoomSummaryBtn.onclick = async () => {
+          const comments = activeRoom.comments || [];
+          if (comments.length === 0) {
+            alert('이 토론방에 나눈 대화 내역이 없어 의견 요약을 생성할 수 없습니다. 대화를 나눈 후에 실행해 주세요!');
+            return;
+          }
+
+          const originalHTML = chatActiveRoomSummaryBtn.innerHTML;
+          try {
+            chatActiveRoomSummaryBtn.disabled = true;
+            chatActiveRoomSummaryBtn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> <span>요약 중...</span>`;
+            updateIcons();
+
+            const res = await fetch(`/api/wall/${wall.id}/cards/${activeRoom.id}/summary`, {
+              method: 'POST'
+            });
+
+            if (!res.ok) {
+              const errData = await res.json();
+              throw new Error(errData.error || '요약 생성 실패');
+            }
+
+            const data = await res.json();
+            
+            // Post the AI summary directly to the comments section so it gets saved at the end of the chat
+            try {
+              const postRes = await fetch(`/api/wall/${wall.id}/cards/${activeRoom.id}/comments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  author: "🤖 AI 의견 요약 브리핑",
+                  text: data.summary,
+                  clientUuid: clientUuid
+                })
+              });
+
+              if (postRes.ok) {
+                const updatedCard = await postRes.json();
+                if (wall.cards && wall.cards[activeRoom.id]) {
+                  wall.cards[activeRoom.id].comments = updatedCard.comments || [];
+                  activeRoom.comments = updatedCard.comments || [];
+                }
+              } else {
+                const errJson = await postRes.json();
+                console.error('Failed to post AI summary comment:', errJson.error);
+              }
+            } catch (postErr) {
+              console.error('Failed to post AI summary as a comment', postErr);
+            }
+
+            // Automatically trigger image generation
+            try {
+              console.log('Automatically generating image for card:', activeRoom.id);
+              const imgRes = await fetch(`/api/wall/${wall.id}/cards/${activeRoom.id}/generate-image`, {
+                method: 'POST'
+              });
+              if (imgRes.ok) {
+                const imgData = await imgRes.json();
+                activeRoom.image = imgData.image;
+                if (wall.cards && wall.cards[activeRoom.id]) {
+                  wall.cards[activeRoom.id].image = imgData.image;
+                }
+              } else {
+                console.error('Failed to auto-generate image on summary');
+              }
+            } catch (imgErr) {
+              console.error('Failed to auto-generate image:', imgErr);
+            }
+
+            renderChatLayout(wall);
+            showNotebookSummaryModal(activeRoom.title || '토론방', data.summary);
+          } catch (err) {
+            alert(err.message);
+          } finally {
+            chatActiveRoomSummaryBtn.disabled = false;
+            chatActiveRoomSummaryBtn.innerHTML = originalHTML;
+            updateIcons();
+          }
+        };
+      }
+      if (chatActiveRoomShareBtn) {
+        chatActiveRoomShareBtn.classList.remove('hidden');
+        chatActiveRoomShareBtn.onclick = async () => {
+          const anonymize = confirm('📢 대화 참여자들의 실명을 가리고 익명(예: 익명 1, 익명 2)으로 변환한 링크를 복사하시겠습니까?');
+          const shareUrl = `${window.location.origin}${window.location.pathname}?cardId=${activeRoom.id}${anonymize ? '&anonymize=true' : ''}`;
+          
+          let targetUrl = shareUrl;
+          const originalBtnHTML = chatActiveRoomShareBtn.innerHTML;
+          
+          try {
+            chatActiveRoomShareBtn.disabled = true;
+            chatActiveRoomShareBtn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> <span>단축 중...</span>`;
+            updateIcons();
+
+            const token = localStorage.getItem('kfcman_auth_token');
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers['X-KFCMan-Auth'] = token;
+
+            const res = await fetch('/api/shorten', {
+              method: 'POST',
+              headers: headers,
+              body: JSON.stringify({ url: shareUrl })
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.link && data.link.code) {
+                targetUrl = `${window.location.origin}/${data.link.code}`;
+              }
+            }
+          } catch (err) {
+            console.error('Failed to shorten url, using fallback long url', err);
+          } finally {
+            chatActiveRoomShareBtn.disabled = false;
+            chatActiveRoomShareBtn.innerHTML = originalBtnHTML;
+            updateIcons();
+          }
+
+          navigator.clipboard.writeText(targetUrl).then(() => {
+            alert(anonymize ? '📢 익명 처리된 짧은 톡방 주소가 클립보드에 복사되었습니다! 🌸' : '📢 짧은 톡방 주소가 클립보드에 복사되었습니다! 🌸');
+          }).catch(err => {
+            const tempInput = document.createElement('input');
+            tempInput.value = targetUrl;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            alert(anonymize ? '📢 익명 처리된 짧은 톡방 주소가 클립보드에 복사되었습니다! 🌸' : '📢 짧은 톡방 주소가 클립보드에 복사되었습니다! 🌸');
+          });
+        };
+      }
       if (chatActiveRoomTitle) chatActiveRoomTitle.textContent = `#${activeRoom.title} 주제 톡방`;
       if (chatActiveRoomDesc) chatActiveRoomDesc.textContent = activeRoom.content || `${activeRoom.title}에 대해 자유롭게 이야기 나누는 공간입니다.`;
       
@@ -3123,10 +3225,10 @@ function initWall() {
 
         if (activeRoom.image) {
           const bannerDiv = document.createElement('div');
-          bannerDiv.className = "mb-4 rounded-2xl overflow-hidden border border-slate-200/60 dark:border-slate-800/80 shadow-sm max-h-[180px] relative select-none flex-shrink-0 cursor-zoom-in";
+          bannerDiv.className = "mb-4 rounded-2xl overflow-hidden border border-slate-200/60 dark:border-slate-800/80 shadow-sm relative select-none flex-shrink-0 cursor-zoom-in";
           bannerDiv.onclick = () => openLightbox(activeRoom.image);
           bannerDiv.innerHTML = `
-            <img src="${escapeHTML(activeRoom.image)}" class="w-full h-full object-cover object-center" style="aspect-ratio: 16/9;" onerror="this.parentNode.remove()" />
+            <img src="${escapeHTML(activeRoom.image)}" class="w-full h-auto block" onerror="this.parentNode.remove()" />
             <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3.5 pointer-events-none">
               <span class="text-white text-xs font-black drop-shadow-md"># ${escapeHTML(activeRoom.title)}</span>
             </div>
@@ -3147,24 +3249,66 @@ function initWall() {
           `;
           chatMessagesArea.appendChild(emptyDiv);
         } else {
+          const urlParams = new URLSearchParams(window.location.search);
+          const isAnonymousMode = urlParams.get('anonymize') === 'true' || urlParams.get('anonymous') === 'true';
+          const authorMap = {};
+          let anonCounter = 1;
+
           comments.forEach(comment => {
             const isSelf = comment.author === myName;
             
+            // Handle anonymity mappings
+            let displayAuthor = comment.author;
+            if (isAnonymousMode && comment.author !== "🤖 AI 의견 요약 브리핑") {
+              if (!authorMap[comment.author]) {
+                authorMap[comment.author] = `익명 ${anonCounter++}`;
+              }
+              displayAuthor = authorMap[comment.author];
+            }
+
             const msgRow = document.createElement('div');
             msgRow.className = `flex gap-2.5 mb-3.5 ${isSelf ? 'justify-end' : 'justify-start'}`;
             
-            let avatarContent = escapeHTML(comment.author.substring(0, 1).toUpperCase());
-            const emojiMatch = comment.author.match(/^([\uD800-\uDBFF][\uDC00-\uDFFF])/);
+            let avatarContent = escapeHTML(displayAuthor.substring(0, 1).toUpperCase());
+            const emojiMatch = displayAuthor.match(/^([\uD800-\uDBFF][\uDC00-\uDFFF])/);
             if (emojiMatch) {
               avatarContent = emojiMatch[1];
             }
             
             const formattedTime = formatTimeChat(comment.createdAt);
             
-            if (isSelf) {
+            if (comment.author === "🤖 AI 의견 요약 브리핑") {
+              // Parse markdown
+              let parsedText = (comment.text || '')
+                .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                .replace(/^# (.*$)/gim, '<h1 class="text-base font-black text-indigo-650 dark:text-indigo-400 mb-2.5 mt-1.5 pb-1 border-b border-indigo-150 dark:border-slate-800">$1</h1>')
+                .replace(/^## (.*$)/gim, '<h2 class="text-xs font-black text-slate-850 dark:text-slate-100 mb-2 mt-3.5 flex items-center gap-1.5">$1</h2>')
+                .replace(/^### (.*$)/gim, '<h3 class="text-[11px] font-black text-slate-700 dark:text-slate-250 mb-1 mt-2.5">$1</h3>')
+                .replace(/^\* (.*$)/gim, '<li class="ml-3 list-disc text-[11px] text-slate-655 dark:text-slate-350 leading-relaxed">$1</li>')
+                .replace(/^- (.*$)/gim, '<li class="ml-3 list-disc text-[11px] text-slate-655 dark:text-slate-350 leading-relaxed">$1</li>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+
+              msgRow.className = `flex flex-col mb-4 w-full`;
+              msgRow.innerHTML = `
+                <div class="flex items-center gap-2 mb-1.5 select-none">
+                  <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-black shadow-sm flex-shrink-0">
+                    🤖
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-[10px] font-black text-indigo-600 dark:text-indigo-400">AI 의견 요약 브리핑</span>
+                    <span class="text-[7px] font-bold text-slate-400 dark:text-slate-500">${formattedTime}</span>
+                  </div>
+                </div>
+                <div class="bg-indigo-50/50 dark:bg-indigo-950/15 border-2 border-indigo-100 dark:border-indigo-900/60 text-slate-800 dark:text-slate-100 px-4 py-3 rounded-2xl text-xs font-medium leading-relaxed break-all shadow-sm w-full">
+                  ${parsedText}
+                </div>
+              `;
+            } else if (isSelf) {
               msgRow.innerHTML = `
                 <div class="flex flex-col items-end max-w-[70%] text-right">
-                  <span class="text-[9px] font-black text-slate-650 dark:text-slate-400 mb-0.5 select-none">${escapeHTML(comment.author)}</span>
+                  <span class="text-[9px] font-black text-slate-650 dark:text-slate-400 mb-0.5 select-none">${escapeHTML(displayAuthor)}</span>
                   <div class="flex items-end gap-1.5">
                     <button onclick="likeComment('${activeRoom.id}', '${comment.id}')" class="text-[9px] font-black text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 border border-rose-250 dark:border-rose-900 px-1.5 py-0.5 rounded-lg flex items-center gap-0.5 cursor-pointer shadow-sm active:scale-90">
                       <i data-lucide="heart" class="w-2.5 h-2.5 fill-rose-500"></i>
@@ -3186,7 +3330,7 @@ function initWall() {
                   ${avatarContent}
                 </div>
                 <div class="flex flex-col items-start max-w-[70%] text-left">
-                  <span class="text-[9px] font-black text-slate-600 dark:text-slate-400 mb-0.5 select-none">${escapeHTML(comment.author)}</span>
+                  <span class="text-[9px] font-black text-slate-600 dark:text-slate-400 mb-0.5 select-none">${escapeHTML(displayAuthor)}</span>
                   <div class="flex items-end gap-1.5">
                     <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 px-3 py-2 rounded-2xl rounded-tl-none text-xs font-bold leading-relaxed break-all shadow-sm border border-slate-200/50 dark:border-slate-800/80">
                       ${renderContentWithLinks(escapeHTML(comment.text))}
@@ -3536,10 +3680,13 @@ function initWall() {
         const res = await fetch('/api/admin/config/gemini', { headers });
         if (res.ok) {
           const status = await res.json();
+          const geminiKeySection = document.getElementById('gemini-key-section');
           if (status.hasKey) {
+            if (geminiKeySection) geminiKeySection.classList.add('hidden');
             aiApiKeyInput.placeholder = '🔑 API Key가 이미 등록되어 있습니다.';
             aiApiKeyInput.value = '';
           } else {
+            if (geminiKeySection) geminiKeySection.classList.remove('hidden');
             aiApiKeyInput.placeholder = 'Google Gemini API Key 입력';
           }
         }

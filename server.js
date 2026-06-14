@@ -937,11 +937,7 @@ app.post('/api/admin/config/gemini/test', authenticate, requireAdmin, async (req
       'Content-Length': Buffer.byteLength(requestBody)
     };
 
-    if (apiKey.startsWith('AQ.')) {
-      headers['Authorization'] = `Bearer ${apiKey}`;
-    } else {
-      geminiUrl += `?key=${apiKey}`;
-    }
+    geminiUrl += `?key=${apiKey}`;
 
     const testCall = () => {
       return new Promise((resolve, reject) => {
@@ -949,6 +945,7 @@ app.post('/api/admin/config/gemini/test', authenticate, requireAdmin, async (req
           method: 'POST',
           headers: headers
         }, (resp) => {
+          resp.setEncoding('utf8');
           let data = '';
           resp.on('data', chunk => data += chunk);
           resp.on('end', () => {
@@ -976,11 +973,85 @@ app.post('/api/admin/config/gemini/test', authenticate, requireAdmin, async (req
 
 
 // Helper to generate an image using Imagen 4 and save it to disk
+function getUnsplashFallbackUrl(title) {
+  return new Promise((resolve) => {
+    try {
+      const fallbackImages = {
+        '과학': 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=1200&q=80',
+        '실험': 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=1200&q=80',
+        '수학': 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=1200&q=80',
+        '미술': 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=1200&q=80',
+        '예술': 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=1200&q=80',
+        '컴퓨터': 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1200&q=80',
+        '코딩': 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1200&q=80',
+        '교실': 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&w=1200&q=80',
+        '수업': 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&w=1200&q=80',
+        '공부': 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=1200&q=80',
+        '토론': 'https://images.unsplash.com/photo-1531535934027-687f6b31c23a?auto=format&fit=crop&w=1200&q=80',
+        '회의': 'https://images.unsplash.com/photo-1531535934027-687f6b31c23a?auto=format&fit=crop&w=1200&q=80',
+        '환경': 'https://images.unsplash.com/photo-1500485035595-cbe6f645feb1?auto=format&fit=crop&w=1200&q=80',
+        '음악': 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1200&q=80',
+        'default': 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=1200&q=80'
+      };
+
+      let selectedUrl = fallbackImages['default'];
+      for (const [keyword, url] of Object.entries(fallbackImages)) {
+        if (keyword !== 'default' && title.includes(keyword)) {
+          selectedUrl = url;
+          break;
+        }
+      }
+
+      console.log(`Downloading fallback image for title "${title}" from: ${selectedUrl}`);
+
+      const https = require('https');
+      const path = require('path');
+      const crypto = require('crypto');
+      const fs = require('fs');
+
+      https.get(selectedUrl, (res) => {
+        if (res.statusCode !== 200) {
+          console.error(`Unsplash returned status ${res.statusCode} for fallback`);
+          return resolve('/uploads/default.jpg');
+        }
+        
+        const chunks = [];
+        res.on('data', chunk => chunks.push(chunk));
+        res.on('end', () => {
+          try {
+            const buffer = Buffer.concat(chunks);
+            const filename = crypto.randomUUID() + '.jpg';
+            const uploadsDir = path.join(__dirname, 'public', 'uploads');
+            if (!fs.existsSync(uploadsDir)) {
+              fs.mkdirSync(uploadsDir, { recursive: true });
+            }
+            const filePath = path.join(uploadsDir, filename);
+            fs.writeFileSync(filePath, buffer);
+            resolve(`/uploads/${filename}`);
+          } catch (e) {
+            console.error('Failed to save Unsplash image:', e);
+            resolve('/uploads/default.jpg');
+          }
+        });
+      }).on('error', (e) => {
+        console.error('Failed to download Unsplash image:', e);
+        resolve('/uploads/default.jpg');
+      });
+    } catch (err) {
+      console.error('Error in getUnsplashFallbackUrl:', err);
+      resolve('/uploads/default.jpg');
+    }
+  });
+}
+
 function generateAndSaveTopicImage(title, apiKey) {
   return new Promise((resolve) => {
     try {
       const https = require('https');
       const crypto = require('crypto');
+      const path = require('path');
+      const fs = require('fs');
+      
       const cleanTitle = title.replace(/[^\w\sㄱ-힣]/g, '').trim();
       const finalPrompt = `A wide landscape widescreen webtoon banner illustration representing the theme: "${cleanTitle}". Beautiful Korean webtoon art style, wide-angle view, clean line art, vivid digital coloring, expressive cartoon characters, educational and friendly classroom scene, no text, clean background, perfectly designed as a 16:9 header banner`;
 
@@ -999,11 +1070,7 @@ function generateAndSaveTopicImage(title, apiKey) {
         'Content-Length': Buffer.byteLength(postData)
       };
 
-      if (apiKey.startsWith('AQ.')) {
-        headers['Authorization'] = `Bearer ${apiKey}`;
-      } else {
-        apiPath += `?key=${apiKey}`;
-      }
+      apiPath += `?key=${apiKey}`;
 
       const options = {
         hostname: 'generativelanguage.googleapis.com',
@@ -1014,18 +1081,22 @@ function generateAndSaveTopicImage(title, apiKey) {
       };
 
       const apiReq = https.request(options, (apiRes) => {
+        apiRes.setEncoding('utf8');
         let body = '';
         apiRes.on('data', (chunk) => body += chunk);
-        apiRes.on('end', () => {
+        apiRes.on('end', async () => {
           try {
             if (apiRes.statusCode !== 200) {
-              console.error(`Imagen API error during topic generation: Status ${apiRes.statusCode}`);
-              return resolve('');
+              console.error(`Imagen API error during topic generation: Status ${apiRes.statusCode}. Falling back to Unsplash.`);
+              const fallbackUrl = await getUnsplashFallbackUrl(title);
+              return resolve(fallbackUrl);
             }
             const resObj = JSON.parse(body);
             const base64Image = resObj.predictions?.[0]?.bytesBase64Encoded;
             if (!base64Image) {
-              return resolve('');
+              console.warn('No base64Image returned from Imagen. Falling back to Unsplash.');
+              const fallbackUrl = await getUnsplashFallbackUrl(title);
+              return resolve(fallbackUrl);
             }
             
             const uploadsDir = path.join(__dirname, 'public', 'uploads');
@@ -1038,21 +1109,23 @@ function generateAndSaveTopicImage(title, apiKey) {
             resolve(`/uploads/${filename}`);
           } catch (e) {
             console.error('Error parsing Imagen response for topic:', e);
-            resolve('');
+            const fallbackUrl = await getUnsplashFallbackUrl(title);
+            resolve(fallbackUrl);
           }
         });
       });
 
-      apiReq.on('error', (e) => {
+      apiReq.on('error', async (e) => {
         console.error('HTTP Request error for Imagen for topic:', e);
-        resolve('');
+        const fallbackUrl = await getUnsplashFallbackUrl(title);
+        resolve(fallbackUrl);
       });
 
       apiReq.write(postData);
       apiReq.end();
     } catch (err) {
       console.error('Unexpected error in generateAndSaveTopicImage:', err);
-      resolve('');
+      getUnsplashFallbackUrl(title).then(resolve);
     }
   });
 }
@@ -1130,11 +1203,7 @@ Ensure the response contains absolutely NO markdown, NO code fences (like \`\`\`
       'Content-Length': Buffer.byteLength(requestBody)
     };
 
-    if (apiKey.startsWith('AQ.')) {
-      headers['Authorization'] = `Bearer ${apiKey}`;
-    } else {
-      geminiUrl += `?key=${apiKey}`;
-    }
+    geminiUrl += `?key=${apiKey}`;
 
     const callGemini = () => {
       return new Promise((resolve, reject) => {
@@ -1142,6 +1211,7 @@ Ensure the response contains absolutely NO markdown, NO code fences (like \`\`\`
           method: 'POST',
           headers: headers
         }, (resp) => {
+          resp.setEncoding('utf8');
           let data = '';
           resp.on('data', chunk => data += chunk);
           resp.on('end', () => {
@@ -2369,7 +2439,8 @@ app.post('/api/wall/:id/cards/:cardId/comments', async (req, res) => {
     const { cardId } = req.params;
     const { author, text, clientUuid } = req.body;
 
-    if (containsProfanity(author) || containsProfanity(text)) {
+    const isAiSummary = author === "🤖 AI 의견 요약 브리핑";
+    if (!isAiSummary && (containsProfanity(author) || containsProfanity(text))) {
       return res.status(400).json({ error: '부적절한 표현(욕설, 비하, 성적 표현 등)이 감지되어 등록할 수 없습니다. 서로 배려하는 예쁜 언어를 사용해 주세요! 🌸' });
     }
 
@@ -2382,7 +2453,7 @@ app.post('/api/wall/:id/cards/:cardId/comments', async (req, res) => {
     const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin' || wall.creator === cleanUser;
 
     // Enforce slot check if maxUsers > 0
-    if (wall.maxUsers > 0 && !isAdmin) {
+    if (wall.maxUsers > 0 && !isAdmin && author !== "🤖 AI 의견 요약 브리핑") {
       const members = Object.values(wall.members || {});
       const myMember = members.find(m => m.clientUuid === clientUuid);
       if (!myMember) {
@@ -2766,11 +2837,7 @@ app.post('/api/wall/:id/generate-webtoon-image', async (req, res) => {
       'Content-Length': Buffer.byteLength(postData)
     };
 
-    if (apiKey.startsWith('AQ.')) {
-      headers['Authorization'] = `Bearer ${apiKey}`;
-    } else {
-      apiPath += `?key=${apiKey}`;
-    }
+    apiPath += `?key=${apiKey}`;
 
     const options = {
       hostname: 'generativelanguage.googleapis.com',
@@ -2781,32 +2848,38 @@ app.post('/api/wall/:id/generate-webtoon-image', async (req, res) => {
     };
 
     const apiReq = https.request(options, (apiRes) => {
+      apiRes.setEncoding('utf8');
       let body = '';
       apiRes.on('data', (chunk) => body += chunk);
-      apiRes.on('end', () => {
+      apiRes.on('end', async () => {
         try {
           if (apiRes.statusCode !== 200) {
             const errObj = JSON.parse(body);
-            console.error('Gemini Imagen error:', errObj);
-            return res.status(apiRes.statusCode).json({ error: errObj.error?.message || 'Gemini Imagen API 호출 오류' });
+            console.error('Gemini Imagen error:', errObj, '. Falling back to Unsplash.');
+            const fallbackUrl = await getUnsplashFallbackUrl(cleanTitle);
+            return res.status(200).json({ success: true, url: fallbackUrl });
           }
           const resObj = JSON.parse(body);
           const base64Image = resObj.predictions?.[0]?.bytesBase64Encoded;
           if (!base64Image) {
-            return res.status(500).json({ error: 'Gemini Imagen API에서 이미지를 반환하지 않았습니다.' });
+            console.warn('No base64Image returned. Falling back to Unsplash.');
+            const fallbackUrl = await getUnsplashFallbackUrl(cleanTitle);
+            return res.status(200).json({ success: true, url: fallbackUrl });
           }
           const dataUrl = `data:image/jpeg;base64,${base64Image}`;
           return res.status(200).json({ success: true, url: dataUrl });
         } catch (e) {
           console.error('JSON parse error in Gemini Imagen response:', e);
-          return res.status(500).json({ error: 'Gemini Imagen 응답 분석 도중 오류가 발생했습니다.' });
+          const fallbackUrl = await getUnsplashFallbackUrl(cleanTitle);
+          return res.status(200).json({ success: true, url: fallbackUrl });
         }
       });
     });
 
-    apiReq.on('error', (e) => {
+    apiReq.on('error', async (e) => {
       console.error('HTTP Request error for Gemini Imagen:', e);
-      return res.status(500).json({ error: 'Gemini API 연결에 실패했습니다.' });
+      const fallbackUrl = await getUnsplashFallbackUrl(cleanTitle);
+      return res.status(200).json({ success: true, url: fallbackUrl });
     });
 
     apiReq.write(postData);
@@ -2814,7 +2887,12 @@ app.post('/api/wall/:id/generate-webtoon-image', async (req, res) => {
 
   } catch (err) {
     console.error('Error in /api/wall/:id/generate-webtoon-image:', err);
-    return res.status(500).json({ error: '서버 내부 오류로 만화 생성에 실패했습니다.' });
+    try {
+      const fallbackUrl = await getUnsplashFallbackUrl(req.body.cleanTitle || '수업');
+      return res.status(200).json({ success: true, url: fallbackUrl });
+    } catch (fallbackErr) {
+      return res.status(500).json({ error: '서버 내부 오류로 만화 생성에 실패했습니다.' });
+    }
   }
 });
 
@@ -2843,7 +2921,7 @@ app.post('/api/wall/:id/overall-notebook-summary', async (req, res) => {
       if (comments.length > 0) {
         hasComments = true;
         comments.forEach(c => {
-          allChatContent += `- [${c.author}]: ${c.content}\n`;
+          allChatContent += `- [${c.author}]: ${c.text || c.content || ''}\n`;
         });
       } else {
         allChatContent += `(이 방에는 나눈 의견이 없습니다.)\n`;
@@ -2911,11 +2989,7 @@ ${allChatContent}`;
       'Content-Length': Buffer.byteLength(postData)
     };
 
-    if (apiKey.startsWith('AQ.')) {
-      headers['Authorization'] = `Bearer ${apiKey}`;
-    } else {
-      apiPath += `?key=${apiKey}`;
-    }
+    apiPath += `?key=${apiKey}`;
 
     const options = {
       hostname: 'generativelanguage.googleapis.com',
@@ -2926,6 +3000,7 @@ ${allChatContent}`;
     };
 
     const apiReq = https.request(options, (apiRes) => {
+      apiRes.setEncoding('utf8');
       let body = '';
       apiRes.on('data', (chunk) => body += chunk);
       apiRes.on('end', () => {
@@ -2956,6 +3031,131 @@ ${allChatContent}`;
   } catch (err) {
     console.error('Error generating overall notebook summary:', err);
     return res.status(500).json({ error: '종합 요약 생성 도중 서버 내부 오류가 발생했습니다.' });
+  }
+});
+
+// Endpoint: Generate NotebookLM style summary for a specific active chatroom (card)
+app.post('/api/wall/:id/cards/:cardId/summary', async (req, res) => {
+  try {
+    const wallId = req.params.id.trim().toUpperCase();
+    const cardId = req.params.cardId.trim();
+    const wall = await db.getWall(wallId);
+    if (!wall) return res.status(404).json({ error: '존재하지 않는 게시판입니다.' });
+
+    const card = wall.cards?.[cardId];
+    if (!card) return res.status(404).json({ error: '존재하지 않는 토론방입니다.' });
+
+    const comments = card.comments || [];
+    if (comments.length === 0) {
+      return res.status(400).json({ error: '토론방에 나눈 대화 내역이 없어 요약을 생성할 수 없습니다.' });
+    }
+
+    let chatContent = '';
+    const authorMap = {};
+    let anonCounter = 1;
+    comments.forEach(c => {
+      const author = c.author || '익명';
+      if (!authorMap[author]) {
+        authorMap[author] = `익명 ${anonCounter++}`;
+      }
+      chatContent += `- [${authorMap[author]}]: ${c.text || c.content || ''}\n`;
+    });
+
+    // 1. Get stored API key
+    const configPath = path.join(__dirname, 'config.json');
+    let apiKey = '';
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (config.geminiApiKey) {
+        apiKey = config.geminiApiKey;
+      }
+    }
+
+    if (!apiKey) {
+      return res.status(400).json({ error: 'Gemini API Key가 등록되지 않았습니다. 먼저 API Key를 등록해 주세요.' });
+    }
+
+    // 2. Prepare Gemini prompt
+    const systemPrompt = `You are a professional educational consultant and a head AI Notebook director similar to Google's NotebookLM.
+Your task is to analyze the participant discussions from the learning topic room titled "${card.title}" (Description: ${card.content || ''}) under the board "${wall.title || '토론 게시판'}". 
+Compile these discussions into a single, comprehensive, highly structured, and inspiring "Learning Topic Notebook Summary & Educational Guide".
+
+Formatting Guidelines:
+- Use Markdown format with Korean language.
+- Provide a clear, clean, and extremely premium structure.
+- Focus on key insights, proposed solutions, questions raised, and consensus.
+- Organize the content into the following sections:
+
+# 📌 [${card.title}] AI 의견 요약 및 학습노트
+
+## 🎯 1. 핵심 요약 (Summary)
+Summarize the main points and themes of the discussion in this room.
+
+## 💡 2. 주요 의견 및 제안 (Key Insights & Proposals)
+Highlight the most valuable ideas or experiences shared by participants.
+
+## 🚀 3. 실천 방안 및 적용 팁 (Actionable Tips)
+Provide concrete tips on how to apply these ideas in practice.
+
+Discussion Transcript:
+${chatContent}`;
+
+    // 3. Call Gemini API
+    const https = require('https');
+    const postData = JSON.stringify({
+      contents: [{
+        parts: [{ text: systemPrompt }]
+      }]
+    });
+
+    let apiPath = `/v1beta/models/gemini-2.5-flash:generateContent`;
+    const headers = {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(postData)
+    };
+
+    apiPath += `?key=${apiKey}`;
+
+    const options = {
+      hostname: 'generativelanguage.googleapis.com',
+      port: 443,
+      path: apiPath,
+      method: 'POST',
+      headers: headers
+    };
+
+    const apiReq = https.request(options, (apiRes) => {
+      apiRes.setEncoding('utf8');
+      let body = '';
+      apiRes.on('data', (chunk) => body += chunk);
+      apiRes.on('end', () => {
+        try {
+          if (apiRes.statusCode !== 200) {
+            const errObj = JSON.parse(body);
+            console.error('Gemini card summary error:', errObj);
+            return res.status(apiRes.statusCode).json({ error: errObj.error?.message || 'Gemini API 호출 오류' });
+          }
+          const resObj = JSON.parse(body);
+          const responseText = resObj.candidates?.[0]?.content?.parts?.[0]?.text || '요약을 생성할 수 없습니다.';
+          return res.status(200).json({ success: true, summary: responseText });
+        } catch (e) {
+          console.error('JSON parse error in Gemini response:', e);
+          return res.status(500).json({ error: 'Gemini 응답 분석 도중 오류가 발생했습니다.' });
+        }
+      });
+    });
+
+    apiReq.on('error', (e) => {
+      console.error('HTTP Request error:', e);
+      return res.status(500).json({ error: 'Gemini API 연결에 실패했습니다.' });
+    });
+
+    apiReq.write(postData);
+    apiReq.end();
+
+  } catch (err) {
+    console.error('Error generating card summary:', err);
+    return res.status(500).json({ error: '요약 생성 도중 서버 내부 오류가 발생했습니다.' });
   }
 });
 
@@ -3020,215 +3220,26 @@ app.get('/wall/:id', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'wall.html'));
 });
 
-// KFC MAN-DOCS APIs
-app.get('/api/docs', optionalAuthenticate, async (req, res) => {
-  try {
-    const list = db.getUserDocs(req.username);
-    return res.status(200).json({ docs: list });
-  } catch (err) {
-    console.error('Error fetching docs:', err);
-    return res.status(500).json({ error: '문서 목록 조회에 실패했습니다.' });
-  }
-});
-
-app.post('/api/docs', authenticate, async (req, res) => {
-  const { title, content, password, isPublic, hwpData, hwpName } = req.body;
-  try {
-    const userDocs = db.getUserDocs(req.username);
-    const userRole = req.role || 'user';
-    if (userRole === 'user' && userDocs.filter(d => d.creator === req.username.toLowerCase()).length >= 10) {
-      return res.status(403).json({ error: '일반회원은 문서를 최대 10개까지만 생성할 수 있습니다. 무제한 생성을 원하시면 우수회원으로 등급업해 주세요.' });
-    }
-
-    const finalHwpData = saveBase64ToDisk(hwpData, 'hwp');
-    const doc = await db.createDoc(title, content, req.username, password, isPublic, finalHwpData, hwpName);
-    return res.status(201).json(doc);
-  } catch (err) {
-    console.error('Error creating doc:', err);
-    return res.status(500).json({ error: '문서 생성 도중 오류가 발생했습니다.' });
-  }
-});
-
-app.get('/api/docs/:id', optionalAuthenticate, async (req, res) => {
-  const docId = req.params.id.trim().toUpperCase();
-  try {
-    const doc = await db.getDoc(docId);
-    if (!doc) {
-      return res.status(404).json({ error: '존재하지 않는 문서입니다.' });
-    }
-
-    const cleanUser = req.username ? req.username.trim().toLowerCase() : '';
-    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin';
-    const isCreator = doc.creator === cleanUser;
-
-    // Check password protection for private documents
-    if (doc.password && !isCreator && !isAdmin) {
-      const authHeader = req.headers['x-kfcman-doc-password'];
-      if (authHeader !== doc.password) {
-        return res.status(403).json({ error: 'PASSWORD_REQUIRED', hasPassword: true });
-      }
-    }
-
-    return res.status(200).json({
-      id: doc.id,
-      title: doc.title,
-      content: doc.content,
-      creator: doc.creator,
-      isPublic: doc.isPublic,
-      hasPassword: !!doc.password,
-      hasHwpData: !!doc.hwpData,
-      hwpName: doc.hwpName,
-      createdAt: doc.createdAt,
-      updatedAt: doc.updatedAt,
-      updatedBy: doc.updatedBy
-    });
-  } catch (err) {
-    console.error('Error fetching doc:', err);
-    return res.status(500).json({ error: '문서 조회 도중 오류가 발생했습니다.' });
-  }
-});
-
-app.get('/api/docs/:id/download', optionalAuthenticate, async (req, res) => {
-  const docId = req.params.id.trim().toUpperCase();
-  try {
-    const doc = await db.getDoc(docId);
-    if (!doc || !doc.hwpData) {
-      return res.status(404).send('HWP 문서 바이너리가 존재하지 않습니다.');
-    }
-
-    const cleanUser = req.username ? req.username.trim().toLowerCase() : '';
-    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin';
-    const isCreator = doc.creator === cleanUser;
-
-    if (doc.password && !isCreator && !isAdmin) {
-      const authHeader = req.headers['x-kfcman-doc-password'] || req.query.password;
-      if (authHeader !== doc.password) {
-        return res.status(403).send('인증 암호가 올바르지 않습니다.');
-      }
-    }
-
-    let binaryBuffer;
-    let mimeType = 'application/x-hwp';
-    if (doc.hwpData && doc.hwpData.startsWith('/uploads/')) {
-      const filePath = path.join(__dirname, 'public', doc.hwpData);
-      if (!fs.existsSync(filePath)) {
-        return res.status(404).send('HWP 파일을 디스크에서 찾을 수 없습니다.');
-      }
-      binaryBuffer = fs.readFileSync(filePath);
-    } else {
-      const match = doc.hwpData.match(/^data:(.+);base64,(.+)$/);
-      let base64Data = doc.hwpData;
-      if (match) {
-        mimeType = match[1];
-        base64Data = match[2];
-      }
-      binaryBuffer = Buffer.from(base64Data, 'base64');
-    }
-    const filename = encodeURIComponent(doc.hwpName || doc.title + '.hwp');
-
-    res.setHeader('Content-Type', mimeType);
-    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
-    return res.send(binaryBuffer);
-  } catch (err) {
-    console.error('Download error:', err);
-    return res.status(500).send('다운로드 실패');
-  }
-});
-
-app.post('/api/docs/:id/verify-password', async (req, res) => {
-  const docId = req.params.id.trim().toUpperCase();
-  const { password } = req.body;
-  try {
-    const doc = await db.getDoc(docId);
-    if (!doc) {
-      return res.status(404).json({ error: '존재하지 않는 문서입니다.' });
-    }
-    if (doc.password === password) {
-      return res.status(200).json({ success: true });
-    }
-    return res.status(401).json({ error: '비밀번호가 일치하지 않습니다.' });
-  } catch (err) {
-    return res.status(500).json({ error: '서버 오류' });
-  }
-});
-
-app.put('/api/docs/:id', optionalAuthenticate, async (req, res) => {
-  const docId = req.params.id.trim().toUpperCase();
-  const { title, content, hwpData, hwpName } = req.body;
-  try {
-    const doc = await db.getDoc(docId);
-    if (!doc) {
-      return res.status(404).json({ error: '존재하지 않는 문서입니다.' });
-    }
-
-    const cleanUser = req.username ? req.username.trim().toLowerCase() : '';
-    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin';
-    const isCreator = doc.creator === cleanUser;
-
-    if (!doc.isPublic && !isCreator && !isAdmin) {
-      return res.status(403).json({ error: '비공개 문서이며 편집 권한이 없습니다.' });
-    }
-
-    const finalHwpData = saveBase64ToDisk(hwpData, 'hwp');
-    const updated = await db.updateDoc(docId, title, content, req.username || '익명 편집자', finalHwpData, hwpName);
-    return res.status(200).json(updated);
-  } catch (err) {
-    console.error('Error updating doc:', err);
-    return res.status(500).json({ error: err.message || '문서 저장 도중 오류가 발생했습니다.' });
-  }
-});
-
-app.delete('/api/docs/:id', authenticate, async (req, res) => {
-  const docId = req.params.id.trim().toUpperCase();
-  try {
-    const success = await db.deleteDoc(docId, req.username);
-    if (!success) {
-      return res.status(404).json({ error: '존재하지 않는 문서입니다.' });
-    }
-    return res.status(200).json({ message: '문서가 성공적으로 완전히 삭제되었습니다.' });
-  } catch (err) {
-    return res.status(500).json({ error: err.message || '문서 삭제 도중 오류가 발생했습니다.' });
-  }
-});
-
 // Serve scratch directory static files (contains sync agent etc)
 app.use('/scratch', express.static(path.join(__dirname, 'scratch')));
 
-// Dedicated HTML page routers for docs
+// Redirect disabled docs and tetris pages to home
 app.get('/docs', (req, res) => {
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  res.sendFile(path.join(__dirname, 'public', 'docs.html'));
+  return res.redirect('/');
 });
-
 app.get('/docs/:id', (req, res) => {
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  res.sendFile(path.join(__dirname, 'public', 'docs.html'));
+  return res.redirect('/');
+});
+app.get('/tetris', (req, res) => {
+  return res.redirect('/');
 });
 
-// Dedicated HTML page routers for tetris-battle (admin only)
-function requireAdminForPage(req, res, next) {
-  if (req.role !== 'admin' && req.role !== 'manager') {
-    return res.redirect('/?blocked=tetris');
-  }
-  next();
-}
-app.use('/tetris', optionalAuthenticate, requireAdminForPage, express.static(path.join(__dirname, 'public', 'tetris')));
-app.get('/tetris', optionalAuthenticate, requireAdminForPage, (req, res) => {
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  res.sendFile(path.join(__dirname, 'public', 'tetris', 'index.html'));
+// Disabled HWP/Docs and Tetris APIs returning 404
+app.all('/api/docs*', (req, res) => {
+  return res.status(404).json({ error: 'Docs API has been disabled.' });
 });
-
-app.get('/api/tetris/stats', (req, res) => {
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  res.json(getStats());
+app.all('/api/tetris*', (req, res) => {
+  return res.status(404).json({ error: 'Tetris API has been disabled.' });
 });
 
 // SPA fallback
