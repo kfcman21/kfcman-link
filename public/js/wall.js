@@ -30,7 +30,7 @@ function initWall() {
       });
 
       // Upload to server
-      const uploadRes = await fetch(`/api/wall/${wall.id}/cards/${activeRoomId}/upload-image`, {
+      const uploadRes = await fetch(`/api/wall/${currentWall.id}/cards/${activeRoomId}/upload-image`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: base64Data })
@@ -46,7 +46,7 @@ function initWall() {
     } catch (err) {
       console.warn('Client-side generation failed, falling back to server-side generation:', err);
       // Fall back to server-side generation (which uses Gemini/Unsplash)
-      const serverRes = await fetch(`/api/wall/${wall.id}/cards/${activeRoomId}/generate-image`, {
+      const serverRes = await fetch(`/api/wall/${currentWall.id}/cards/${activeRoomId}/generate-image`, {
         method: 'POST'
       });
       if (!serverRes.ok) {
