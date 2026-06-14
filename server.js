@@ -1053,7 +1053,7 @@ function generateAndSaveTopicImage(title, apiKey) {
       const fs = require('fs');
       
       const cleanTitle = title.replace(/[^\w\sㄱ-힣]/g, '').trim();
-      const finalPrompt = `A wide landscape widescreen webtoon banner illustration representing the theme: "${cleanTitle}". Beautiful Korean webtoon art style, wide-angle view, clean line art, vivid digital coloring, expressive cartoon characters, educational and friendly classroom scene, no text, clean background, perfectly designed as a 16:9 header banner`;
+      const finalPrompt = `A wide landscape widescreen webtoon banner illustration representing the theme: "${cleanTitle}". Beautiful Korean webtoon art style, wide-angle view, clean line art, vivid digital coloring, expressive cartoon characters, educational and friendly classroom scene, textless, wordless, absolutely no text, no letters, no words, no writing on the image, perfectly designed as a 16:9 header banner`;
 
       const postData = JSON.stringify({
         instances: [{ prompt: finalPrompt }],
@@ -2816,7 +2816,7 @@ app.post('/api/wall/:id/generate-webtoon-image', async (req, res) => {
     }
 
     const https = require('https');
-    const finalPrompt = `A wide landscape widescreen webtoon banner illustration representing the theme: "${cleanTitle}". Beautiful Korean webtoon art style, wide-angle view, clean line art, vivid digital coloring, expressive cartoon characters, educational and friendly classroom scene, no text, clean background, perfectly designed as a 16:9 header banner`;
+    const finalPrompt = `A wide landscape widescreen webtoon banner illustration representing the theme: "${cleanTitle}". Beautiful Korean webtoon art style, wide-angle view, clean line art, vivid digital coloring, expressive cartoon characters, educational and friendly classroom scene, textless, wordless, absolutely no text, no letters, no words, no writing on the image, perfectly designed as a 16:9 header banner`;
 
     const postData = JSON.stringify({
       instances: [
