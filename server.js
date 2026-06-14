@@ -972,6 +972,58 @@ app.post('/api/admin/config/gemini/test', authenticate, requireAdmin, async (req
 });
 
 
+function getPollinationsFallbackUrl(title) {
+  return new Promise((resolve) => {
+    try {
+      const https = require('https');
+      const crypto = require('crypto');
+      const path = require('path');
+      const fs = require('fs');
+
+      const cleanTitle = title.replace(/[^\w\sㄱ-힣]/g, '').trim();
+      const finalPrompt = `A wide landscape widescreen webtoon banner illustration representing the theme: "${cleanTitle}". Beautiful Korean webtoon art style, wide-angle view, clean line art, vivid digital coloring, expressive cartoon characters, educational and friendly classroom scene, textless, wordless, absolutely no text, no letters, no words, no writing on the image, perfectly designed as a 16:9 header banner`;
+      const encodedPrompt = encodeURIComponent(finalPrompt);
+      const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=576&nologo=true&private=true`;
+
+      console.log(`Attempting Pollinations AI generation for "${cleanTitle}"...`);
+      https.get(url, (res) => {
+        if (res.statusCode !== 200) {
+          console.error(`Pollinations returned status ${res.statusCode}. Falling back to Unsplash.`);
+          getUnsplashFallbackUrl(title).then(resolve);
+          return;
+        }
+
+        const chunks = [];
+        res.on('data', chunk => chunks.push(chunk));
+        res.on('end', () => {
+          try {
+            const buffer = Buffer.concat(chunks);
+            const filename = crypto.randomUUID() + '.jpg';
+            const uploadsDir = path.join(__dirname, 'public', 'uploads');
+            if (!fs.existsSync(uploadsDir)) {
+              fs.mkdirSync(uploadsDir, { recursive: true });
+            }
+            const filePath = path.join(uploadsDir, filename);
+            fs.writeFileSync(filePath, buffer);
+            console.log(`Successfully generated and saved Pollinations image: /uploads/${filename}`);
+            resolve(`/uploads/${filename}`);
+          } catch (e) {
+            console.error('Failed to save Pollinations image:', e);
+            getUnsplashFallbackUrl(title).then(resolve);
+          }
+        });
+      }).on('error', (e) => {
+        console.error('Failed to download Pollinations image:', e);
+        getUnsplashFallbackUrl(title).then(resolve);
+      });
+    } catch (err) {
+      console.error('Error in getPollinationsFallbackUrl:', err);
+      getUnsplashFallbackUrl(title).then(resolve);
+    }
+  });
+}
+
+
 // Helper to generate an image using Imagen 4 and save it to disk
 function getUnsplashFallbackUrl(title) {
   return new Promise((resolve) => {
@@ -1087,15 +1139,15 @@ function generateAndSaveTopicImage(title, apiKey) {
         apiRes.on('end', async () => {
           try {
             if (apiRes.statusCode !== 200) {
-              console.error(`Imagen API error during topic generation: Status ${apiRes.statusCode}. Falling back to Unsplash.`);
-              const fallbackUrl = await getUnsplashFallbackUrl(title);
+              console.error(`Imagen API error during topic generation: Status ${apiRes.statusCode}. Falling back to Pollinations.`);
+              const fallbackUrl = await getPollinationsFallbackUrl(title);
               return resolve(fallbackUrl);
             }
             const resObj = JSON.parse(body);
             const base64Image = resObj.predictions?.[0]?.bytesBase64Encoded;
             if (!base64Image) {
-              console.warn('No base64Image returned from Imagen. Falling back to Unsplash.');
-              const fallbackUrl = await getUnsplashFallbackUrl(title);
+              console.warn('No base64Image returned from Imagen. Falling back to Pollinations.');
+              const fallbackUrl = await getPollinationsFallbackUrl(title);
               return resolve(fallbackUrl);
             }
             
@@ -1109,7 +1161,7 @@ function generateAndSaveTopicImage(title, apiKey) {
             resolve(`/uploads/${filename}`);
           } catch (e) {
             console.error('Error parsing Imagen response for topic:', e);
-            const fallbackUrl = await getUnsplashFallbackUrl(title);
+            const fallbackUrl = await getPollinationsFallbackUrl(title);
             resolve(fallbackUrl);
           }
         });
@@ -1117,7 +1169,7 @@ function generateAndSaveTopicImage(title, apiKey) {
 
       apiReq.on('error', async (e) => {
         console.error('HTTP Request error for Imagen for topic:', e);
-        const fallbackUrl = await getUnsplashFallbackUrl(title);
+        const fallbackUrl = await getPollinationsFallbackUrl(title);
         resolve(fallbackUrl);
       });
 
@@ -1125,7 +1177,7 @@ function generateAndSaveTopicImage(title, apiKey) {
       apiReq.end();
     } catch (err) {
       console.error('Unexpected error in generateAndSaveTopicImage:', err);
-      getUnsplashFallbackUrl(title).then(resolve);
+      getPollinationsFallbackUrl(title).then(resolve);
     }
   });
 }
@@ -2855,22 +2907,22 @@ app.post('/api/wall/:id/generate-webtoon-image', async (req, res) => {
         try {
           if (apiRes.statusCode !== 200) {
             const errObj = JSON.parse(body);
-            console.error('Gemini Imagen error:', errObj, '. Falling back to Unsplash.');
-            const fallbackUrl = await getUnsplashFallbackUrl(cleanTitle);
+            console.error('Gemini Imagen error:', errObj, '. Falling back to Pollinations.');
+            const fallbackUrl = await getPollinationsFallbackUrl(cleanTitle);
             return res.status(200).json({ success: true, url: fallbackUrl });
           }
           const resObj = JSON.parse(body);
           const base64Image = resObj.predictions?.[0]?.bytesBase64Encoded;
           if (!base64Image) {
-            console.warn('No base64Image returned. Falling back to Unsplash.');
-            const fallbackUrl = await getUnsplashFallbackUrl(cleanTitle);
+            console.warn('No base64Image returned. Falling back to Pollinations.');
+            const fallbackUrl = await getPollinationsFallbackUrl(cleanTitle);
             return res.status(200).json({ success: true, url: fallbackUrl });
           }
           const dataUrl = `data:image/jpeg;base64,${base64Image}`;
           return res.status(200).json({ success: true, url: dataUrl });
         } catch (e) {
           console.error('JSON parse error in Gemini Imagen response:', e);
-          const fallbackUrl = await getUnsplashFallbackUrl(cleanTitle);
+          const fallbackUrl = await getPollinationsFallbackUrl(cleanTitle);
           return res.status(200).json({ success: true, url: fallbackUrl });
         }
       });
@@ -2878,7 +2930,7 @@ app.post('/api/wall/:id/generate-webtoon-image', async (req, res) => {
 
     apiReq.on('error', async (e) => {
       console.error('HTTP Request error for Gemini Imagen:', e);
-      const fallbackUrl = await getUnsplashFallbackUrl(cleanTitle);
+      const fallbackUrl = await getPollinationsFallbackUrl(cleanTitle);
       return res.status(200).json({ success: true, url: fallbackUrl });
     });
 
@@ -2888,7 +2940,7 @@ app.post('/api/wall/:id/generate-webtoon-image', async (req, res) => {
   } catch (err) {
     console.error('Error in /api/wall/:id/generate-webtoon-image:', err);
     try {
-      const fallbackUrl = await getUnsplashFallbackUrl(req.body.cleanTitle || '수업');
+      const fallbackUrl = await getPollinationsFallbackUrl(req.body.cleanTitle || '수업');
       return res.status(200).json({ success: true, url: fallbackUrl });
     } catch (fallbackErr) {
       return res.status(500).json({ error: '서버 내부 오류로 만화 생성에 실패했습니다.' });
