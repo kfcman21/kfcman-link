@@ -2684,6 +2684,45 @@ app.post('/api/wall/:id/cards/:cardId/generate-image', async (req, res) => {
   }
 });
 
+// 7.4. Upload client-generated image for a specific card
+app.post('/api/wall/:id/cards/:cardId/upload-image', async (req, res) => {
+  try {
+    const wallId = req.params.id.trim().toUpperCase();
+    const { cardId } = req.params;
+    const { image } = req.body; // base64 encoded image string
+
+    if (!image) {
+      return res.status(400).json({ error: '이미지 데이터가 누락되었습니다.' });
+    }
+
+    const wall = await db.getWall(wallId);
+    if (!wall) {
+      return res.status(404).json({ error: '존재하지 않는 게시판입니다.' });
+    }
+
+    const card = wall.cards && wall.cards[cardId];
+    if (!card) {
+      return res.status(404).json({ error: '존재하지 않는 대화방입니다.' });
+    }
+
+    const localPath = saveBase64ToDisk(image, 'jpg');
+    if (!localPath || localPath.startsWith('data:')) {
+      return res.status(500).json({ error: '이미지 저장에 실패했습니다.' });
+    }
+
+    card.image = localPath;
+    await db.save();
+
+    // Broadcast update
+    broadcastWallUpdate(wallId);
+
+    return res.status(200).json({ success: true, image: localPath });
+  } catch (err) {
+    console.error('Error uploading generated image:', err);
+    return res.status(500).json({ error: `이미지 업로드 실패: ${err.message}` });
+  }
+});
+
 // 7.5. Join a wall member slot
 app.post('/api/wall/:id/join', async (req, res) => {
   try {

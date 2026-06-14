@@ -6,6 +6,58 @@ function initWall() {
     localStorage.setItem('kfcman_wall_client_uuid', clientUuid);
   }
 
+  async function generateAndUploadImage(cardTitle, activeRoomId) {
+    try {
+      const cleanTitle = cardTitle.replace(/[^\w\sㄱ-힣]/g, '').trim();
+      const finalPrompt = `A wide landscape widescreen webtoon banner illustration representing the theme: "${cleanTitle}". Beautiful Korean webtoon art style, wide-angle view, clean line art, vivid digital coloring, expressive cartoon characters, educational and friendly classroom scene, textless, wordless, absolutely no text, no letters, no words, no writing on the image, perfectly designed as a 16:9 header banner`;
+      const encodedPrompt = encodeURIComponent(finalPrompt);
+      const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=576&nologo=true&private=true`;
+
+      console.log('Generating image on client side using Pollinations...');
+      const pollinationsRes = await fetch(url);
+      if (!pollinationsRes.ok) {
+        throw new Error(`Pollinations status ${pollinationsRes.status}`);
+      }
+
+      const blob = await pollinationsRes.blob();
+      
+      // Convert Blob to Base64 data URL
+      const base64Data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+
+      // Upload to server
+      const uploadRes = await fetch(`/api/wall/${wall.id}/cards/${activeRoomId}/upload-image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64Data })
+      });
+
+      if (!uploadRes.ok) {
+        const errObj = await uploadRes.json();
+        throw new Error(errObj.error || 'Server upload failed');
+      }
+
+      const uploadData = await uploadRes.json();
+      return uploadData.image;
+    } catch (err) {
+      console.warn('Client-side generation failed, falling back to server-side generation:', err);
+      // Fall back to server-side generation (which uses Gemini/Unsplash)
+      const serverRes = await fetch(`/api/wall/${wall.id}/cards/${activeRoomId}/generate-image`, {
+        method: 'POST'
+      });
+      if (!serverRes.ok) {
+        const errData = await serverRes.json();
+        throw new Error(errData.error || 'AI 이미지 생성에 실패했습니다.');
+      }
+      const serverData = await serverRes.json();
+      return serverData.image;
+    }
+  }
+
   // 1. Core State and Route Parsing
   const pathSegments = window.location.pathname.split('/');
   let boardId = '';
@@ -3060,16 +3112,9 @@ function initWall() {
               chatActiveRoomAiImgBtn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> <span>생성 중...</span>`;
               updateIcons();
               
-              const res = await fetch(`/api/wall/${wall.id}/cards/${activeRoom.id}/generate-image`, {
-                method: 'POST'
-              });
-              if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.error || '이미지 생성 실패');
-              }
-              const data = await res.json();
+              const imageUrl = await generateAndUploadImage(activeRoom.title, activeRoom.id);
               alert('AI 이미지가 성공적으로 생성되었습니다!');
-              activeRoom.image = data.image;
+              activeRoom.image = imageUrl;
               renderChatLayout(wall);
             } catch (err) {
               alert(err.message);
@@ -3138,17 +3183,10 @@ function initWall() {
             // Automatically trigger image generation
             try {
               console.log('Automatically generating image for card:', activeRoom.id);
-              const imgRes = await fetch(`/api/wall/${wall.id}/cards/${activeRoom.id}/generate-image`, {
-                method: 'POST'
-              });
-              if (imgRes.ok) {
-                const imgData = await imgRes.json();
-                activeRoom.image = imgData.image;
-                if (wall.cards && wall.cards[activeRoom.id]) {
-                  wall.cards[activeRoom.id].image = imgData.image;
-                }
-              } else {
-                console.error('Failed to auto-generate image on summary');
+              const imageUrl = await generateAndUploadImage(activeRoom.title, activeRoom.id);
+              activeRoom.image = imageUrl;
+              if (wall.cards && wall.cards[activeRoom.id]) {
+                wall.cards[activeRoom.id].image = imageUrl;
               }
             } catch (imgErr) {
               console.error('Failed to auto-generate image:', imgErr);
