@@ -2266,6 +2266,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mNavShortener.classList.remove('text-slate-400', 'dark:text-slate-500');
       }
       stopLivePollInterval();
+      renderDashboard(); // Populate recent links grid (create/edit/stats) on the shortener tab too
     } else if (tabId === 'projects') {
       // In projects tab, we display the recent grid under shortener section, but hide banner, categories, and highlights.
       if (shortenerSec) shortenerSec.classList.remove('hidden');
