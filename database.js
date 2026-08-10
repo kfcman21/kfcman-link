@@ -399,6 +399,20 @@ class Database {
     return results;
   }
 
+  // Update the destination URL of a link owned by the user
+  async updateLink(code, newUrl, username) {
+    const cleanUsername = username.trim().toLowerCase();
+    const link = this.getLink(code);
+    if (!link) return null;
+
+    if (link.owner !== cleanUsername) return null;
+
+    link.originalUrl = newUrl;
+    link.updatedAt = new Date().toISOString();
+    await this.save();
+    return link;
+  }
+
   // Delete a specific link owned by a user
   async deleteLink(code, username) {
     const cleanUsername = username.trim().toLowerCase();

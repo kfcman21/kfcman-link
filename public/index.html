@@ -2943,6 +2943,27 @@
     </div>
   </div>
 
+  <!-- 2.5 Edit Link Modal -->
+  <div class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" id="edit-link-modal">
+    <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg w-full max-w-md animate-scale-up text-left relative clay-card">
+      <button class="absolute right-4 top-4 w-8 h-8 rounded-lg border-2 border-white bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover" id="btn-edit-link-modal-close" type="button"><i data-lucide="x" class="w-4 h-4"></i></button>
+
+      <h3 class="text-lg font-black text-slate-900 dark:text-white mb-1">단축 링크 수정</h3>
+      <p class="text-xs text-slate-400 mb-5"><span id="edit-link-code-label">kfcman.link/CODE</span>의 연결 대상 주소를 변경합니다.</p>
+
+      <form id="edit-link-form">
+        <div class="mb-5">
+          <label class="block text-[10px] font-black text-slate-500 mb-1.5">새로운 연결 대상 URL</label>
+          <input type="text" id="edit-link-url-input" required placeholder="https://example.com/new-destination" class="w-full px-4 py-3 text-xs font-bold border-2 border-white rounded-xl bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:border-clay-purple shadow-clay-flat">
+        </div>
+        <button type="submit" class="btn w-full py-3 text-xs font-black border-4 border-white rounded-2xl bg-clay-purple hover:bg-clay-sky text-white shadow-clay-flat hover:shadow-clay-flat-hover hover:translate-x-0.5 hover:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer" id="btn-edit-link-submit">
+          <i data-lucide="save" class="w-4 h-4"></i>
+          <span>수정 사항 저장</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
   <!-- 3. Detail Click Stats Modal -->
   <div class="modal-overlay hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" id="stats-modal">
     <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg w-full max-w-2xl animate-scale-up text-left relative clay-card overflow-y-auto max-h-[90vh]">
