@@ -1,0 +1,12 @@
+{
+  "reference_id": "drdiary",
+  "description": "kfcman.link 전체 사이트 분위기를 Dr.diary(닥터다이어리) 헬스케어 브랜드 레퍼런스 톤으로 재구성",
+  "mode": "inspired",
+  "delta_set": {
+    "axes": {},
+    "voiceHints": [],
+    "matchedKeywords": [],
+    "warnings": []
+  },
+  "bootstrapped_at": "2026-08-11"
+}

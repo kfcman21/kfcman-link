@@ -5665,7 +5665,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     filteredItems.forEach(item => {
       const card = document.createElement('div');
-      card.className = 'canva-card bg-white dark:bg-[#161b26] border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col h-[280px] relative group';
+      card.className = 'canva-card bg-white dark:bg-[#161b26] border border-[#dee0e4] dark:border-white/5 rounded-2xl overflow-hidden hover:-translate-y-1 transition-all flex flex-col h-[280px] relative group';
 
       let topHtml = '';
       let bottomHtml = '';
