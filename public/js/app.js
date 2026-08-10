@@ -135,11 +135,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnDark = document.getElementById('btn-guest-theme-dark');
     if (btnLight && btnDark) {
       if (isLight) {
-        btnLight.className = "px-4 py-1.5 rounded-full text-xs font-black transition-all flex items-center gap-1 cursor-pointer bg-white text-slate-800 shadow-sm border border-slate-100";
+        btnLight.className = "px-4 py-1.5 rounded-full text-xs font-black transition-all flex items-center gap-1 cursor-pointer bg-white text-slate-800 border border-slate-100";
         btnDark.className = "px-4 py-1.5 rounded-full text-xs font-black transition-all flex items-center gap-1 cursor-pointer text-slate-450 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 border border-transparent";
       } else {
         btnLight.className = "px-4 py-1.5 rounded-full text-xs font-black transition-all flex items-center gap-1 cursor-pointer text-slate-450 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 border border-transparent";
-        btnDark.className = "px-4 py-1.5 rounded-full text-xs font-black transition-all flex items-center gap-1 cursor-pointer bg-slate-950 text-white shadow-sm border border-slate-800";
+        btnDark.className = "px-4 py-1.5 rounded-full text-xs font-black transition-all flex items-center gap-1 cursor-pointer bg-slate-950 text-white border border-slate-800";
       }
     }
   }
@@ -1760,7 +1760,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Role select dropdown
         const isRoleSelectDisabled = isSelf || (currentUserRole !== 'admin');
         const roleSelector = `
-          <select class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 px-2 py-1 rounded-xl text-xs font-black cursor-pointer text-slate-800 dark:text-slate-100 shadow-sm btn-user-change-role" data-username="${user.username}" ${isRoleSelectDisabled ? 'disabled style="opacity:0.6; pointer-events:none;"' : ''}>
+          <select class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 px-2 py-1 rounded-xl text-xs font-black cursor-pointer text-slate-800 dark:text-slate-100 btn-user-change-role" data-username="${user.username}" ${isRoleSelectDisabled ? 'disabled style="opacity:0.6; pointer-events:none;"' : ''}>
             <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>관리자 👑</option>
             <option value="manager" ${user.role === 'manager' ? 'selected' : ''}>부관리자 🛡️</option>
             <option value="vip" ${user.role === 'vip' ? 'selected' : ''}>우수회원 ⭐</option>
@@ -2979,7 +2979,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         <div class="flex gap-2 mt-4 w-full">
           ${!isExpired && !hasVoted 
-            ? `<button class="btn-vote-trigger flex-1 bg-gradient-to-r from-brand-purple to-brand-cyan hover:shadow-lg shadow-brand-purple/20 text-white font-bold text-xs py-2 rounded-lg transition-all flex items-center justify-center hover:scale-[1.01] active:scale-95 cursor-pointer h-9" data-id="${poll.id}">투표 참여하기</button>`
+            ? `<button class="btn-vote-trigger flex-1 bg-gradient-to-r from-brand-purple to-brand-cyan shadow-brand-purple/20 text-white font-bold text-xs py-2 rounded-lg transition-all flex items-center justify-center hover:scale-[1.01] active:scale-95 cursor-pointer h-9" data-id="${poll.id}">투표 참여하기</button>`
             : `<button class="btn-stats-trigger flex-1 bg-brand-green/10 border border-brand-green/20 hover:bg-brand-green/15 text-brand-green font-bold text-xs py-2 rounded-lg transition-all flex items-center justify-center hover:scale-[1.01] active:scale-95 cursor-pointer h-9" data-id="${poll.id}">${hasVoted ? '투표 완료 (결과보기)' : '결과 분석 보기'}</button>`
           }
           <button class="w-9 h-9 rounded-lg flex items-center justify-center border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 btn-share-poll active:scale-95 transition-all flex-shrink-0" data-id="${poll.id}" title="주소 공유">
@@ -3483,7 +3483,7 @@ document.addEventListener('DOMContentLoaded', () => {
               
               const floatDur = 4.5 + Math.random() * 4.5;
               const floatDelay = Math.random() * -6;
-              wordSpan.className = 'px-3.5 py-2.5 menti-word transition-all duration-300 hover:scale-125 cursor-pointer select-none font-black tracking-tight rounded-2xl bg-slate-500/5 dark:bg-white/5 border border-slate-200/10 dark:border-white/5 shadow-sm';
+              wordSpan.className = 'px-3.5 py-2.5 menti-word transition-all duration-300 hover:scale-125 cursor-pointer select-none font-black tracking-tight rounded-2xl bg-slate-500/5 dark:bg-white/5 border border-slate-200/10 dark:border-white/5';
               wordSpan.style.setProperty('--float-duration', `${floatDur}s`);
               wordSpan.style.setProperty('--float-delay', `${floatDelay}s`);
 
@@ -4267,12 +4267,12 @@ document.addEventListener('DOMContentLoaded', () => {
               <!-- Milestone Badge Above -->
               <div class="absolute bottom-full mb-4.5 flex flex-col items-center whitespace-nowrap z-20">
                 <span class="px-4 py-1.5 rounded-2xl border-2 border-white text-[19px] font-black shadow-clay-flat transition-all ${reached ? 'bg-clay-grass text-white scale-110 glow-green' : 'bg-clay-sand text-slate-500 scale-95'}">${g.temp.toFixed(0)}° - ${g.activity}</span>
-                <div class="w-3.5 h-3.5 border-r-2 border-b-2 border-white rotate-45 -mt-1.5 shadow-sm transition-all ${reached ? 'bg-clay-grass' : 'bg-clay-sand'}"></div>
+                <div class="w-3.5 h-3.5 border-r-2 border-b-2 border-white rotate-45 -mt-1.5 transition-all ${reached ? 'bg-clay-grass' : 'bg-clay-sand'}"></div>
               </div>
             ` : `
               <!-- Milestone Badge Below -->
               <div class="absolute top-full mt-4.5 flex flex-col items-center whitespace-nowrap z-20">
-                <div class="w-3.5 h-3.5 border-l-2 border-t-2 border-white rotate-45 -mb-1.5 shadow-sm transition-all ${reached ? 'bg-clay-grass' : 'bg-clay-sand'}"></div>
+                <div class="w-3.5 h-3.5 border-l-2 border-t-2 border-white rotate-45 -mb-1.5 transition-all ${reached ? 'bg-clay-grass' : 'bg-clay-sand'}"></div>
                 <span class="px-4 py-1.5 rounded-2xl border-2 border-white text-[19px] font-black shadow-clay-flat transition-all ${reached ? 'bg-clay-grass text-white scale-110 glow-green' : 'bg-clay-sand text-slate-500 scale-95'}">${g.temp.toFixed(0)}° - ${g.activity}</span>
               </div>
             `}
@@ -4280,7 +4280,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <!-- Indicator line inside track -->
             <div class="w-1 h-full border-l border-white/20 dark:border-white/10 relative">
               <!-- Interactive dot -->
-              <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full border-2 border-white transition-all shadow-md ${reached ? 'bg-white scale-125' : 'bg-slate-300 dark:bg-slate-700'}"></div>
+              <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full border-2 border-white transition-all ${reached ? 'bg-white scale-125' : 'bg-slate-300 dark:bg-slate-700'}"></div>
             </div>
           </div>
         `;
@@ -4346,7 +4346,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="h-8 w-full bg-slate-100 dark:bg-slate-950/50 border border-white/5 rounded-full relative overflow-hidden flex items-center shadow-inner">
               <!-- Rocket Engine Tail Trail (dynamic width) -->
-              <div class="h-full bg-gradient-to-r ${color} rounded-l-full flex justify-end items-center pr-3 transition-all duration-1000 ease-out shadow-lg" style="width: ${percent}%;">
+              <div class="h-full bg-gradient-to-r ${color} rounded-l-full flex justify-end items-center pr-3 transition-all duration-1000 ease-out" style="width: ${percent}%;">
                 <!-- Shiny metallic rocket cabin representation -->
                 <div class="w-5 h-5 rounded-full bg-white/30 border border-white/40 flex items-center justify-center animate-pulse">
                   <i data-lucide="rocket" class="w-3 h-3 text-white -rotate-45"></i>
@@ -4366,7 +4366,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const unpaidAchievements = Math.floor((s.unpaid || 0) / (classroomData.rules.rawToAchievementRatio || 50));
       return `
         <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat flex flex-col justify-between items-center text-center clay-card hover:scale-105 transition-all">
-          <div class="w-14 h-14 rounded-full border-2 border-white bg-slate-100 dark:bg-slate-850 text-xl font-black flex items-center justify-center shadow-sm text-slate-700 dark:text-slate-300">${s.number}</div>
+          <div class="w-14 h-14 rounded-full border-2 border-white bg-slate-100 dark:bg-slate-850 text-xl font-black flex items-center justify-center text-slate-700 dark:text-slate-300">${s.number}</div>
           ${nameText ? `<span class="text-xl font-black text-slate-800 dark:text-slate-100 mt-3 truncate w-full">${s.name}</span>` : ''}
           <div class="mt-3 text-3xl font-black text-clay-sky dark:text-clay-mint leading-none">${s.rawScore.toLocaleString()}</div>
           <div class="text-[17px] font-black text-clay-grass mt-3.5 bg-clay-grass/15 border-2 border-clay-grass/25 px-4 py-1.5 rounded-2xl">미지급 ${unpaidAchievements}</div>
@@ -4608,12 +4608,12 @@ document.addEventListener('DOMContentLoaded', () => {
               <!-- Milestone Badge Above -->
               <div class="absolute bottom-full mb-4.5 flex flex-col items-center whitespace-nowrap z-20">
                 <span class="px-4 py-1.5 rounded-2xl border-2 border-white text-[19px] font-black shadow-clay-flat transition-all ${reached ? 'bg-clay-grass text-white scale-110 glow-green' : 'bg-clay-sand text-slate-500 scale-95'}">${g.temp.toFixed(0)}° - ${g.activity}</span>
-                <div class="w-3.5 h-3.5 border-r-2 border-b-2 border-white rotate-45 -mt-1.5 shadow-sm transition-all ${reached ? 'bg-clay-grass' : 'bg-clay-sand'}"></div>
+                <div class="w-3.5 h-3.5 border-r-2 border-b-2 border-white rotate-45 -mt-1.5 transition-all ${reached ? 'bg-clay-grass' : 'bg-clay-sand'}"></div>
               </div>
             ` : `
               <!-- Milestone Badge Below -->
               <div class="absolute top-full mt-4.5 flex flex-col items-center whitespace-nowrap z-20">
-                <div class="w-3.5 h-3.5 border-l-2 border-t-2 border-white rotate-45 -mb-1.5 shadow-sm transition-all ${reached ? 'bg-clay-grass' : 'bg-clay-sand'}"></div>
+                <div class="w-3.5 h-3.5 border-l-2 border-t-2 border-white rotate-45 -mb-1.5 transition-all ${reached ? 'bg-clay-grass' : 'bg-clay-sand'}"></div>
                 <span class="px-4 py-1.5 rounded-2xl border-2 border-white text-[19px] font-black shadow-clay-flat transition-all ${reached ? 'bg-clay-grass text-white scale-110 glow-green' : 'bg-clay-sand text-slate-500 scale-95'}">${g.temp.toFixed(0)}° - ${g.activity}</span>
               </div>
             `}
@@ -4621,7 +4621,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <!-- Indicator line inside track -->
             <div class="w-1 h-full border-l border-white/20 dark:border-white/10 relative">
               <!-- Interactive dot -->
-              <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full border-2 border-white transition-all shadow-md ${reached ? 'bg-white scale-125' : 'bg-slate-300 dark:bg-slate-700'}"></div>
+              <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full border-2 border-white transition-all ${reached ? 'bg-white scale-125' : 'bg-slate-300 dark:bg-slate-700'}"></div>
             </div>
           </div>
         `;
@@ -4648,7 +4648,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Milestones List items
     milestonesListContainer.innerHTML = classroomData.goals.map(g => `
-      <div class="bg-slate-50 dark:bg-slate-950 p-3.5 border-2 border-white rounded-2xl flex justify-between items-center shadow-sm">
+      <div class="bg-slate-50 dark:bg-slate-950 p-3.5 border-2 border-white rounded-2xl flex justify-between items-center">
         <div class="flex items-center gap-3">
           <span class="text-xs font-black bg-clay-purple text-white px-2 py-0.5 rounded">${g.temp.toFixed(1)}°</span>
           <span class="text-xs font-extrabold text-slate-800 dark:text-slate-100">${g.activity}</span>
@@ -5678,21 +5678,21 @@ document.addEventListener('DOMContentLoaded', () => {
         topHtml = `
           <div class="h-36 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-4 relative overflow-hidden">
             <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
-              <button onclick="event.stopPropagation(); window.copyTextToClipboardDirect('${visualBrandUrl}', this)" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer" title="주소 복사">
+              <button onclick="event.stopPropagation(); window.copyTextToClipboardDirect('${visualBrandUrl}', this)" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer" title="주소 복사">
                 <i data-lucide="copy" class="w-4 h-4"></i>
               </button>
-              <button onclick="event.stopPropagation(); window.showStatsModalDirect('${item.id}')" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer" title="상세 통계">
+              <button onclick="event.stopPropagation(); window.showStatsModalDirect('${item.id}')" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer" title="상세 통계">
                 <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
               </button>
-              <button onclick="event.stopPropagation(); window.openEditLinkModalDirect('${item.id}', '${item.subtitle.replace(/'/g, "\\'")}')" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer" title="수정">
+              <button onclick="event.stopPropagation(); window.openEditLinkModalDirect('${item.id}', '${item.subtitle.replace(/'/g, "\\'")}')" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer" title="수정">
                 <i data-lucide="edit" class="w-4 h-4"></i>
               </button>
-              <button onclick="event.stopPropagation(); window.deleteLinkDirect('${item.id}')" class="w-9 h-9 rounded-xl bg-rose-500 text-white flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer" title="삭제">
+              <button onclick="event.stopPropagation(); window.deleteLinkDirect('${item.id}')" class="w-9 h-9 rounded-xl bg-rose-500 text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer" title="삭제">
                 <i data-lucide="trash" class="w-4 h-4"></i>
               </button>
             </div>
             <!-- Canva Mockup Document Frame -->
-            <div class="bg-white dark:bg-[#161b26] rounded-xl shadow-lg w-full h-full p-3 flex flex-col justify-between border border-white/20 select-none">
+            <div class="bg-white dark:bg-[#161b26] rounded-xl w-full h-full p-3 flex flex-col justify-between border border-white/20 select-none">
               <div class="flex justify-between items-start gap-1">
                 <div class="flex items-center gap-1 bg-violet-100 dark:bg-violet-950/50 text-violet-750 dark:text-violet-300 text-[8px] font-black px-1.5 py-0.5 rounded">
                   <i data-lucide="link-2" class="w-2.5 h-2.5"></i> 단축 주소
@@ -5730,12 +5730,12 @@ document.addEventListener('DOMContentLoaded', () => {
         topHtml = `
           <div class="h-36 bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center p-4 relative overflow-hidden">
             <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
-              <a href="/wall?id=${item.id}" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer" title="게시판 열기">
+              <a href="/wall?id=${item.id}" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer" title="게시판 열기">
                 <i data-lucide="external-link" class="w-4 h-4"></i>
               </a>
             </div>
             <!-- Canva Wall Folder Frame -->
-            <div class="bg-white dark:bg-[#161b26] rounded-xl shadow-lg w-full h-full p-3 flex flex-col justify-between border border-white/20 select-none">
+            <div class="bg-white dark:bg-[#161b26] rounded-xl w-full h-full p-3 flex flex-col justify-between border border-white/20 select-none">
               <div class="flex justify-between items-start gap-1">
                 <div class="flex items-center gap-1 bg-teal-100 dark:bg-teal-950/50 text-teal-750 dark:text-teal-300 text-[8px] font-black px-1.5 py-0.5 rounded">
                   <i data-lucide="layout-grid" class="w-2.5 h-2.5"></i> 칸반 보드
@@ -5773,15 +5773,15 @@ document.addEventListener('DOMContentLoaded', () => {
         topHtml = `
           <div class="h-36 bg-gradient-to-br from-rose-400 to-orange-500 flex items-center justify-center p-4 relative overflow-hidden">
             <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
-              <button onclick="event.stopPropagation(); window.openPollModal('${item.id}', 'vote')" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer" title="투표하기">
+              <button onclick="event.stopPropagation(); window.openPollModal('${item.id}', 'vote')" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer" title="투표하기">
                 <i data-lucide="vote" class="w-4 h-4"></i>
               </button>
-              <button onclick="event.stopPropagation(); window.openPollModal('${item.id}', 'stats')" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer" title="결과 보기">
+              <button onclick="event.stopPropagation(); window.openPollModal('${item.id}', 'stats')" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer" title="결과 보기">
                 <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
               </button>
             </div>
             <!-- Canva Poll Frame -->
-            <div class="bg-white dark:bg-[#161b26] rounded-xl shadow-lg w-full h-full p-3 flex flex-col justify-between border border-white/20 select-none">
+            <div class="bg-white dark:bg-[#161b26] rounded-xl w-full h-full p-3 flex flex-col justify-between border border-white/20 select-none">
               <div class="flex justify-between items-start gap-1">
                 <div class="flex items-center gap-1 bg-rose-100 dark:bg-rose-950/50 text-rose-750 dark:text-rose-300 text-[8px] font-black px-1.5 py-0.5 rounded">
                   <i data-lucide="vote" class="w-2.5 h-2.5"></i> 실시간 설문

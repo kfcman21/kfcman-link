@@ -700,9 +700,9 @@
   <div class="flex min-h-screen w-screen bg-slate-100 dark:bg-[#080a10] transition-colors relative">
     
     <!-- Canva Left Navigation Sidebar (Desktop only) -->
-    <aside id="left-sidebar" class="hidden lg:flex w-60 flex-col items-center justify-between border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f1422] py-6 flex-shrink-0 z-[200] relative shadow-sm">
+    <aside id="left-sidebar" class="hidden lg:flex w-60 flex-col items-center justify-between border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f1422] py-6 flex-shrink-0 z-[200] relative">
       <!-- Toggle Button -->
-      <button id="btn-sidebar-toggle" type="button" class="absolute top-6 -right-3 w-6 h-6 rounded-full bg-white dark:bg-slate-900 border border-slate-250 dark:border-slate-750 flex items-center justify-center shadow-md hover:scale-110 transition-all cursor-pointer z-50">
+      <button id="btn-sidebar-toggle" type="button" class="absolute top-6 -right-3 w-6 h-6 rounded-full bg-white dark:bg-slate-900 border border-slate-250 dark:border-slate-750 flex items-center justify-center hover:scale-110 transition-all cursor-pointer z-50">
         <i data-lucide="chevron-left" class="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" id="sidebar-toggle-icon"></i>
       </button>
 
@@ -712,7 +712,7 @@
         <div class="flex items-center justify-between select-none w-full mb-3 px-4">
           <a href="/" class="font-title flex items-center gap-3 group w-full" id="sidebar-logo">
             <!-- SVG Logo Mark -->
-            <div class="relative w-11 h-11 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shadow-sm group-hover:scale-105 group-hover:shadow-md transition-all flex-shrink-0">
+            <div class="relative w-11 h-11 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center group-hover:scale-105 group- transition-all flex-shrink-0">
               <svg class="w-9 h-9" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                   <linearGradient id="logo-grad-side-1" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -755,13 +755,13 @@
 
         <!-- Sidebar Create button -->
         <div class="w-full px-4 mb-3">
-          <button id="btn-sidebar-create" type="button" class="w-full py-3 bg-gradient-to-tr from-clay-purple to-clay-sky text-white rounded-2xl flex items-center justify-center gap-2 shadow-md hover:scale-105 transition-all cursor-pointer font-bold flex-shrink-0">
+          <button id="btn-sidebar-create" type="button" class="w-full py-3 bg-gradient-to-tr from-clay-purple to-clay-sky text-white rounded-2xl flex items-center justify-center gap-2 hover:scale-105 transition-all cursor-pointer font-bold flex-shrink-0">
             <i data-lucide="plus" class="w-5 h-5 text-white font-bold"></i>
             <span class="text-xs font-black tracking-wider sidebar-text">만들기</span>
           </button>
         </div>
 
-        <div id="create-popover" class="hidden absolute left-full ml-2 top-16 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-3 z-50 flex flex-col gap-1 w-48 text-left text-xs font-black">
+        <div id="create-popover" class="hidden absolute left-full ml-2 top-16 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl p-3 z-50 flex flex-col gap-1 w-48 text-left text-xs font-black">
           <button onclick="openShortenerModal(); document.getElementById('create-popover').classList.add('hidden');" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-800 dark:text-white cursor-pointer flex items-center gap-2">
             <i data-lucide="sparkles" class="w-4 h-4 text-violet-500"></i>
             <span>단축 URL 생성</span>
@@ -877,7 +877,7 @@
 
         <!-- Profile details -->
         <div id="sidebar-profile-group" class="hidden flex items-center gap-3 w-full px-4">
-          <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-clay-purple to-clay-sky border-2 border-white text-white flex items-center justify-center font-black text-xs shadow-sm cursor-pointer select-none flex-shrink-0" id="sidebar-profile-circle" title="프로필">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-clay-purple to-clay-sky border-2 border-white text-white flex items-center justify-center font-black text-xs cursor-pointer select-none flex-shrink-0" id="sidebar-profile-circle" title="프로필">
             서
           </div>
           <div class="flex-grow text-left leading-tight sidebar-text min-w-0">
@@ -902,13 +902,13 @@
     <div class="flex-grow flex flex-col min-h-screen overflow-x-hidden relative">
 
       <!-- Header -->
-      <header class="lg:hidden h-20 flex items-center border-b-4 border-white bg-white dark:bg-clay-night sticky top-0 z-50 transition-colors shadow-sm px-4 md:px-0">
+      <header class="lg:hidden h-20 flex items-center border-b-4 border-white bg-white dark:bg-clay-night sticky top-0 z-50 transition-colors px-4 md:px-0">
     <div class="max-w-7xl mx-auto px-4 md:px-6 w-full flex justify-between items-center">
       
       <!-- Brand Logo -->
       <a href="/" class="font-title text-2xl font-black tracking-tight flex items-center gap-2 cursor-pointer select-none group" id="logo-link">
         <!-- SVG Logo Mark -->
-        <div class="w-11 h-11 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shadow-sm group-hover:scale-105 group-hover:shadow-md transition-all flex-shrink-0">
+        <div class="w-11 h-11 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center group-hover:scale-105 group- transition-all flex-shrink-0">
           <svg class="w-9 h-9" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="logo-grad-hdr-1" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1059,7 +1059,7 @@
       
       <!-- Sleek Guest Theme Switcher -->
       <div class="flex items-center gap-1 p-1 bg-white/40 dark:bg-[#131824]/40 border-2 border-white dark:border-white/10 rounded-full shadow-clay-flat mb-8 backdrop-blur-md" id="guest-theme-switcher">
-        <button type="button" id="btn-guest-theme-light" class="px-4 py-1.5 rounded-full text-xs font-black transition-all flex items-center gap-1 cursor-pointer bg-white text-slate-800 shadow-sm border border-slate-100">
+        <button type="button" id="btn-guest-theme-light" class="px-4 py-1.5 rounded-full text-xs font-black transition-all flex items-center gap-1 cursor-pointer bg-white text-slate-800 border border-slate-100">
           <i data-lucide="sun" class="w-3.5 h-3.5 text-orange-500"></i>
           <span>라이트</span>
         </button>
@@ -1114,18 +1114,18 @@
       <section class="shortener-section scroll-mt-24" id="shortener-section">
         
         <!-- 1. Canva Gradient Banner -->
-        <div id="canva-banner" class="w-full bg-gradient-to-r from-clay-purple via-clay-sky to-clay-mint rounded-3xl p-8 md:p-12 text-center relative overflow-hidden shadow-sm mb-8">
+        <div id="canva-banner" class="w-full bg-gradient-to-r from-clay-purple via-clay-sky to-clay-mint rounded-3xl p-8 md:p-12 text-center relative overflow-hidden mb-8">
           <!-- Decorative bubble vectors -->
           <div class="absolute -left-12 -top-12 w-48 h-48 rounded-full bg-white/10 blur-xl pointer-events-none"></div>
           <div class="absolute -right-12 -bottom-12 w-64 h-64 rounded-full bg-white/10 blur-2xl pointer-events-none"></div>
 
           <div class="relative z-10 font-title">
-            <h1 class="text-3xl md:text-4xl font-black text-white drop-shadow-sm leading-tight">
+            <h1 class="text-3xl md:text-4xl font-black text-white drop- leading-tight">
               수업의 시작부터 피드백까지, 클릭 한 번으로 편리하게
             </h1>
             
             <!-- Centered Canva Search Bar -->
-            <div class="max-w-xl mx-auto mt-6 bg-white dark:bg-slate-900 border-2 border-clay-purple dark:border-slate-800 rounded-full px-5 py-3 shadow-md flex items-center gap-3 focus-within:border-clay-purple dark:focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-clay-purple/20 transition-all">
+            <div class="max-w-xl mx-auto mt-6 bg-white dark:bg-slate-900 border-2 border-clay-purple dark:border-slate-800 rounded-full px-5 py-3 flex items-center gap-3 focus-within:border-clay-purple dark:focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-clay-purple/20 transition-all">
               <i data-lucide="search" class="w-5 h-5 text-clay-purple dark:text-slate-400 flex-shrink-0"></i>
               <input type="text" id="canva-search-input" placeholder="단축주소, 목적지 링크, 여론조사 검색..." class="w-full bg-transparent border-none outline-none text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400">
             </div>
@@ -1138,7 +1138,7 @@
             
             <!-- Magic Layers / URL Shorten -->
             <button onclick="openShortenerModal()" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
-              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-[#0f6b53]/50 group-hover:to-[#1fae9a]/30 group-hover:shadow-[0_12px_24px_-8px_rgba(139,92,246,0.45)] transition-all duration-500 relative overflow-hidden">
+              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 group-hover:from-[#0f6b53]/50 group-hover:to-[#1fae9a]/30 group-hover:shadow-[0_12px_24px_-8px_rgba(139,92,246,0.45)] transition-all duration-500 relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-tr from-[#0f6b53]/0 to-[#1fae9a]/0 group-hover:from-[#0f6b53]/10 group-hover:to-[#1fae9a]/10 transition-all duration-500"></div>
                 <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
                   <svg class="w-6 h-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(139,92,246,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1158,7 +1158,7 @@
 
             <!-- Live Kanban Board -->
             <a href="/wall" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
-              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-[#0d9488]/50 group-hover:to-[#6ee7b7]/30 group-hover:shadow-[0_12px_24px_-8px_rgba(249,115,22,0.45)] transition-all duration-500 relative overflow-hidden">
+              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 group-hover:from-[#0d9488]/50 group-hover:to-[#6ee7b7]/30 group-hover:shadow-[0_12px_24px_-8px_rgba(249,115,22,0.45)] transition-all duration-500 relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-tr from-[#0d9488]/0 to-[#6ee7b7]/0 group-hover:from-[#0d9488]/10 group-hover:to-[#6ee7b7]/10 transition-all duration-500"></div>
                 <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
                   <svg class="w-6 h-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(249,115,22,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1183,7 +1183,7 @@
 
             <!-- Preference Poll -->
             <button id="btn-category-create-poll" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
-              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-[#047857]/50 group-hover:to-[#5eead4]/30 group-hover:shadow-[0_12px_24px_-8px_rgba(244,63,94,0.45)] transition-all duration-500 relative overflow-hidden">
+              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 group-hover:from-[#047857]/50 group-hover:to-[#5eead4]/30 group-hover:shadow-[0_12px_24px_-8px_rgba(244,63,94,0.45)] transition-all duration-500 relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-tr from-[#047857]/0 to-[#5eead4]/0 group-hover:from-[#047857]/10 group-hover:to-[#5eead4]/10 transition-all duration-500"></div>
                 <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
                   <svg class="w-6 h-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(244,63,94,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1205,7 +1205,7 @@
 
             <!-- Classroom Board -->
             <button onclick="switchMainTab('classroom')" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
-              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-[#15803d]/50 group-hover:to-[#86efac]/30 group-hover:shadow-[0_12px_24px_-8px_rgba(168,85,247,0.45)] transition-all duration-500 relative overflow-hidden">
+              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 group-hover:from-[#15803d]/50 group-hover:to-[#86efac]/30 group-hover:shadow-[0_12px_24px_-8px_rgba(168,85,247,0.45)] transition-all duration-500 relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-tr from-[#15803d]/0 to-[#86efac]/0 group-hover:from-[#15803d]/10 group-hover:to-[#86efac]/10 transition-all duration-500"></div>
                 <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
                   <svg class="w-6 h-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(168,85,247,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1228,7 +1228,7 @@
 
             <!-- 주제별 톡방 -->
             <a href="/chat" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
-              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-[#0e7490]/50 group-hover:to-[#6ee7b7]/30 group-hover:shadow-[0_12px_24px_-8px_rgba(234,179,8,0.45)] transition-all duration-500 relative overflow-hidden">
+              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 group-hover:from-[#0e7490]/50 group-hover:to-[#6ee7b7]/30 group-hover:shadow-[0_12px_24px_-8px_rgba(234,179,8,0.45)] transition-all duration-500 relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-tr from-[#0e7490]/0 to-[#6ee7b7]/0 group-hover:from-[#0e7490]/10 group-hover:to-[#0e7490]/10 transition-all duration-500"></div>
                 <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
                   <svg class="w-6 h-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(234,179,8,0.35)]" viewBox="0 0 24 24" fill="none" xmlns="http://www/w3.org/2000/svg">
@@ -1248,7 +1248,7 @@
 
             <!-- Quick QR -->
             <button id="btn-category-qr" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
-              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-[#059669]/50 group-hover:to-[#67e8f9]/30 group-hover:shadow-[0_12px_24px_-8px_rgba(59,130,246,0.45)] transition-all duration-500 relative overflow-hidden">
+              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 group-hover:from-[#059669]/50 group-hover:to-[#67e8f9]/30 group-hover:shadow-[0_12px_24px_-8px_rgba(59,130,246,0.45)] transition-all duration-500 relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-tr from-[#059669]/0 to-[#67e8f9]/0 group-hover:from-[#059669]/10 group-hover:to-[#059669]/10 transition-all duration-500"></div>
                 <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
                   <svg class="w-6 h-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1279,7 +1279,7 @@
 
             <!-- Stats Dashboard -->
             <button onclick="switchMainTab('projects')" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
-              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-[#065f46]/50 group-hover:to-[#67e8f9]/30 group-hover:shadow-[0_12px_24px_-8px_rgba(14,165,233,0.45)] transition-all duration-500 relative overflow-hidden">
+              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 group-hover:from-[#065f46]/50 group-hover:to-[#67e8f9]/30 group-hover:shadow-[0_12px_24px_-8px_rgba(14,165,233,0.45)] transition-all duration-500 relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-tr from-[#065f46]/0 to-[#67e8f9]/0 group-hover:from-[#065f46]/10 group-hover:to-[#67e8f9]/10 transition-all duration-500"></div>
                 <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
                   <svg class="w-6 h-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(14,165,233,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1301,7 +1301,7 @@
 
             <!-- Settings -->
             <button onclick="switchMainTab('settings')" class="flex flex-col items-center gap-2 hover:scale-[1.02] transition-all cursor-pointer group">
-              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 shadow-md group-hover:from-slate-500/50 group-hover:to-slate-600/30 group-hover:shadow-[0_12px_24px_-8px_rgba(100,116,139,0.45)] transition-all duration-500 relative overflow-hidden">
+              <div class="w-14 h-14 rounded-2xl p-[1px] bg-gradient-to-br from-slate-200/80 to-slate-350/50 dark:from-slate-800/60 dark:to-slate-700/30 group-hover:from-slate-500/50 group-hover:to-slate-600/30 group-hover:shadow-[0_12px_24px_-8px_rgba(100,116,139,0.45)] transition-all duration-500 relative overflow-hidden">
                 <div class="absolute inset-0 bg-gradient-to-tr from-slate-500/0 to-slate-600/0 group-hover:from-slate-500/10 group-hover:to-slate-600/10 transition-all duration-500"></div>
                 <div class="w-full h-full rounded-[15px] bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center transition-colors duration-300">
                   <svg class="w-6 h-6 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300 filter drop-shadow-[0_0_8px_rgba(100,116,139,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1330,7 +1330,7 @@
           <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 mb-4 tracking-tight">하이라이트</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             
-            <button onclick="openShortenerModal()" class="w-full text-left rounded-2xl bg-gradient-to-br from-[#0f6b53] to-[#1fae9a] text-white p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all flex flex-col justify-between h-36 relative overflow-hidden group cursor-pointer border border-white/10">
+            <button onclick="openShortenerModal()" class="w-full text-left rounded-2xl bg-gradient-to-br from-[#0f6b53] to-[#1fae9a] text-white p-5 hover:scale-[1.01] transition-all flex flex-col justify-between h-36 relative overflow-hidden group cursor-pointer border border-white/10">
               <div class="absolute right-0 bottom-0 translate-x-4 translate-y-4 opacity-15 group-hover:scale-110 group-hover:rotate-[-6deg] transition-all duration-700 ease-out">
                 <svg class="w-24 h-24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M9 17H7A5 5 0 0 1 7 7H9" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
@@ -1351,7 +1351,7 @@
               </div>
             </button>
 
-            <a href="/wall" class="w-full text-left rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all flex flex-col justify-between h-36 relative overflow-hidden group cursor-pointer border border-white/10">
+            <a href="/wall" class="w-full text-left rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white p-5 hover:scale-[1.01] transition-all flex flex-col justify-between h-36 relative overflow-hidden group cursor-pointer border border-white/10">
               <div class="absolute right-0 bottom-0 translate-x-4 translate-y-4 opacity-15 group-hover:scale-110 group-hover:rotate-[-6deg] transition-all duration-700 ease-out">
                 <svg class="w-24 h-24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <rect x="3" y="3" width="5" height="18" rx="1.5" stroke="white" stroke-width="1.5"/>
@@ -1375,7 +1375,7 @@
               </div>
             </a>
 
-            <button id="btn-highlight-create-poll" class="w-full text-left rounded-2xl bg-gradient-to-br from-[#1fae9a] to-[#2ec4b6] text-white p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all flex flex-col justify-between h-36 relative overflow-hidden group cursor-pointer border border-white/10">
+            <button id="btn-highlight-create-poll" class="w-full text-left rounded-2xl bg-gradient-to-br from-[#1fae9a] to-[#2ec4b6] text-white p-5 hover:scale-[1.01] transition-all flex flex-col justify-between h-36 relative overflow-hidden group cursor-pointer border border-white/10">
               <div class="absolute right-0 bottom-0 translate-x-4 translate-y-4 opacity-15 group-hover:scale-110 group-hover:rotate-[-6deg] transition-all duration-700 ease-out">
                 <svg class="w-24 h-24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M4 9C4 7.89543 4.89543 7 6 7H18C19.1046 7 20 7.89543 20 9V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V9Z" stroke="white" stroke-width="1.5"/>
@@ -1394,7 +1394,7 @@
               </div>
             </button>
 
-            <button onclick="switchMainTab('classroom')" class="w-full text-left rounded-2xl bg-gradient-to-br from-[#065f46] to-[#0f6b53] text-white p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all flex flex-col justify-between h-36 relative overflow-hidden group cursor-pointer border border-white/10">
+            <button onclick="switchMainTab('classroom')" class="w-full text-left rounded-2xl bg-gradient-to-br from-[#065f46] to-[#0f6b53] text-white p-5 hover:scale-[1.01] transition-all flex flex-col justify-between h-36 relative overflow-hidden group cursor-pointer border border-white/10">
               <div class="absolute right-0 bottom-0 translate-x-4 translate-y-4 opacity-15 group-hover:scale-110 group-hover:rotate-[-6deg] transition-all duration-700 ease-out">
                 <svg class="w-24 h-24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <circle cx="12" cy="10" r="6" stroke="white" stroke-width="1.5"/>
@@ -1469,13 +1469,13 @@
         </div>
 
         <!-- Feature Unlock Progress Board (Multi-Tier) -->
-        <div class="hidden bg-gradient-to-r from-[#0f6b53]/10 via-[#1fae9a]/10 to-[#2ec4b6]/10 dark:from-[#0f6b53]/20 dark:via-[#1fae9a]/20 dark:to-[#2ec4b6]/20 border-4 border-dashed border-[#0f6b53]/40 rounded-3xl p-6 mb-8 text-left shadow-sm relative overflow-hidden" id="vip-promotion-card">
+        <div class="hidden bg-gradient-to-r from-[#0f6b53]/10 via-[#1fae9a]/10 to-[#2ec4b6]/10 dark:from-[#0f6b53]/20 dark:via-[#1fae9a]/20 dark:to-[#2ec4b6]/20 border-4 border-dashed border-[#0f6b53]/40 rounded-3xl p-6 mb-8 text-left relative overflow-hidden" id="vip-promotion-card">
           <div class="absolute right-0 top-0 translate-x-4 -translate-y-4 opacity-10"><i data-lucide="sparkles" class="w-48 h-48 text-[#0f6b53] animate-pulse"></i></div>
           <div class="relative z-10 space-y-6">
             
             <!-- Header Info -->
             <div class="space-y-1.5">
-              <span class="bg-purple-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full inline-flex items-center gap-1 shadow-sm"><i data-lucide="trending-up" class="w-3 h-3"></i> 프리미엄 기능 활성화 로드맵</span>
+              <span class="bg-purple-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full inline-flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i> 프리미엄 기능 활성화 로드맵</span>
               <h3 class="text-lg font-black text-slate-900 dark:text-[#86efac]">단축 링크를 적극 활용하고 <span class="underline decoration-wavy decoration-[#0f6b53] font-extrabold text-[#0f6b53] dark:text-[#5eead4]">프리미엄 기능</span>을 해제하세요!</h3>
               <p class="text-xs font-bold text-slate-500 dark:text-slate-400 leading-relaxed">
                 kfcman.link는 사용자의 서비스 사용 실적(단축 주소 등록 수 또는 클릭 횟수 중 높은 값)에 따라 실시간으로 고급 기능이 즉시 활성화됩니다!
@@ -1486,7 +1486,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               <!-- Tier 1: Survey (Polls) -->
-              <div class="bg-white/80 dark:bg-slate-900/80 border-2 border-slate-200 dark:border-white/5 p-4 rounded-2xl flex flex-col justify-between shadow-sm relative overflow-hidden" id="promo-tier-polls">
+              <div class="bg-white/80 dark:bg-slate-900/80 border-2 border-slate-200 dark:border-white/5 p-4 rounded-2xl flex flex-col justify-between relative overflow-hidden" id="promo-tier-polls">
                 <div>
                   <div class="flex justify-between items-center mb-1">
                     <span class="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
@@ -1509,7 +1509,7 @@
               </div>
 
               <!-- Tier 2: Classroom (Eusseuk) -->
-              <div class="bg-white/80 dark:bg-slate-900/80 border-2 border-slate-200 dark:border-white/5 p-4 rounded-2xl flex flex-col justify-between shadow-sm relative overflow-hidden" id="promo-tier-classroom">
+              <div class="bg-white/80 dark:bg-slate-900/80 border-2 border-slate-200 dark:border-white/5 p-4 rounded-2xl flex flex-col justify-between relative overflow-hidden" id="promo-tier-classroom">
                 <div>
                   <div class="flex justify-between items-center mb-1">
                     <span class="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
@@ -1607,7 +1607,7 @@
             <p class="text-xs font-bold text-slate-500 mt-1">비회원도 공유 링크를 타고 들어와 즉각 클릭 투표가 가능한 실시간 피드입니다.</p>
           </div>
           
-          <button class="btn px-4 py-2.5 text-xs font-black border-2 border-white rounded-xl bg-gradient-to-r from-clay-purple to-clay-sky text-white shadow-clay-flat hover:shadow-lg hover:shadow-clay-sky/20 hover:translate-x-0.5 hover:translate-y-0.5 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5 cursor-pointer" id="btn-create-poll-toggle">
+          <button class="btn px-4 py-2.5 text-xs font-black border-2 border-white rounded-xl bg-gradient-to-r from-clay-purple to-clay-sky text-white shadow-clay-flat hover:shadow-clay-sky/20 hover:translate-x-0.5 hover:translate-y-0.5 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-1.5 cursor-pointer" id="btn-create-poll-toggle">
             <i data-lucide="plus-circle" class="w-4 h-4 text-white"></i>
             <span class="flex items-center gap-0.5 text-white">
               <span>New</span>
@@ -1882,11 +1882,11 @@
           </div>
 
           <!-- Guidance Alert for initial/example class setup (Hidden by default) -->
-          <div class="hidden bg-gradient-to-r from-amber-500/10 to-orange-500/10 dark:from-amber-950/20 dark:to-orange-950/20 border-4 border-dashed border-amber-400/40 rounded-3xl p-6 mb-6 text-left shadow-sm relative overflow-hidden animate-pulse" id="class-initial-guidance-card">
+          <div class="hidden bg-gradient-to-r from-amber-500/10 to-orange-500/10 dark:from-amber-950/20 dark:to-orange-950/20 border-4 border-dashed border-amber-400/40 rounded-3xl p-6 mb-6 text-left relative overflow-hidden animate-pulse" id="class-initial-guidance-card">
             <div class="absolute right-0 top-0 translate-x-4 -translate-y-4 opacity-10"><i data-lucide="help-circle" class="w-48 h-48 text-amber-500"></i></div>
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
               <div class="space-y-1.5 max-w-3xl">
-                <span class="bg-amber-500 text-black text-[9px] font-black px-2 py-0.5 rounded-full inline-flex items-center gap-1 shadow-sm"><i data-lucide="help-circle" class="w-3 h-3"></i> 신규 운영 가이드</span>
+                <span class="bg-amber-500 text-black text-[9px] font-black px-2 py-0.5 rounded-full inline-flex items-center gap-1"><i data-lucide="help-circle" class="w-3 h-3"></i> 신규 운영 가이드</span>
                 <h3 class="text-base font-black text-amber-950 dark:text-amber-300">실제 우리 반 학급 운영을 온전히 시작해보세요! 🚀</h3>
                 <p class="text-xs font-bold text-slate-500 dark:text-slate-400 leading-relaxed">
                   현재 표시된 화면은 <strong>예시 학급</strong> 상태입니다. 실제 우리 반 학생들을 등록하고 점수 환산 규칙을 적용하여 실시간 피드백을 주시려면, 우측 상단 ⚙️ <strong>설정 -> [으쓱점수 설정]</strong> 메뉴에서 학생 목록을 등록(일괄 생성)하고 학급 이름을 새롭게 지정해 주세요!
@@ -1928,7 +1928,7 @@
                     <!-- The Track -->
                     <div class="w-full h-12 bg-slate-100 dark:bg-slate-950/60 border-4 border-white rounded-full relative shadow-inner overflow-visible">
                       <!-- Filled progress bar -->
-                      <div id="dash-temp-progress-bar" class="h-full bg-gradient-to-r from-clay-sky via-clay-grass to-clay-purple rounded-full transition-all duration-1000 ease-out shadow-lg" style="width: 0%;"></div>
+                      <div id="dash-temp-progress-bar" class="h-full bg-gradient-to-r from-clay-sky via-clay-grass to-clay-purple rounded-full transition-all duration-1000 ease-out" style="width: 0%;"></div>
                       
                       <!-- Milestone Markers Container (Dynamic content) -->
                       <div id="dash-temp-milestones-container" class="absolute top-0 left-0 w-full h-full pointer-events-none">
@@ -2067,7 +2067,7 @@
                     <!-- The Track -->
                     <div class="w-full h-12 bg-slate-100 dark:bg-slate-950/60 border-4 border-white rounded-full relative shadow-inner overflow-visible">
                       <!-- Filled progress bar -->
-                      <div id="detail-temp-progress-bar" class="h-full bg-gradient-to-r from-clay-sky via-clay-grass to-clay-purple rounded-full transition-all duration-1000 ease-out shadow-lg" style="width: 0%;"></div>
+                      <div id="detail-temp-progress-bar" class="h-full bg-gradient-to-r from-clay-sky via-clay-grass to-clay-purple rounded-full transition-all duration-1000 ease-out" style="width: 0%;"></div>
                       
                       <!-- Milestone Markers Container (Dynamic content) -->
                       <div id="detail-temp-milestones-container" class="absolute top-0 left-0 w-full h-full pointer-events-none">
@@ -2230,7 +2230,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 text-left">
           <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-5 shadow-clay-flat-lg clay-card flex flex-col justify-between">
             <div class="flex items-center gap-3 mb-3">
-              <div class="w-10 h-10 rounded-xl border-2 border-white bg-amber-500 text-slate-950 flex items-center justify-center shadow-md">
+              <div class="w-10 h-10 rounded-xl border-2 border-white bg-amber-500 text-slate-950 flex items-center justify-center">
                 <i data-lucide="hourglass" class="w-5 h-5"></i>
               </div>
               <div>
@@ -2496,9 +2496,9 @@
                </p>
                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <!-- Eusseuk Toggle -->
-                 <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white p-4 rounded-2xl flex justify-between items-center shadow-sm">
+                 <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white p-4 rounded-2xl flex justify-between items-center">
                    <div class="flex items-center gap-2">
-                     <div class="w-9 h-9 rounded-xl border-2 border-white bg-clay-purple text-white flex items-center justify-center shadow-sm"><i data-lucide="award" class="w-4 h-4"></i></div>
+                     <div class="w-9 h-9 rounded-xl border-2 border-white bg-clay-purple text-white flex items-center justify-center"><i data-lucide="award" class="w-4 h-4"></i></div>
                      <div class="text-left">
                        <span class="text-xs font-black text-slate-800 dark:text-slate-200 block font-sans">으쓱점수 기능 활성화</span>
                        <span class="text-[9px] font-bold text-slate-400">학급 온도계 및 학생 카드 활성</span>
@@ -2511,9 +2511,9 @@
                  </div>
                  
                  <!-- Poll Toggle -->
-                 <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white p-4 rounded-2xl flex justify-between items-center shadow-sm">
+                 <div class="bg-slate-50 dark:bg-slate-950 border-2 border-white p-4 rounded-2xl flex justify-between items-center">
                    <div class="flex items-center gap-2">
-                     <div class="w-9 h-9 rounded-xl border-2 border-white bg-clay-sky text-white flex items-center justify-center shadow-sm"><i data-lucide="bar-chart-2" class="w-4 h-4"></i></div>
+                     <div class="w-9 h-9 rounded-xl border-2 border-white bg-clay-sky text-white flex items-center justify-center"><i data-lucide="bar-chart-2" class="w-4 h-4"></i></div>
                      <div class="text-left">
                        <span class="text-xs font-black text-slate-800 dark:text-slate-200 block font-sans">선호도 설문 기능 활성화</span>
                        <span class="text-[9px] font-bold text-slate-400">의견 조사 및 투표 탭 활성</span>
@@ -2535,7 +2535,7 @@
                </p>
                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                  <!-- Light Mode Option -->
-                 <label class="border-2 border-white rounded-2xl p-4 bg-slate-50 dark:bg-slate-950 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900/50 transition-all shadow-sm">
+                 <label class="border-2 border-white rounded-2xl p-4 bg-slate-50 dark:bg-slate-950 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900/50 transition-all">
                    <div class="flex items-center gap-3">
                      <div class="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-500 flex items-center justify-center"><i data-lucide="sun" class="w-4.5 h-4.5"></i></div>
                      <span class="text-xs font-black text-slate-800 dark:text-slate-200">라이트 모드 (Light)</span>
@@ -2544,7 +2544,7 @@
                  </label>
                  
                  <!-- Dark Mode Option -->
-                 <label class="border-2 border-white rounded-2xl p-4 bg-slate-50 dark:bg-slate-950 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900/50 transition-all shadow-sm">
+                 <label class="border-2 border-white rounded-2xl p-4 bg-slate-50 dark:bg-slate-950 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900/50 transition-all">
                    <div class="flex items-center gap-3">
                      <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center"><i data-lucide="moon" class="w-4.5 h-4.5"></i></div>
                      <span class="text-xs font-black text-slate-800 dark:text-slate-200">다크 모드 (Dark)</span>
@@ -2775,9 +2775,9 @@
 
   <!-- 0. Canva Style URL Shortener Modal -->
   <div class="modal-overlay hidden fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm animate-fade-in" id="shortener-modal">
-    <div class="bg-white dark:bg-[#161b26] w-full h-full p-6 md:p-10 shadow-lg animate-scale-up text-left relative overflow-y-auto flex flex-col justify-start" id="shortener-modal-content">
+    <div class="bg-white dark:bg-[#161b26] w-full h-full p-6 md:p-10 animate-scale-up text-left relative overflow-y-auto flex flex-col justify-start" id="shortener-modal-content">
       <div class="max-w-7xl mx-auto w-full relative pt-6">
-      <button class="absolute right-0 top-0 w-8 h-8 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer shadow-sm z-20" id="btn-shortener-modal-close" type="button">
+      <button class="absolute right-0 top-0 w-8 h-8 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer z-20" id="btn-shortener-modal-close" type="button">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
       
@@ -2799,7 +2799,7 @@
         </div>
 
         <!-- Usage Limit Tracker (For Regular Members) -->
-        <div id="usage-limit-container" class="hidden mb-6 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 text-left shadow-sm">
+        <div id="usage-limit-container" class="hidden mb-6 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-4 text-left">
           <div class="flex justify-between items-center text-xs mb-1.5">
             <span class="font-extrabold text-slate-500 dark:text-slate-400">단축 주소 생성 한도 (최대 50회)</span>
             <span class="font-black text-clay-purple dark:text-clay-mint text-xs" id="usage-limit-text">0 / 50 개 사용됨</span>
@@ -2854,7 +2854,7 @@
               <span class="text-[9px] font-black text-slate-400">브랜드 단축 URL</span>
               <span class="text-xs font-black text-clay-sky dark:text-clay-mint truncate mt-0.5" id="brand-url-display">http://kfcman.link/code</span>
             </div>
-            <button class="w-9 h-9 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-black dark:text-white hover:bg-slate-100 flex items-center justify-center shadow-sm flex-shrink-0 cursor-pointer" id="btn-copy-brand" title="주소 복사">
+            <button class="w-9 h-9 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-black dark:text-white hover:bg-slate-100 flex items-center justify-center flex-shrink-0 cursor-pointer" id="btn-copy-brand" title="주소 복사">
               <i data-lucide="copy" class="w-3.5 h-3.5"></i>
             </button>
           </div>
@@ -2865,18 +2865,18 @@
               <span class="text-[9px] font-black text-slate-400">로컬 URL</span>
               <span class="text-xs font-black text-clay-purple dark:text-clay-mint truncate mt-0.5" id="local-url-display">http://localhost:3000/code</span>
             </div>
-            <button class="w-9 h-9 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-black dark:text-white hover:bg-slate-100 flex items-center justify-center shadow-sm flex-shrink-0 cursor-pointer" id="btn-copy-local" title="주소 복사">
+            <button class="w-9 h-9 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-black dark:text-white hover:bg-slate-100 flex items-center justify-center flex-shrink-0 cursor-pointer" id="btn-copy-local" title="주소 복사">
               <i data-lucide="copy" class="w-3.5 h-3.5"></i>
             </button>
           </div>
         </div>
 
         <div class="mt-6 flex gap-2.5 justify-center">
-          <button class="btn flex-1 py-2.5 text-xs font-black border border-slate-250 rounded-xl bg-clay-toy hover:bg-amber-400 text-black shadow-sm flex items-center justify-center gap-1 cursor-pointer" id="btn-qr-trigger">
+          <button class="btn flex-1 py-2.5 text-xs font-black border border-slate-250 rounded-xl bg-clay-toy hover:bg-amber-400 text-black flex items-center justify-center gap-1 cursor-pointer" id="btn-qr-trigger">
             <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
             <span>QR코드 다운</span>
           </button>
-          <button class="btn flex-1 py-2.5 text-xs font-black border border-slate-250 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-100 flex items-center justify-center gap-1 shadow-sm cursor-pointer" id="btn-reset">
+          <button class="btn flex-1 py-2.5 text-xs font-black border border-slate-250 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-100 flex items-center justify-center gap-1 cursor-pointer" id="btn-reset">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
             <span>새 주소 생성</span>
           </button>
@@ -3403,7 +3403,7 @@
 
 
   <!-- Mobile Bottom Navigation (Visible only on mobile/tablet) -->
-  <div class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-[#161b26]/95 backdrop-blur-md border-t-2 border-white px-4 py-3 flex justify-around items-center shadow-lg transition-all">
+  <div class="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-[#161b26]/95 backdrop-blur-md border-t-2 border-white px-4 py-3 flex justify-around items-center transition-all">
     
     <!-- 1. Guest Nav Group (Visible when logged out) -->
     <div id="mobile-nav-guest-group" class="flex justify-around items-center w-full">
