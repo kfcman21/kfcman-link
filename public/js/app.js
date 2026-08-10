@@ -5684,6 +5684,9 @@ document.addEventListener('DOMContentLoaded', () => {
               <button onclick="event.stopPropagation(); window.showStatsModalDirect('${item.id}')" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer" title="상세 통계">
                 <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
               </button>
+              <button onclick="event.stopPropagation(); window.openEditLinkModalDirect('${item.id}', '${item.subtitle.replace(/'/g, "\\'")}')" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer" title="수정">
+                <i data-lucide="edit" class="w-4 h-4"></i>
+              </button>
               <button onclick="event.stopPropagation(); window.deleteLinkDirect('${item.id}')" class="w-9 h-9 rounded-xl bg-rose-500 text-white flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer" title="삭제">
                 <i data-lucide="trash" class="w-4 h-4"></i>
               </button>
@@ -5842,6 +5845,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.copyTextToClipboardDirect = (text, btn) => {
     copyTextToClipboard(text, btn);
+  };
+
+  window.openEditLinkModalDirect = (code, url) => {
+    openEditLinkModal(code, url);
   };
 
   window.deleteLinkDirect = async (code) => {
