@@ -94,6 +94,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const qrCanvas = document.getElementById('qr-canvas');
   const btnQrDownload = document.getElementById('btn-qr-download');
   
+  const editLinkModal = document.getElementById('edit-link-modal');
+  const btnEditLinkModalClose = document.getElementById('btn-edit-link-modal-close');
+  const editLinkCodeLabel = document.getElementById('edit-link-code-label');
+  const editLinkUrlInput = document.getElementById('edit-link-url-input');
+  const editLinkForm = document.getElementById('edit-link-form');
+  const btnEditLinkSubmit = document.getElementById('btn-edit-link-submit');
+  let editingLinkCode = null;
+
   const statsModal = document.getElementById('stats-modal');
   const btnStatsModalClose = document.getElementById('btn-stats-modal-close');
   const statsModalCode = document.getElementById('stats-modal-code');
@@ -1089,6 +1097,9 @@ document.addEventListener('DOMContentLoaded', () => {
               <button class="btn-action-icon btn-table-stats" data-code="${link.code}" title="상세 통계">
                 <i data-lucide="bar-chart-3"></i>
               </button>
+              <button class="btn-action-icon btn-table-edit" data-code="${link.code}" data-url="${link.originalUrl}" title="수정">
+                <i data-lucide="edit"></i>
+              </button>
               <button class="btn-action-icon btn-table-delete" data-code="${link.code}" title="삭제" style="color: rgba(239, 68, 68, 0.65);">
                 <i data-lucide="trash"></i>
               </button>
@@ -1148,6 +1159,13 @@ document.addEventListener('DOMContentLoaded', () => {
       button.addEventListener('click', () => {
         const code = button.getAttribute('data-code');
         showStatsModal(code);
+      });
+    });
+
+    document.querySelectorAll('.btn-table-edit').forEach(button => {
+      button.addEventListener('click', () => {
+        const code = button.getAttribute('data-code');
+        openEditLinkModal(code, button.getAttribute('data-url'));
       });
     });
 
@@ -1271,6 +1289,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnStatsModalClose.addEventListener('click', () => {
     statsModal.classList.add('hidden');
+  });
+
+  // --- 12.5 Edit Link Modal ---
+  function openEditLinkModal(code, currentUrl) {
+    editingLinkCode = code;
+    editLinkCodeLabel.textContent = `kfcman.link/${code}`;
+    editLinkUrlInput.value = currentUrl || '';
+    editLinkModal.classList.remove('hidden');
+    editLinkUrlInput.focus();
+  }
+
+  btnEditLinkModalClose.addEventListener('click', () => {
+    editLinkModal.classList.add('hidden');
+    editingLinkCode = null;
+  });
+
+  editLinkForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!editingLinkCode) return;
+
+    const newUrl = editLinkUrlInput.value.trim();
+    if (!newUrl) return;
+
+    btnEditLinkSubmit.disabled = true;
+    const btnSpan = btnEditLinkSubmit.querySelector('span');
+    if (btnSpan) btnSpan.textContent = '저장 중...';
+
+    try {
+      const response = await secureFetch(`/api/links/${editingLinkCode}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: newUrl })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      showToast('수정 완료', '단축 링크의 연결 대상이 성공적으로 변경되었습니다.', 'success');
+      editLinkModal.classList.add('hidden');
+      editingLinkCode = null;
+      renderDashboard();
+    } catch (err) {
+      if (err.message !== 'Unauthorized') {
+        showToast('수정 실패', err.message, 'error');
+      }
+    } finally {
+      btnEditLinkSubmit.disabled = false;
+      if (btnSpan) btnSpan.textContent = '수정 사항 저장';
+    }
   });
 
   // Reset entire dashboard

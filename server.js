@@ -1517,6 +1517,50 @@ app.get('/api/stats/:code', authenticate, (req, res) => {
   return res.status(200).json({ link });
 });
 
+// Endpoint: Update an individual link's destination URL (Auth & Ownership Required!)
+app.put('/api/links/:code', authenticate, async (req, res) => {
+  const { code } = req.params;
+  let { url } = req.body;
+
+  if (!url) {
+    return res.status(400).json({ error: 'URL은 필수 입력 항목입니다.' });
+  }
+
+  if (!/^https?:\/\//i.test(url)) {
+    url = 'http://' + url;
+  }
+
+  if (!isValidUrl(url)) {
+    return res.status(400).json({ error: '올바른 HTTP 또는 HTTPS URL 주소를 입력해 주세요.' });
+  }
+
+  if (isHarmfulUrl(url)) {
+    return res.status(400).json({
+      error: '유해 사이트(음란물, 불법 도박, 저작권 침해 사이트 등)는 단축 주소 공유 금지 원칙에 따라 링크를 생성할 수 없습니다.'
+    });
+  }
+
+  try {
+    const updated = await db.updateLink(code, url, req.username);
+    if (!updated) {
+      return res.status(403).json({ error: '링크 수정 권한이 없거나 존재하지 않는 링크입니다.' });
+    }
+    return res.status(200).json({
+      message: '단축 링크가 성공적으로 수정되었습니다.',
+      link: {
+        code: updated.code,
+        originalUrl: updated.originalUrl,
+        createdAt: updated.createdAt,
+        updatedAt: updated.updatedAt,
+        clicks: updated.clicks
+      }
+    });
+  } catch (err) {
+    console.error('Error updating link:', err);
+    return res.status(500).json({ error: '단축 링크 수정 도중 오류가 발생했습니다.' });
+  }
+});
+
 // Endpoint: Delete an individual link (Auth & Ownership Required!)
 app.delete('/api/links/:code', authenticate, async (req, res) => {
   const { code } = req.params;
