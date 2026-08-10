@@ -627,6 +627,67 @@ app.get('/api/admin/users/:username/usage', authenticate, requireAdmin, (req, re
 });
 
 
+// Endpoint: Get every shortened link across all users (Admin Only)
+app.get('/api/admin/links', authenticate, requireAdmin, (req, res) => {
+  try {
+    const links = db.getAllLinks();
+    return res.status(200).json({ links });
+  } catch (err) {
+    console.error('Error fetching all links:', err);
+    return res.status(500).json({ error: '전체 링크 목록을 불러오는데 실패했습니다.' });
+  }
+});
+
+// Endpoint: Update any user's link destination URL (Admin Only, bypasses ownership)
+app.put('/api/admin/links/:code', authenticate, requireAdmin, async (req, res) => {
+  const { code } = req.params;
+  let { url } = req.body;
+
+  if (!url) {
+    return res.status(400).json({ error: 'URL은 필수 입력 항목입니다.' });
+  }
+
+  if (!/^https?:\/\//i.test(url)) {
+    url = 'http://' + url;
+  }
+
+  if (!isValidUrl(url)) {
+    return res.status(400).json({ error: '올바른 HTTP 또는 HTTPS URL 주소를 입력해 주세요.' });
+  }
+
+  if (isHarmfulUrl(url)) {
+    return res.status(400).json({
+      error: '유해 사이트(음란물, 불법 도박, 저작권 침해 사이트 등)는 단축 주소 공유 금지 원칙에 따라 링크를 생성할 수 없습니다.'
+    });
+  }
+
+  try {
+    const updated = await db.adminUpdateLink(code, url);
+    if (!updated) {
+      return res.status(404).json({ error: '존재하지 않는 링크입니다.' });
+    }
+    return res.status(200).json({ message: '단축 링크가 관리자 권한으로 수정되었습니다.', link: updated });
+  } catch (err) {
+    console.error('Error updating link (admin):', err);
+    return res.status(500).json({ error: '단축 링크 수정 도중 오류가 발생했습니다.' });
+  }
+});
+
+// Endpoint: Delete any user's link (Admin Only, bypasses ownership)
+app.delete('/api/admin/links/:code', authenticate, requireAdmin, async (req, res) => {
+  const { code } = req.params;
+  try {
+    const deleted = await db.adminDeleteLink(code);
+    if (!deleted) {
+      return res.status(404).json({ error: '존재하지 않는 링크입니다.' });
+    }
+    return res.status(200).json({ message: '단축 링크가 관리자 권한으로 삭제되었습니다.' });
+  } catch (err) {
+    console.error('Error deleting link (admin):', err);
+    return res.status(500).json({ error: '단축 링크 삭제 도중 오류가 발생했습니다.' });
+  }
+});
+
 // Endpoint: Toggle user block/active status (Admin Only)
 app.post('/api/admin/users/toggle-block', authenticate, requireAdmin, async (req, res) => {
   const { username } = req.body;

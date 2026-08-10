@@ -2305,6 +2305,43 @@
           </div>
         </div>
 
+        <!-- Full-width: All members' shortened links management -->
+        <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card text-left mb-8">
+          <div class="flex justify-between items-center border-b-2 border-white pb-3 mb-4 flex-wrap gap-3">
+            <div class="flex items-center gap-2">
+              <i data-lucide="link-2" class="text-clay-mint w-5 h-5"></i>
+              <h3 class="text-base font-black text-slate-900 dark:text-white">전체 회원 단축 링크 관리</h3>
+              <span class="text-[10px] font-black text-slate-400" id="admin-links-count-label"></span>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="text" id="admin-links-search" placeholder="코드, 원본 URL, 소유자로 검색" class="bg-white dark:bg-clay-card border-2 border-white rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-white w-56">
+              <button class="w-8 h-8 rounded-lg border-2 border-white bg-slate-100 dark:bg-slate-800 text-black dark:text-white hover:bg-slate-200 flex items-center justify-center cursor-pointer shadow-clay-flat hover:shadow-clay-flat-hover" id="btn-refresh-admin-links" title="전체 링크 목록 새로고침"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto w-full">
+            <table class="w-full text-xs">
+              <thead>
+                <tr class="bg-slate-100 dark:bg-slate-950 border-b-2 border-white text-slate-600 dark:text-slate-400 font-black">
+                  <th class="p-2.5">단축 코드</th>
+                  <th class="p-2.5">원본 URL</th>
+                  <th class="p-2.5">소유자</th>
+                  <th class="p-2.5">클릭수</th>
+                  <th class="p-2.5">생성일</th>
+                  <th class="p-2.5 text-center">관제</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800/50 font-bold text-slate-700 dark:text-slate-300" id="admin-links-body">
+                <!-- All members' link rows dynamically -->
+              </tbody>
+            </table>
+          </div>
+          <div class="p-6 text-center text-slate-400 font-bold hidden" id="admin-links-empty-state">
+            <i data-lucide="link-2-off" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+            <p class="text-xs">등록된 단축 링크가 없습니다.</p>
+          </div>
+        </div>
+
         <!-- Multi-channel notifications configuration -->
         <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat-lg clay-card text-left">
           <div class="flex items-center gap-2 border-b-4 border-white pb-4 mb-6">

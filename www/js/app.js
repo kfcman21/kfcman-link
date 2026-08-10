@@ -1373,6 +1373,13 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error("Failed to load user management panel:", e);
     }
 
+    // Load All Members' Links Management Panel safely
+    try {
+      await renderAdminLinksPanel();
+    } catch (e) {
+      console.error("Failed to load admin links management panel:", e);
+    }
+
     // 1. Fetch system monitoring metrics
     try {
       const sysResponse = await secureFetch('/api/admin/system');
@@ -1904,6 +1911,153 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshUserStatsBtn.addEventListener('click', () => {
       renderUserManagementPanel();
       showToast('새로고침 완료', '회원 사용량 및 계정 상태 정보를 다시 읽어왔습니다.', 'info');
+    });
+  }
+
+  // --- 14.5 ALL MEMBERS' LINKS MANAGEMENT (Admin Only) ---
+  let cachedAdminLinks = [];
+
+  async function renderAdminLinksPanel() {
+    try {
+      const response = await secureFetch('/api/admin/links');
+      if (!response.ok) throw new Error('전체 링크 목록을 불러오지 못했습니다.');
+      const { links } = await response.json();
+
+      cachedAdminLinks = (links || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      const searchInput = document.getElementById('admin-links-search');
+      renderAdminLinksTable(searchInput ? searchInput.value.trim() : '');
+    } catch (err) {
+      console.error(err);
+      showToast('링크 관리 오류', err.message, 'error');
+    }
+  }
+
+  function renderAdminLinksTable(filterText = '') {
+    const adminLinksBody = document.getElementById('admin-links-body');
+    const adminLinksEmptyState = document.getElementById('admin-links-empty-state');
+    const adminLinksCountLabel = document.getElementById('admin-links-count-label');
+    if (!adminLinksBody) return;
+
+    const keyword = filterText.trim().toLowerCase();
+    const filtered = keyword
+      ? cachedAdminLinks.filter(link =>
+          link.code.toLowerCase().includes(keyword) ||
+          link.originalUrl.toLowerCase().includes(keyword) ||
+          (link.owner || '').toLowerCase().includes(keyword)
+        )
+      : cachedAdminLinks;
+
+    if (adminLinksCountLabel) {
+      adminLinksCountLabel.textContent = `총 ${cachedAdminLinks.length}개${keyword ? ` · 검색결과 ${filtered.length}개` : ''}`;
+    }
+
+    adminLinksBody.innerHTML = '';
+
+    if (filtered.length === 0) {
+      adminLinksEmptyState.classList.remove('hidden');
+      return;
+    }
+    adminLinksEmptyState.classList.add('hidden');
+
+    filtered.forEach(link => {
+      const row = document.createElement('tr');
+      const localLinkUrl = `${window.location.origin}/${link.code}`;
+      const originalUrlClean = link.originalUrl.replace(/^https?:\/\/(www\.)?/, '');
+      const dateStr = new Date(link.createdAt).toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+
+      row.innerHTML = `
+        <td>
+          <a href="${localLinkUrl}" target="_blank" class="text-brand-cyan font-bold hover:underline" title="이동하기">kfcman.link/${link.code}</a>
+        </td>
+        <td>
+          <a href="${link.originalUrl}" target="_blank" class="text-slate-500 dark:text-slate-400 font-medium hover:underline" title="${link.originalUrl}">${originalUrlClean}</a>
+        </td>
+        <td><span class="text-slate-700 dark:text-slate-300 font-bold">${link.owner || '-'}</span></td>
+        <td><strong class="text-brand-cyan font-bold text-sm">${link.clicks || 0}회</strong></td>
+        <td><span class="text-xs text-slate-500 dark:text-slate-400 font-medium">${dateStr}</span></td>
+        <td>
+          <div class="flex items-center justify-center gap-1.5">
+            <button class="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 font-bold px-2 py-1 text-[10px] rounded transition-all btn-admin-link-edit flex items-center gap-1 active:scale-95 cursor-pointer" data-code="${link.code}" data-url="${link.originalUrl}" title="연결 대상 수정">
+              <i data-lucide="edit" class="w-3 h-3"></i> 수정
+            </button>
+            <button class="bg-red-500/10 border border-red-500/20 hover:bg-red-500/15 text-red-400 font-bold px-2 py-1 text-[10px] rounded transition-all btn-admin-link-delete flex items-center gap-1 active:scale-95 cursor-pointer" data-code="${link.code}" title="링크 영구 삭제">
+              <i data-lucide="trash-2" class="w-3 h-3"></i> 삭제
+            </button>
+          </div>
+        </td>
+      `;
+
+      adminLinksBody.appendChild(row);
+    });
+
+    lucide.createIcons();
+    bindAdminLinksActionEvents();
+  }
+
+  function bindAdminLinksActionEvents() {
+    document.querySelectorAll('.btn-admin-link-edit').forEach(button => {
+      button.addEventListener('click', async () => {
+        const code = button.getAttribute('data-code');
+        const currentUrl = button.getAttribute('data-url');
+        const newUrl = prompt(`단축 링크 [kfcman.link/${code}]의 새 연결 대상 URL을 입력하세요:`, currentUrl);
+
+        if (newUrl !== null && newUrl.trim() && newUrl.trim() !== currentUrl) {
+          try {
+            const response = await secureFetch(`/api/admin/links/${code}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url: newUrl.trim() })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error);
+
+            showToast('링크 수정 완료', `단축 링크 [${code}]가 관리자 권한으로 수정되었습니다.`, 'success');
+            renderAdminLinksPanel();
+          } catch (err) {
+            showToast('링크 수정 실패', err.message, 'error');
+          }
+        }
+      });
+    });
+
+    document.querySelectorAll('.btn-admin-link-delete').forEach(button => {
+      button.addEventListener('click', async () => {
+        const code = button.getAttribute('data-code');
+        if (confirm(`⚠️ 단축 링크 [kfcman.link/${code}]를 관리자 권한으로 영구 삭제하시겠습니까?\n소유자와 무관하게 즉시 삭제되며 되돌릴 수 없습니다.`)) {
+          try {
+            const response = await secureFetch(`/api/admin/links/${code}`, {
+              method: 'DELETE'
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error);
+
+            showToast('링크 삭제 완료', data.message, 'success');
+            renderAdminLinksPanel();
+          } catch (err) {
+            showToast('링크 삭제 실패', err.message, 'error');
+          }
+        }
+      });
+    });
+  }
+
+  const refreshAdminLinksBtn = document.getElementById('btn-refresh-admin-links');
+  if (refreshAdminLinksBtn) {
+    refreshAdminLinksBtn.addEventListener('click', () => {
+      renderAdminLinksPanel();
+      showToast('새로고침 완료', '전체 회원 단축 링크 목록을 다시 읽어왔습니다.', 'info');
+    });
+  }
+
+  const adminLinksSearchInput = document.getElementById('admin-links-search');
+  if (adminLinksSearchInput) {
+    adminLinksSearchInput.addEventListener('input', () => {
+      renderAdminLinksTable(adminLinksSearchInput.value);
     });
   }
 

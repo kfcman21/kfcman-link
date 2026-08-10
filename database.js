@@ -387,6 +387,11 @@ class Database {
     return results;
   }
 
+  // Retrieve every shortened link across all users (Admin Only)
+  getAllLinks() {
+    return Object.values(this.cache.links);
+  }
+
   // Retrieve bulk statistics for verification
   getBulkStats(codes) {
     const results = [];
@@ -418,13 +423,34 @@ class Database {
     const cleanUsername = username.trim().toLowerCase();
     const link = this.getLink(code);
     if (!link) return false;
-    
+
     if (link.owner === cleanUsername) {
       delete this.cache.links[code];
       await this.save();
       return true;
     }
     return false;
+  }
+
+  // Update any link's destination URL regardless of owner (Admin Only)
+  async adminUpdateLink(code, newUrl) {
+    const link = this.getLink(code);
+    if (!link) return null;
+
+    link.originalUrl = newUrl;
+    link.updatedAt = new Date().toISOString();
+    await this.save();
+    return link;
+  }
+
+  // Delete any link regardless of owner (Admin Only)
+  async adminDeleteLink(code) {
+    const link = this.getLink(code);
+    if (!link) return false;
+
+    delete this.cache.links[code];
+    await this.save();
+    return true;
   }
 
   // Clear all links owned by a user
