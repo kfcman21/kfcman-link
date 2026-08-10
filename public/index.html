@@ -2882,6 +2882,30 @@
           </button>
         </div>
       </div>
+
+      <!-- My Links List (create/edit/stats all in one place) -->
+      <div class="w-full mt-10 pt-8 border-t-4 border-slate-100 dark:border-slate-800" id="shortener-modal-links-container">
+        <h3 class="text-sm font-black text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+          <i data-lucide="list" class="w-4 h-4 text-clay-sky"></i>
+          내 단축 링크 목록
+        </h3>
+        <div class="overflow-x-auto w-full">
+          <table class="w-full text-xs">
+            <thead>
+              <tr class="bg-slate-100 dark:bg-slate-950 border-b-2 border-white dark:border-slate-800 text-slate-600 dark:text-slate-400 font-black">
+                <th class="p-2.5 text-left">단축 링크</th>
+                <th class="p-2.5 text-left">생성일</th>
+                <th class="p-2.5 text-left">클릭수</th>
+                <th class="p-2.5 text-center">관리</th>
+              </tr>
+            </thead>
+            <tbody id="shortener-modal-links-body"></tbody>
+          </table>
+        </div>
+        <div class="hidden p-6 text-center text-slate-400 font-bold text-xs" id="shortener-modal-links-empty">
+          아직 생성한 단축 링크가 없습니다.
+        </div>
+      </div>
     </div>
   </div>
 

@@ -1036,6 +1036,7 @@ document.addEventListener('DOMContentLoaded', () => {
         statTotalClicks.textContent = '0';
         statAvgClicks.textContent = '0.0';
         applyFeatureVisibility();
+        renderShortenerModalLinks();
         return;
       }
 
@@ -1118,6 +1119,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       lucide.createIcons();
       bindTableActionEvents();
+      renderShortenerModalLinks();
 
     } catch (err) {
       if (err.message !== 'Unauthorized') {
@@ -1125,6 +1127,57 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('대시보드 오류', '통계 정보를 불러오는데 실패했습니다.', 'error');
       }
     }
+  }
+
+  // --- 10.5 Links list embedded inside the shortener creation modal ---
+  function renderShortenerModalLinks() {
+    const body = document.getElementById('shortener-modal-links-body');
+    const emptyState = document.getElementById('shortener-modal-links-empty');
+    if (!body) return;
+
+    body.innerHTML = '';
+
+    if (!cachedLinks || cachedLinks.length === 0) {
+      if (emptyState) emptyState.classList.remove('hidden');
+      return;
+    }
+    if (emptyState) emptyState.classList.add('hidden');
+
+    cachedLinks.forEach(link => {
+      const row = document.createElement('tr');
+      row.className = 'border-b border-slate-100 dark:border-slate-800';
+
+      const localLinkUrl = `${window.location.origin}/${link.code}`;
+      const visualBrandUrl = `http://kfcman.link/${link.code}`;
+      const originalUrlClean = link.originalUrl.replace(/^https?:\/\/(www\.)?/, '');
+      const dateStr = new Date(link.createdAt).toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+
+      row.innerHTML = `
+        <td class="p-2.5">
+          <a href="${localLinkUrl}" target="_blank" class="font-black text-clay-sky dark:text-clay-mint" title="이동하기">kfcman.link/${link.code}</a>
+          <div class="text-slate-400 font-medium truncate max-w-[220px]" title="${link.originalUrl}">${originalUrlClean}</div>
+        </td>
+        <td class="p-2.5 text-slate-500 dark:text-slate-400">${dateStr}</td>
+        <td class="p-2.5 font-black text-clay-sky dark:text-clay-mint">${link.clicks || 0}회</td>
+        <td class="p-2.5">
+          <div class="flex items-center justify-center gap-1">
+            <button class="btn-action-icon btn-table-copy" data-url="${visualBrandUrl}" title="주소 복사"><i data-lucide="copy"></i></button>
+            <button class="btn-action-icon btn-table-stats" data-code="${link.code}" title="상세 통계"><i data-lucide="bar-chart-3"></i></button>
+            <button class="btn-action-icon btn-table-edit" data-code="${link.code}" data-url="${link.originalUrl}" title="수정"><i data-lucide="edit"></i></button>
+            <button class="btn-action-icon btn-table-delete" data-code="${link.code}" title="삭제" style="color: rgba(239, 68, 68, 0.65);"><i data-lucide="trash"></i></button>
+          </div>
+        </td>
+      `;
+
+      body.appendChild(row);
+    });
+
+    lucide.createIcons();
+    bindTableActionEvents();
   }
 
   // --- 11. Bind Actions in Table Rows ---
@@ -5449,6 +5502,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modal) modal.classList.remove('hidden');
     if (inputContainer) inputContainer.classList.remove('hidden');
     if (resultContainer) resultContainer.classList.add('hidden');
+    renderShortenerModalLinks();
   };
 
   window.closeShortenerModal = () => {
