@@ -1,0 +1,518 @@
+<meta charset="utf-8">
+<title>궤도실험실 오르비</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ground:#EDF0F6;
+    --paper:#FFFFFF;
+    --ink:#131C31;
+    --ink-soft:#3D4761;
+    --muted:#6E7791;
+    --line:#D2D8E4;
+    --line-soft:#E2E7F0;
+    --amber:#C9631F;
+    --amber-soft:#F4E3D6;
+    --teal:#1F6B7A;
+    --teal-soft:#DCEAED;
+    --shadow:0 1px 2px rgba(19,28,49,.05), 0 8px 24px -16px rgba(19,28,49,.25);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0D1220;
+      --paper:#141B2C;
+      --ink:#E7EBF4;
+      --ink-soft:#B4BDD1;
+      --muted:#8792AB;
+      --line:#28324A;
+      --line-soft:#1E273B;
+      --amber:#F0A268;
+      --amber-soft:#2E2216;
+      --teal:#79C4D2;
+      --teal-soft:#132A30;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0D1220;
+    --paper:#141B2C;
+    --ink:#E7EBF4;
+    --ink-soft:#B4BDD1;
+    --muted:#8792AB;
+    --line:#28324A;
+    --line-soft:#1E273B;
+    --amber:#F0A268;
+    --amber-soft:#2E2216;
+    --teal:#79C4D2;
+    --teal-soft:#132A30;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:"IBM Plex Sans KR","Malgun Gothic",system-ui,sans-serif;
+    font-weight:400;
+    line-height:1.75;
+    font-size:16px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:860px;margin:0 auto;padding:0 24px 96px}
+
+  /* ---- masthead ---- */
+  header.mast{
+    padding:72px 0 40px;
+    border-bottom:1px solid var(--line);
+    display:flex;flex-direction:column;gap:20px;
+  }
+  .kicker{
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--amber);
+    display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  }
+  .kicker span.sep{color:var(--line);}
+  h1{
+    font-family:"Gowun Batang","Batang",serif;
+    font-weight:700;
+    font-size:clamp(38px,7vw,62px);
+    line-height:1.12;
+    letter-spacing:-.01em;
+    margin:0;
+    text-wrap:balance;
+  }
+  h1 em{font-style:normal;color:var(--amber);}
+  .standfirst{
+    font-size:18px;color:var(--ink-soft);max-width:60ch;margin:0;
+    font-weight:300;
+  }
+  .meta{
+    display:flex;flex-wrap:wrap;gap:0;
+    border:1px solid var(--line);border-radius:2px;
+    background:var(--paper);
+    overflow:hidden;
+  }
+  .meta div{
+    flex:1 1 150px;padding:14px 18px;
+    border-right:1px solid var(--line-soft);
+  }
+  .meta div:last-child{border-right:0}
+  .meta dt{
+    font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 4px;
+  }
+  .meta dd{margin:0;font-size:15px;font-weight:500;line-height:1.4}
+
+  /* ---- sections ---- */
+  section{padding:56px 0;border-bottom:1px solid var(--line-soft);}
+  section:last-of-type{border-bottom:0}
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--teal);margin:0 0 10px;
+  }
+  h2{
+    font-family:"Gowun Batang",serif;font-weight:700;
+    font-size:clamp(26px,4vw,34px);line-height:1.25;margin:0 0 14px;
+    text-wrap:balance;
+  }
+  h3{
+    font-size:17px;font-weight:600;margin:0 0 6px;line-height:1.45;
+  }
+  p{margin:0 0 16px;max-width:66ch}
+  p:last-child{margin-bottom:0}
+  .lead{font-size:17px;color:var(--ink-soft);font-weight:300}
+  strong{font-weight:600;color:var(--ink)}
+  a{color:var(--teal)}
+
+  ul.plain{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
+  ul.plain li{
+    padding-left:20px;position:relative;color:var(--ink-soft);max-width:66ch;
+  }
+  ul.plain li::before{
+    content:"";position:absolute;left:2px;top:12px;
+    width:6px;height:6px;border-radius:50%;
+    border:1.5px solid var(--amber);
+  }
+
+  /* ---- cards ---- */
+  .grid{display:grid;gap:16px;margin-top:24px}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .g3{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+  .card{
+    background:var(--paper);border:1px solid var(--line);border-radius:3px;
+    padding:20px;box-shadow:var(--shadow);
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .card p{font-size:14.5px;color:var(--muted);margin:0}
+  .tag{
+    font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;
+    color:var(--teal);background:var(--teal-soft);
+    padding:3px 8px;border-radius:2px;align-self:flex-start;
+  }
+  .tag.warm{color:var(--amber);background:var(--amber-soft)}
+
+  /* ---- mission stages ---- */
+  .stages{display:flex;flex-direction:column;gap:0;margin-top:28px}
+  .stage{
+    display:grid;grid-template-columns:78px 1fr;gap:24px;
+    padding:24px 0;border-top:1px solid var(--line-soft);
+  }
+  .stage:last-child{border-bottom:1px solid var(--line-soft)}
+  .stage-n{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:13px;color:var(--muted);letter-spacing:.06em;
+    display:flex;flex-direction:column;gap:6px;
+  }
+  .stage-n b{
+    font-family:"Gowun Batang",serif;font-size:30px;color:var(--amber);
+    font-weight:700;line-height:1;
+  }
+  .stage-body h3{font-size:19px;font-family:"Gowun Batang",serif;font-weight:700}
+  .stage-body .verb{
+    font-size:13px;font-family:"IBM Plex Mono",monospace;color:var(--teal);
+    margin:0 0 10px;
+  }
+  .stage-body p{font-size:15px;color:var(--ink-soft);margin:0 0 10px}
+  .stage-body .out{
+    font-size:13.5px;color:var(--muted);
+    border-left:2px solid var(--line);padding-left:12px;margin:0;
+  }
+
+  /* ---- table ---- */
+  .tablewrap{overflow-x:auto;margin-top:24px;border:1px solid var(--line);border-radius:3px;background:var(--paper)}
+  table{border-collapse:collapse;width:100%;min-width:560px;font-size:14.5px}
+  th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  thead th{
+    font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);font-weight:500;
+    background:var(--ground);
+  }
+  tbody tr:last-child td{border-bottom:0}
+  td.num{font-variant-numeric:tabular-nums;font-family:"IBM Plex Mono",monospace;color:var(--muted);white-space:nowrap}
+  td b{font-weight:600}
+
+  /* ---- callout ---- */
+  .callout{
+    background:var(--amber-soft);border:1px solid var(--line);
+    border-radius:3px;padding:22px 24px;margin-top:24px;
+  }
+  .callout h3{color:var(--ink);font-family:"Gowun Batang",serif;font-size:19px}
+  .callout p{color:var(--ink-soft);font-size:15px;margin-bottom:0}
+
+  footer{
+    padding:40px 0 0;border-top:1px solid var(--line);
+    color:var(--muted);font-size:13.5px;
+    font-family:"IBM Plex Mono",monospace;letter-spacing:.03em;
+  }
+
+  @media (max-width:560px){
+    .stage{grid-template-columns:1fr;gap:10px}
+    .stage-n{flex-direction:row;align-items:baseline;gap:10px}
+  }
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <div class="kicker">
+    <span>교육용 게임 기획안</span><span class="sep">/</span>
+    <span>과학 · 지구와 우주</span>
+  </div>
+  <h1>궤도실험실 <em>오르비</em></h1>
+  <p class="standfirst">
+    태양계·지구·달의 운동과 북쪽 하늘의 별자리를 “외우는 지식”이 아니라 <strong>내가 돌려서 확인하는 현상</strong>으로
+    바꾸는 웹 기반 학습 게임. 학생은 관측 기지의 견습 연구원이 되어, 하늘에서 벌어지는
+    이상 현상의 원인을 자전과 공전으로 설명해 낸다.
+  </p>
+  <dl class="meta">
+    <div><dt>대상</dt><dd>초등학교 과학 수업</dd></div>
+    <div><dt>형태</dt><dd>웹(PC·태블릿) 단일 앱</dd></div>
+    <div><dt>구성</dt><dd>관측 임무 6종 · 4차시</dd></div>
+    <div><dt>핵심 단원</dt><dd>태양계와 별 · 지구와 달의 운동</dd></div>
+  </dl>
+</header>
+
+<section>
+  <p class="eyebrow">01 — 문제 정의</p>
+  <h2>“왜 밤이 되나요?”에 대한 답은 이미 알지만, 이유는 모른다</h2>
+  <p class="lead">
+    학생 대부분은 “지구가 자전해서 낮과 밤이 생긴다”는 문장을 말할 수 있다.
+    그러나 지구본을 돌려 보라고 하면 어느 방향으로 돌릴지 모르고, 달의 모양이 왜 변하는지를
+    “지구 그림자” 때문이라고 설명한다.
+  </p>
+  <ul class="plain">
+    <li><strong>규모의 벽</strong> — 1억 5천만 km, 27.3일 같은 수는 교과서 안에서만 존재하는 숫자다.</li>
+    <li><strong>시점의 벽</strong> — 학습 자료는 우주 밖에서 내려다본 그림인데, 학생의 경험은 언제나 지표면 위다.</li>
+    <li><strong>인과의 벽</strong> — 자전·공전·달의 위상이 서로 다른 서랍에 저장되어, 하나의 운동으로 연결되지 않는다.</li>
+  </ul>
+  <div class="callout">
+    <h3>기획의 한 줄</h3>
+    <p>
+      두 시점을 한 화면에 붙인다. 왼쪽에는 우주에서 본 궤도, 오른쪽에는 그 순간 아이가 서 있는
+      땅 위의 하늘. 학생이 궤도를 손으로 돌리면 하늘이 즉시 따라 바뀐다.
+      <strong>이 동시성이 이 게임의 전부이자 유일한 핵심 장치다.</strong>
+    </p>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">02 — 학습 목표</p>
+  <h2>성취기준과 게임 행동의 연결</h2>
+  <p>각 목표는 “설명할 수 있다”가 아니라 <strong>게임 안에서 관찰 가능한 조작</strong>으로 번역했다. 평가도 이 조작 기록으로 이루어진다.</p>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>학습 목표</th><th>게임 안의 행동</th><th>수집 데이터</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>태양계 구성</b><br>상대적 크기·거리, 지구형과 목성형, 고리</td>
+          <td>행성 카드를 궤도에 배치하고 설명을 읽은 뒤, 축척을 실제 비율로 바꾸고 표면을 기준으로 두 무리로 나눔</td>
+          <td class="num">배치 정확도<br>분류 확인 여부</td>
+        </tr>
+        <tr>
+          <td><b>자전</b><br>낮과 밤, 태양의 겉보기 운동</td>
+          <td>지구를 직접 돌려 특정 시각(정오·해질녘)을 맞추고, 지표 시점에서 태양 위치를 확인</td>
+          <td class="num">회전 방향 오류<br>시각 맞추기 오차</td>
+        </tr>
+        <tr>
+          <td><b>공전</b><br>계절별 별자리와 관찰 방법</td>
+          <td>지구를 궤도 위 4개 지점으로 옮기고 <b>저녁 9시</b>에 맞춰, 계절마다 남쪽 하늘의 대표 별자리 3개를 기록</td>
+          <td class="num">별자리–계절 매칭<br>관찰 시각 정확도</td>
+        </tr>
+        <tr>
+          <td><b>달의 운동과 표면</b><br>위상 변화의 원인, 바다와 충돌구</td>
+          <td>달을 궤도 위에서 끌어 위상 8종을 만들고, 표면을 확대해 바다·고지·충돌구를 살펴봄</td>
+          <td class="num">위상 8종 정답률<br>표면 관찰 여부</td>
+        </tr>
+        <tr>
+          <td><b>북쪽 하늘</b><br>북극성과 계절 없는 별자리</td>
+          <td>시간을 흘려보내며 제자리를 지키는 별을 찾아내고, 북두칠성·카시오페아자리로 북극성을 찾는 길잡이선을 확인</td>
+          <td class="num">오답 선택 별<br>두 방법 확인 여부</td>
+        </tr>
+        <tr>
+          <td><b>종합</b><br>식(蝕) 현상의 조건</td>
+          <td>태양–지구–달을 일직선으로 정렬해 일식·월식을 재현</td>
+          <td class="num">정렬 시도 횟수</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">03 — 핵심 구조</p>
+  <h2>이중 시점 궤도판</h2>
+  <p class="lead">
+    모든 미션은 하나의 화면 문법을 공유한다. 새 개념이 나올 때마다 인터페이스를 새로 배울 필요가 없고,
+    학생은 조작 방법이 아니라 현상에 집중한다.
+  </p>
+  <div class="grid g3">
+    <div class="card">
+      <span class="tag">좌측 · 궤도판</span>
+      <h3>우주에서 본 시점</h3>
+      <p>천체를 드래그하거나 시간 다이얼을 돌려 위치를 바꾼다. 궤도·자전축·태양 빛의 방향이 항상 보인다.</p>
+    </div>
+    <div class="card">
+      <span class="tag">우측 · 하늘창</span>
+      <h3>땅에서 본 시점</h3>
+      <p>궤도판 위 관측 지점(작은 깃발)에 서 있는 사람의 하늘. 왼쪽을 움직이면 즉시 반응한다.</p>
+    </div>
+    <div class="card">
+      <span class="tag warm">하단 · 관측 일지</span>
+      <h3>학생의 기록</h3>
+      <p>버튼 한 번으로 현재 하늘을 스케치처럼 저장. 모은 기록이 미션의 정답 근거가 된다.</p>
+    </div>
+  </div>
+  <div class="grid g2">
+    <div class="card">
+      <h3>시간 다이얼</h3>
+      <p>‘시간’ · ‘일’ · ‘달’ · ‘계절’ 네 눈금으로 전환된다. 같은 조작이 자전에서 공전까지 그대로 확장되어,
+      학생은 두 운동이 <strong>속도가 다른 같은 종류의 회전</strong>임을 몸으로 익힌다.</p>
+    </div>
+    <div class="card">
+      <h3>축척 토글</h3>
+      <p>‘보기 좋은 그림’과 ‘실제 비율’ 사이를 부드럽게 전환한다. 실제 비율을 켜면 화면 밖으로 밀려나는
+      해왕성을 보며 태양계의 빈 공간을 실감한다.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">04 — 게임 진행</p>
+  <h2>여섯 개의 관측 임무</h2>
+  <p>
+    임무는 순서가 곧 개념의 위계다. 앞 임무에서 얻은 도구(시간 다이얼의 눈금, 관측 일지의 항목)가
+    다음 임무의 조건이 되므로 건너뛸 수 없다.
+  </p>
+  <div class="stages">
+
+    <div class="stage">
+      <div class="stage-n"><b>01</b><span>15분</span></div>
+      <div class="stage-body">
+        <h3>사라진 행성 카드</h3>
+        <p class="verb">배치하기 · 비교하기</p>
+        <p>기지의 자료실이 흐트러졌다. 여덟 장의 행성 카드를 크기·거리 단서만 보고 궤도 위 제자리에 돌려놓는다.
+        카드를 누르면 그 행성의 설명이 열린다. 축척 토글을 켜는 순간 자신이 그린 태양계가 얼마나 촘촘했는지 드러나고,
+        마지막으로 표면을 기준으로 두 무리를 나눈다 — 안쪽 넷은 발을 디딜 <strong>단단한 암석 표면</strong>이 있는 지구형,
+        바깥 넷은 표면이 없는 <strong>가스 행성</strong>인 목성형이며 모두 고리를 두르고 있다. 그중 토성의 고리가 가장 뚜렷하다.</p>
+        <p class="out">획득 → 시간 다이얼 ‘시간’ 눈금</p>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-n"><b>02</b><span>15분</span></div>
+      <div class="stage-body">
+        <h3>해가 지지 않는 마을</h3>
+        <p class="verb">돌리기 · 예측하기</p>
+        <p>지구의 자전이 멈춰 마을이 계속 낮이다. 지구를 직접 돌려 태양이 동쪽에서 뜨고 서쪽으로 지도록
+        방향을 찾아낸다. 반대로 돌리면 하늘창에서 해가 서쪽에서 떠오르며 오류가 즉시 보인다.</p>
+        <p class="out">획득 → 관측 일지 ‘낮과 밤’ 항목</p>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-n"><b>03</b><span>20분</span></div>
+      <div class="stage-body">
+        <h3>계절을 잃어버린 별자리</h3>
+        <p class="verb">이동하기 · 기록하기</p>
+        <p>계절 별자리는 그 계절 <strong>저녁 9시 무렵 남쪽 하늘</strong>에서 관찰한다는 규칙을 그대로 조작으로 옮겼다.
+        지구를 궤도 위 네 지점으로 옮기고 시각을 저녁 9시에 맞춰, 계절마다 대표 별자리 세 개씩을 기록한다.
+        시각을 자정으로 바꾸면 같은 별자리가 서쪽으로 기울어, 한 계절 별자리가 이웃한 두 계절에 걸쳐 보이는 까닭이 드러난다.</p>
+        <p class="out">획득 → 시간 다이얼 ‘계절’ 눈금 · 저녁 9시 관찰 규칙</p>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-n"><b>04</b><span>20분</span></div>
+      <div class="stage-body">
+        <h3>달의 얼굴 맞추기</h3>
+        <p class="verb">조작하기 · 대조하기</p>
+        <p>주어진 달 사진 8장과 같은 모양이 나오도록 달을 궤도 위에서 끌어 배치한다.
+        하늘창에는 달의 밝은 면이 항상 태양 쪽을 향하도록 렌더링되어, ‘지구 그림자’ 오개념이
+        조작 과정에서 스스로 무너진다. 끝으로 표면을 확대해 <strong>달의 바다</strong>를 살핀다 —
+        이름과 달리 물이 없는, 용암이 굳어 평평해진 어두운 땅이라는 것, 밝고 울퉁불퉁한 고지와
+        운석이 부딪혀 생긴 충돌구가 그 옆에 있다는 것을 눈으로 확인한다.</p>
+        <p class="out">획득 → 관측 일지 ‘달의 위상’ 항목</p>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-n"><b>05</b><span>20분</span></div>
+      <div class="stage-body">
+        <h3>한낮의 어둠</h3>
+        <p class="verb">정렬하기 · 설명하기</p>
+        <p>세 천체를 일직선으로 놓아 일식과 월식을 재현한다. 마지막으로 “달의 위상 중 일식이
+        가능한 때는 언제인가”에 답하며 앞선 네 임무의 기록을 근거로 인용한다.</p>
+        <p class="out">획득 → 하늘창 ‘북쪽 하늘’ 전환</p>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-n"><b>06</b><span>20분</span></div>
+      <div class="stage-body">
+        <h3>움직이지 않는 별</h3>
+        <p class="verb">관찰하기 · 길잡이 긋기</p>
+        <p>하늘창이 북쪽 하늘로 바뀐다. 시간을 흘려보내면 북두칠성과 카시오페아자리가 서로 마주 본 채
+        한 점을 중심으로 돌아가는데, 그 중심의 별만은 꿈쩍하지 않는다. 학생은 그 별을 직접 찾아 누르고,
+        국자 끝 두 별 간격의 다섯 배, 그리고 W자 두 변을 늘여 만난 점에서 가운데 별을 지나는 선 —
+        두 가지 길잡이로 같은 별에 닿는 것을 확인한다.</p>
+        <p class="out">완료 → 관측 보고서 자동 생성</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">05 — 설계 원칙</p>
+  <h2>실패가 처벌이 아니라 관찰이 되도록</h2>
+  <div class="grid g2">
+    <div class="card">
+      <span class="tag warm">보상</span>
+      <h3>별가루는 관측의 대가</h3>
+      <p>점수(별가루)는 <strong>관측을 기록했을 때와 임무를 완주했을 때만</strong> 쌓인다. 틀렸다고 깎이지
+      않는다. 임무마다 배지 하나(🪐 ☀️ 🍂 🌙 🌑 ⭐)를 주고, 누적 점수는 견습 관측원 → 별지기 →
+      궤도 항해사 → 태양계 안내인으로 등급을 올린다.</p>
+    </div>
+    <div class="card">
+      <h3>틀림은 판정이 아니라 관찰</h3>
+      <p>맞고 틀림을 즉시 선언하지 않는다. 틀린 조작도 하늘창에 결과를 보여 주고, 학생이 스스로
+      “이건 이상하다”고 판단하게 한다. 한 번도 헤매지 않은 임무에만 무실수 보너스가 붙는다.</p>
+    </div>
+    <div class="card">
+      <h3>정답 버튼 없음</h3>
+      <p>확인 절차는 언제나 ‘기록과 대조하기’다. 근거 없이 찍어서 넘어갈 수 있는 경로를 두지 않는다.</p>
+    </div>
+    <div class="card">
+      <h3>시간 제한 없음</h3>
+      <p>속도 경쟁은 규모 감각 학습과 상충한다. 대신 ‘이번 임무에서 새로 기록한 관측’ 수를 보여 준다.</p>
+    </div>
+    <div class="card">
+      <h3>읽기 부담 최소화</h3>
+      <p>모든 지시문은 두 문장 이내, 교과서 수준의 쉬운 어휘로. 핵심 안내는 애니메이션으로 먼저 보여 준 뒤 글로 반복한다.</p>
+    </div>
+  </div>
+  <div class="grid g2">
+    <div class="card">
+      <span class="tag">접근성</span>
+      <h3>색에만 의존하지 않기</h3>
+      <p>낮/밤, 밝은 면/어두운 면은 명도와 패턴으로 함께 구분한다. 모든 조작은 키보드로도 가능하며,
+      드래그에는 방향키 대체 입력을 제공한다.</p>
+    </div>
+    <div class="card">
+      <span class="tag">교실 운영</span>
+      <h3>교사 화면</h3>
+      <p>학급 전체의 임무 진행률과 대표적 오개념(예: 자전 방향 반대 시도 비율)을 한 화면에 요약해,
+      교사가 어디에서 멈춰 설명할지 판단하도록 돕는다.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">06 — 구현</p>
+  <h2>기술 구성과 제작 일정</h2>
+  <p>
+    설치 없이 학교 크롬북·태블릿에서 바로 열리는 웹 앱으로 만든다. 3D 엔진은 쓰지 않는다 —
+    천체의 위치 관계만 정확하면 되므로 2D 캔버스가 더 가볍고, 저사양 기기에서 안정적이다.
+  </p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>영역</th><th>선택</th><th>이유</th></tr></thead>
+      <tbody>
+        <tr><td>렌더링</td><td><b>HTML Canvas 2D</b></td><td>궤도·위상 계산은 삼각함수 수준. 구형 태블릿에서도 60fps 확보</td></tr>
+        <tr><td>구조</td><td><b>바닐라 JS 모듈</b></td><td>빌드 도구·의존성 없이 단일 파일 배포 가능</td></tr>
+        <tr><td>저장</td><td><b>로컬 저장 + 코드 내보내기</b></td><td>학생 계정 없이 운영. 관측 보고서는 인쇄용 페이지로 출력</td></tr>
+        <tr><td>확장</td><td><b>교사용 대시보드(선택)</b></td><td>학급 코드 입력 시에만 서버 연동</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>단계</th><th>기간</th><th>산출물</th></tr></thead>
+      <tbody>
+        <tr><td><b>프로토타입</b></td><td class="num">3주</td><td>이중 시점 궤도판 1종(임무 02) — 핵심 장치 검증</td></tr>
+        <tr><td><b>교실 시험</b></td><td class="num">2주</td><td>2개 학급 관찰, 조작 이해도·오개념 변화 측정</td></tr>
+        <tr><td><b>본 개발</b></td><td class="num">8주</td><td>임무 6종, 관측 일지, 별가루·배지, 보고서 출력</td></tr>
+        <tr><td><b>교사 도구</b></td><td class="num">3주</td><td>대시보드, 수업 지도안 4차시, 활동지</td></tr>
+        <tr><td><b>공개</b></td><td class="num">2주</td><td>접근성 점검, 저사양 기기 성능 보정, 배포</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout">
+    <h3>먼저 확인할 것</h3>
+    <p>
+      본 개발에 들어가기 전, 프로토타입으로 단 하나를 검증한다 —
+      <strong>학생이 궤도판을 돌렸을 때 하늘창의 변화를 스스로 연결 짓는가.</strong>
+      이 연결이 일어나지 않으면 나머지 임무를 아무리 늘려도 학습 효과는 생기지 않는다.
+    </p>
+  </div>
+</section>
+
+<footer>
+  궤도실험실 오르비 · 기획안 v1 · 2026.09
+</footer>
+
+</div>
