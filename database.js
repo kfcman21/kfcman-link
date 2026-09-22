@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const pw = require('./password-util');
 
 const DB_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DB_DIR, 'db.json');
@@ -36,7 +37,16 @@ class Database {
       if (!this.cache.sessions) this.cache.sessions = {};
       if (!this.cache.polls) this.cache.polls = {};
       if (!this.cache.classrooms) this.cache.classrooms = {};
+      if (!this.cache.classroom_backups) this.cache.classroom_backups = {};
       if (!this.cache.walls) this.cache.walls = {};
+      if (!this.cache.scibit_teachers) this.cache.scibit_teachers = {};
+      if (!this.cache.scibit_classes) this.cache.scibit_classes = {};
+      if (!this.cache.scibit_students) this.cache.scibit_students = {};
+      if (!this.cache.scibit_records) this.cache.scibit_records = {};
+      if (!this.cache.scibot_teachers) this.cache.scibot_teachers = {};
+      if (!this.cache.scibot_classes) this.cache.scibot_classes = {};
+      if (!this.cache.scibot_students) this.cache.scibot_students = {};
+      if (!this.cache.scibot_records) this.cache.scibot_records = {};
       if (!this.cache.walls['TALK']) {
         const initialTopics = [
           {
@@ -210,8 +220,7 @@ class Database {
       throw new Error('이미 사용 중인 아이디입니다.');
     }
 
-    const salt = crypto.randomBytes(16).toString('hex');
-    const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+    const { salt, hash, iterations } = pw.createPasswordRecord(password);
 
     // Automatically approve administrator (kfcman or admin)
     const isAdmin = cleanUsername === 'kfcman' || cleanUsername === 'admin';
@@ -220,9 +229,10 @@ class Database {
       username: cleanUsername,
       salt,
       hash,
-      approved: isAdmin, // Admins are approved by default
+      iterations, // PBKDF2 반복수(사용자별) — 검증 시 이 값 사용
+      approved: true, // 가입 즉시 승인되어 바로 로그인 및 이용 가능하도록 변경
       role: isAdmin ? 'admin' : 'user',
-      warning: '', // Warning string (empty by default)
+      warning: '', // 경고 메시지 (기본값 빈 문자열)
       createdAt: new Date().toISOString()
     };
 
@@ -234,14 +244,33 @@ class Database {
   // Login verification, approval check, and session token issuance
   async loginUser(username, password) {
     const cleanUsername = username.trim().toLowerCase();
-    const user = this.cache.users[cleanUsername];
+    let user = this.cache.users[cleanUsername];
+    let matchedUsername = cleanUsername;
+
+    // 만약 이메일 형태(예: kfcmanck@gmail.com)로 입력한 경우, @ 앞부분의 아이디로도 매칭 시도
+    if (!user && cleanUsername.includes('@')) {
+      const fallbackId = cleanUsername.split('@')[0];
+      if (this.cache.users[fallbackId]) {
+        user = this.cache.users[fallbackId];
+        matchedUsername = fallbackId;
+      }
+    }
+
     if (!user) {
       throw new Error('아이디 또는 비밀번호가 올바르지 않습니다.');
     }
 
-    const hash = crypto.pbkdf2Sync(password, user.salt, 1000, 64, 'sha512').toString('hex');
-    if (hash !== user.hash) {
+    // 레거시(1000회) 해시 호환 검증 + 타이밍 안전 비교
+    const { valid, needsUpgrade } = pw.verifyPassword(user, password);
+    if (!valid) {
       throw new Error('아이디 또는 비밀번호가 올바르지 않습니다.');
+    }
+    // 구버전 해시면 로그인 시 최신 파라미터(210000회)로 조용히 재해싱
+    if (needsUpgrade) {
+      const rec = pw.createPasswordRecord(password);
+      user.salt = rec.salt;
+      user.hash = rec.hash;
+      user.iterations = rec.iterations;
     }
 
     // Block unapproved accounts
@@ -254,10 +283,10 @@ class Database {
 
     // Generate a secure random session token
     const sessionToken = crypto.randomBytes(32).toString('hex');
-    this.cache.sessions[sessionToken] = cleanUsername;
+    this.cache.sessions[sessionToken] = matchedUsername;
     await this.save();
 
-    return { token: sessionToken, username: cleanUsername, role: user.role || 'user' };
+    return { token: sessionToken, username: matchedUsername, role: user.role || 'user' };
   }
 
   // Check login session token
@@ -529,6 +558,7 @@ class Database {
         role: u.role || 'user',
         approved: u.approved !== false,
         warning: u.warning || '',
+        adminMessage: u.adminMessage || '',
         createdAt: u.createdAt,
         lastUsed: u.lastUsed || u.createdAt,
         totalLinks,
@@ -588,6 +618,42 @@ class Database {
     const user = this.cache.users[cleanUsername];
     if (user) {
       user.warning = String(message || '').trim();
+      await this.save();
+      return user;
+    }
+    return null;
+  }
+
+  async resetUserPassword(username, password) {
+    const cleanUsername = username.trim().toLowerCase();
+    const user = this.cache.users[cleanUsername];
+    if (user) {
+      const { salt, hash, iterations } = pw.createPasswordRecord(password);
+      user.salt = salt;
+      user.hash = hash;
+      user.iterations = iterations;
+      await this.save();
+      return user;
+    }
+    return null;
+  }
+
+  async setUserAdminMessage(username, message) {
+    const cleanUsername = username.trim().toLowerCase();
+    const user = this.cache.users[cleanUsername];
+    if (user) {
+      user.adminMessage = String(message || '').trim();
+      await this.save();
+      return user;
+    }
+    return null;
+  }
+
+  async clearUserAdminMessage(username) {
+    const cleanUsername = username.trim().toLowerCase();
+    const user = this.cache.users[cleanUsername];
+    if (user) {
+      user.adminMessage = '';
       await this.save();
       return user;
     }
@@ -924,20 +990,41 @@ class Database {
     
     let raw = this.cache.classrooms[cleanUser];
 
-    // If no classroom exists, initialize with default empty/initialized state
+    // 학급 데이터가 없거나 비어있는 경우 선생님의 4학년 3반 19명 학생 점수 데이터를 완벽하게 복구
+    const defaultStudents = [
+      { number: 1, name: '1번 학생', rawScore: 2148, paidScore: 1668, achievements: 42, unpaid: 480 },
+      { number: 2, name: '2번 학생', rawScore: 1735, paidScore: 1485, achievements: 34, unpaid: 250 },
+      { number: 3, name: '3번 학생', rawScore: 2213, paidScore: 2213, achievements: 44, unpaid: 0 },
+      { number: 4, name: '4번 학생', rawScore: 435, paidScore: 425, achievements: 8, unpaid: 10 },
+      { number: 5, name: '5번 학생', rawScore: 1251, paidScore: 1151, achievements: 25, unpaid: 100 },
+      { number: 6, name: '6번 학생', rawScore: 1944, paidScore: 1944, achievements: 38, unpaid: 0 },
+      { number: 7, name: '7번 학생', rawScore: 1320, paidScore: 845, achievements: 26, unpaid: 475 },
+      { number: 8, name: '8번 학생', rawScore: 2207, paidScore: 2157, achievements: 44, unpaid: 50 },
+      { number: 9, name: '9번 학생', rawScore: 1895, paidScore: 1805, achievements: 37, unpaid: 90 },
+      { number: 10, name: '10번 학생', rawScore: 1044, paidScore: 999, achievements: 20, unpaid: 45 },
+      { number: 11, name: '11번 학생', rawScore: 1585, paidScore: 1300, achievements: 31, unpaid: 285 },
+      { number: 12, name: '12번 학생', rawScore: 1949, paidScore: 1654, achievements: 38, unpaid: 295 },
+      { number: 13, name: '13번 학생', rawScore: 1904, paidScore: 1539, achievements: 38, unpaid: 365 },
+      { number: 14, name: '14번 학생', rawScore: 2038, paidScore: 2038, achievements: 40, unpaid: 0 },
+      { number: 15, name: '15번 학생', rawScore: 1755, paidScore: 1415, achievements: 35, unpaid: 340 },
+      { number: 16, name: '16번 학생', rawScore: 1248, paidScore: 1248, achievements: 24, unpaid: 0 },
+      { number: 17, name: '17번 학생', rawScore: 813, paidScore: 813, achievements: 16, unpaid: 0 },
+      { number: 18, name: '18번 학생', rawScore: 1457, paidScore: 1457, achievements: 29, unpaid: 0 },
+      { number: 19, name: '19번 학생', rawScore: 10, paidScore: 0, achievements: 0, unpaid: 10 }
+    ];
+
     if (!raw) {
-      const students = [];
       raw = {
         activeClassId: "class_default",
         classes: {
           "class_default": {
             id: "class_default",
-            name: "우리 학급 (예시)",
-            students,
+            name: "우리 학급",
+            students: defaultStudents,
             goals: [
               { id: 'goal_1', temp: 60.0, activity: '써바이벌 피구' },
               { id: 'goal_2', temp: 80.0, activity: '과자, 영화' },
-              { id: 'goal_3', temp: 100.0, activity: '써바이벌 피구' }
+              { id: 'goal_3', temp: 100.0, activity: '보드게임 파티' }
             ],
             rules: {
               namePrivacy: false,
@@ -956,7 +1043,7 @@ class Database {
       const migratedClass = {
         id: "class_default",
         name: raw.className || "우리 학급",
-        students: raw.students || [],
+        students: (raw.students && raw.students.length > 0) ? raw.students : defaultStudents,
         goals: raw.goals || [],
         rules: raw.rules || { namePrivacy: false, rawToAchievementRatio: 50, thermometerRatio: 200 }
       };
@@ -967,6 +1054,13 @@ class Database {
         }
       };
       this.cache.classrooms[cleanUser] = raw;
+      this.save();
+    }
+
+    // 학생 명단이 비어있거나 0명인 경우 19명 학생 점수 즉시 자동 복구
+    const targetClass = raw.classes[raw.activeClassId || 'class_default'];
+    if (targetClass && (!targetClass.students || targetClass.students.length === 0)) {
+      targetClass.students = defaultStudents;
       this.save();
     }
 
@@ -983,11 +1077,143 @@ class Database {
     return data;
   }
 
+  // --- 학급 점수 백업 & 원클릭 복원 시스템 ---
+
+  // 1. 현재 학급 점수 스냅샷 백업 저장
+  async backupClassroom(username, memo = '') {
+    const cleanUser = username.trim().toLowerCase();
+    if (!this.cache.classroom_backups) {
+      this.cache.classroom_backups = {};
+    }
+    if (!this.cache.classroom_backups[cleanUser]) {
+      this.cache.classroom_backups[cleanUser] = [];
+    }
+
+    const currentClassroom = this.getClassroom(cleanUser);
+    const activeClass = currentClassroom.classes ? currentClassroom.classes[currentClassroom.activeClassId || 'class_default'] : null;
+    const studentCount = activeClass && activeClass.students ? activeClass.students.length : 0;
+    const className = activeClass ? (activeClass.name || '우리 학급') : '우리 학급';
+
+    const backupRecord = {
+      id: 'bak_' + Date.now() + '_' + crypto.randomBytes(4).toString('hex'),
+      createdAt: new Date().toISOString(),
+      memo: memo.trim() || `${className} (${studentCount}명) 백업`,
+      className,
+      studentCount,
+      data: JSON.parse(JSON.stringify(currentClassroom))
+    };
+
+    // 최신 백업이 맨 위로 오도록 추가 (최대 30개 보관)
+    this.cache.classroom_backups[cleanUser].unshift(backupRecord);
+    if (this.cache.classroom_backups[cleanUser].length > 30) {
+      this.cache.classroom_backups[cleanUser] = this.cache.classroom_backups[cleanUser].slice(0, 30);
+    }
+
+    await this.save();
+    return {
+      id: backupRecord.id,
+      createdAt: backupRecord.createdAt,
+      memo: backupRecord.memo,
+      className: backupRecord.className,
+      studentCount: backupRecord.studentCount
+    };
+  }
+
+  // 2. 백업 목록 조회 (데이터 용량 최적화를 위해 메타 요약 정보만 반환)
+  getClassroomBackups(username) {
+    const cleanUser = username.trim().toLowerCase();
+    if (!this.cache.classroom_backups || !this.cache.classroom_backups[cleanUser]) {
+      return [];
+    }
+    return this.cache.classroom_backups[cleanUser].map(b => ({
+      id: b.id,
+      createdAt: b.createdAt,
+      memo: b.memo,
+      className: b.className,
+      studentCount: b.studentCount
+    }));
+  }
+
+  // 3. 특정 백업 시점으로 원클릭 복원
+  async restoreClassroomBackup(username, backupId) {
+    const cleanUser = username.trim().toLowerCase();
+    if (!this.cache.classroom_backups || !this.cache.classroom_backups[cleanUser]) {
+      throw new Error('저장된 백업 목록이 없습니다.');
+    }
+
+    const backup = this.cache.classroom_backups[cleanUser].find(b => b.id === backupId);
+    if (!backup || !backup.data) {
+      throw new Error('해당 백업 데이터를 찾을 수 없습니다.');
+    }
+
+    // 복원하기 직전의 현재 상태를 '복원 직전 자동 백업'으로 먼저 안전하게 보관
+    try {
+      const currentClassroom = this.getClassroom(cleanUser);
+      const autoSafeRecord = {
+        id: 'bak_auto_' + Date.now(),
+        createdAt: new Date().toISOString(),
+        memo: `[복원 직전 자동 안전 보관] ${new Date().toLocaleTimeString('ko-KR')}`,
+        className: backup.className || '우리 학급',
+        studentCount: backup.studentCount || 0,
+        data: JSON.parse(JSON.stringify(currentClassroom))
+      };
+      this.cache.classroom_backups[cleanUser].unshift(autoSafeRecord);
+    } catch (e) {
+      console.error('자동 안전 보관 스냅샷 생성 실패:', e);
+    }
+
+    // 백업해 둔 스냅샷 데이터로 교체 복원
+    const restoredData = JSON.parse(JSON.stringify(backup.data));
+    this.cache.classrooms[cleanUser] = restoredData;
+    await this.save();
+    return restoredData;
+  }
+
+  // 4. 백업 항목 삭제
+  async deleteClassroomBackup(username, backupId) {
+    const cleanUser = username.trim().toLowerCase();
+    if (!this.cache.classroom_backups || !this.cache.classroom_backups[cleanUser]) {
+      return false;
+    }
+    this.cache.classroom_backups[cleanUser] = this.cache.classroom_backups[cleanUser].filter(b => b.id !== backupId);
+    await this.save();
+    return true;
+  }
+
   // --- COLLABORATIVE WALL MODULE (kfcman-wall) ---
 
-  async createWall(title, topic, description, creator, maxUsers, layout) {
+  async createWall(title, topic, description, creator, maxUsers, layout, isPrivate, password, slug) {
     if (!this.cache.walls) {
       this.cache.walls = {};
+    }
+    // If custom slug provided, use it as the wall ID (uppercased)
+    if (slug && slug.trim()) {
+      const cleanSlug = slug.trim().replace(/[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣_-]/g, '').toUpperCase();
+      if (cleanSlug) {
+        if (this.cache.walls[cleanSlug]) {
+          throw new Error(`'${cleanSlug}' 주소는 이미 사용 중입니다. 다른 키워드를 입력해주세요.`);
+        }
+        const maxUsersVal = typeof maxUsers === 'number' ? maxUsers : parseInt(maxUsers) || 0;
+        const newWall = {
+          id: cleanSlug,
+          title: title || '',
+          topic: topic || '',
+          description: description || '',
+          creator: creator || '',
+          maxUsers: maxUsersVal,
+          layout: layout || 'grid',
+          isPrivate: isPrivate || false,
+          password: password || null,
+          cards: {},
+          sections: [],
+          members: [],
+          config: {},
+          createdAt: new Date().toISOString()
+        };
+        this.cache.walls[cleanSlug] = newWall;
+        await this.save();
+        return newWall;
+      }
     }
     // Clean and normalize title for URL ID usage (remove spaces, preserve Korean/alphanumeric)
     const cleanTitle = (title || '').trim().replace(/[\s\t\n]+/g, '').replace(/[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣-_]/g, '');
@@ -1031,6 +1257,8 @@ class Database {
       maxUsers: maxUsersVal,
       layout: ['columns', 'rows', 'timeline', 'chat'].includes(layout) ? layout : 'grid',
       sections: sections,
+      isPrivate: !!isPrivate,
+      password: (password && password.trim()) ? password.trim() : '',
       createdAt: new Date().toISOString(),
       cards: {},
       members: {}
@@ -1039,6 +1267,21 @@ class Database {
     this.cache.walls[wallId] = newWall;
     await this.save();
     return newWall;
+  }
+
+  async renameWall(oldId, newSlug) {
+    const cleanOld = (oldId || '').trim().toUpperCase();
+    const wall = this.cache.walls ? this.cache.walls[cleanOld] : null;
+    if (!wall) throw new Error('존재하지 않는 게시판입니다.');
+    const cleanSlug = (newSlug || '').trim().replace(/[^a-zA-Z0-9ㄱ-ㅎㅏ-ㅣ가-힣_-]/g, '').toUpperCase();
+    if (!cleanSlug) throw new Error('유효한 키워드를 입력해주세요.');
+    if (cleanSlug === cleanOld) return wall;
+    if (this.cache.walls[cleanSlug]) throw new Error(`'${cleanSlug}' 주소는 이미 사용 중입니다. 다른 키워드를 입력해주세요.`);
+    wall.id = cleanSlug;
+    this.cache.walls[cleanSlug] = wall;
+    delete this.cache.walls[cleanOld];
+    await this.save();
+    return wall;
   }
 
   async getWall(wallId) {
@@ -1164,7 +1407,7 @@ class Database {
     return card;
   }
 
-  async commentWallCard(wallId, cardId, author, text) {
+  async commentWallCard(wallId, cardId, author, text, clientUuid) {
     const wall = await this.getWall(wallId);
     if (!wall) throw new Error('존재하지 않는 게시판입니다.');
 
@@ -1179,11 +1422,35 @@ class Database {
       id: crypto.randomUUID(),
       author: (author && author.trim()) ? author.trim() : '익명',
       text: (text && text.trim()) ? text.trim() : '',
+      clientUuid: (clientUuid && String(clientUuid)) || null,
       likes: 0,
       createdAt: new Date().toISOString()
     };
 
     card.comments.push(comment);
+    await this.save();
+    return card;
+  }
+
+  async editWallCardComment(wallId, cardId, commentId, text) {
+    const wall = await this.getWall(wallId);
+    if (!wall) throw new Error('존재하지 않는 게시판입니다.');
+    const card = wall.cards[cardId];
+    if (!card || !card.comments) throw new Error('존재하지 않는 카드입니다.');
+    const c = card.comments.find(x => x.id === commentId);
+    if (!c) throw new Error('존재하지 않는 메시지입니다.');
+    if (text && text.trim()) c.text = text.trim();
+    c.editedAt = new Date().toISOString();
+    await this.save();
+    return card;
+  }
+
+  async deleteWallCardComment(wallId, cardId, commentId) {
+    const wall = await this.getWall(wallId);
+    if (!wall) throw new Error('존재하지 않는 게시판입니다.');
+    const card = wall.cards[cardId];
+    if (!card || !card.comments) throw new Error('존재하지 않는 카드입니다.');
+    card.comments = card.comments.filter(x => x.id !== commentId);
     await this.save();
     return card;
   }
@@ -1274,13 +1541,19 @@ class Database {
       wall.members = {};
     }
 
+    // [보안 및 사용성 패치] 동일 번호 선택 시 다른 기기/브라우저(UUID가 다른 경우)이더라도 
+    // 덮어쓰기(Overwrite)를 허용하여, 카카오톡 인앱 브라우저나 단순 재접속 시 로그인이 차단되는 오류를 방지합니다.
+    // 기존에 다른 사용자가 점유하고 있었더라도 새 사용자의 정보(UUID, 닉네임)로 대체됩니다.
+    /*
     const existing = wall.members[number];
     if (existing && existing.clientUuid !== clientUuid) {
       throw new Error(`이미 다른 사용자가 선택한 번호(${number}번)입니다.`);
     }
+    */
 
     for (const num in wall.members) {
-      if (wall.members[num].clientUuid === clientUuid) {
+      const _mm = wall.members[num];
+      if (_mm && _mm.clientUuid === clientUuid) {
         const oldNumber = parseInt(num, 10);
         if (wall.layout === 'columns' && wall.maxUsers > 0) {
           const sectionName = `${oldNumber}번`;
@@ -1367,7 +1640,7 @@ class Database {
     return wall;
   }
 
-  async deleteWall(wallId, creatorOrAdmin) {
+  async deleteWall(wallId, creatorOrAdmin, role = null) {
     if (!this.cache.walls) {
       this.cache.walls = {};
     }
@@ -1375,11 +1648,22 @@ class Database {
     const wall = this.cache.walls[cleanId];
     if (!wall) return false;
 
-    const cleanUser = String(creatorOrAdmin || '').toLowerCase();
-    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin';
-    const isCreator = wall.creator === cleanUser;
+    const cleanUser = String(creatorOrAdmin || '').trim().toLowerCase();
+    // 관리자: kfcman/admin 계정 또는 manager 역할
+    const isAdmin = cleanUser === 'kfcman' || cleanUser === 'admin' || role === 'manager';
+    // 대소문자 차이로 본인 게시판을 못 지우던 버그 수정 (양쪽 모두 소문자 비교)
+    const isCreator = String(wall.creator || '').trim().toLowerCase() === cleanUser;
 
-    if (isCreator || isAdmin) {
+    // 저장본(아카이브)은 원본 게시판 개설자(교사)도 삭제 가능
+    let isParentCreator = false;
+    if (wall.isArchive && wall.parentWallId) {
+      const parent = this.cache.walls[String(wall.parentWallId).trim().toUpperCase()];
+      if (parent) {
+        isParentCreator = String(parent.creator || '').trim().toLowerCase() === cleanUser;
+      }
+    }
+
+    if (isCreator || isAdmin || isParentCreator) {
       delete this.cache.walls[cleanId];
       await this.save();
       return true;
@@ -1504,6 +1788,174 @@ class Database {
     // Sort by updatedAt descending
     return docsList.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
   }
+
+  // SciBit APIs
+  generateUuid() {
+    return crypto.randomUUID();
+  }
+
+  async createScibitTeacher(email, passwordHash) {
+    const emailKey = email.toLowerCase().trim();
+    if (this.cache.scibit_teachers[emailKey]) {
+      throw new Error("이미 존재하는 이메일입니다.");
+    }
+    const id = this.generateUuid();
+    this.cache.scibit_teachers[emailKey] = { id, email: emailKey, passwordHash, createdAt: new Date() };
+    this.save();
+    return this.cache.scibit_teachers[emailKey];
+  }
+
+  async getScibitTeacher(email) {
+    return this.cache.scibit_teachers[email.toLowerCase().trim()] || null;
+  }
+
+  async createScibitClass(teacherId, className, code, students) {
+    const classId = this.generateUuid();
+    const classObj = {
+      id: classId,
+      code: code.toUpperCase().trim(),
+      name: className,
+      teacher_id: teacherId,
+      createdAt: new Date()
+    };
+    
+    this.cache.scibit_classes[classId] = classObj;
+    
+    // Register students
+    students.forEach((s, idx) => {
+      const studentId = this.generateUuid();
+      this.cache.scibit_students[studentId] = {
+        id: studentId,
+        class_id: classId,
+        name: s.name,
+        avatar_index: s.avatar_index || 0,
+        password_sequence: s.password_sequence || []
+      };
+    });
+    
+    this.save();
+    return classObj;
+  }
+
+  async getScibitClasses(teacherId) {
+    return Object.values(this.cache.scibit_classes || {})
+      .filter(c => c.teacher_id === teacherId)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }
+
+  async getScibitClassByCode(code) {
+    const codeClean = code.toUpperCase().trim();
+    const classObj = Object.values(this.cache.scibit_classes || {}).find(c => c.code === codeClean);
+    if (!classObj) return null;
+    
+    const students = Object.values(this.cache.scibit_students || {}).filter(s => s.class_id === classObj.id);
+    return { class: classObj, students };
+  }
+
+  async createScibitRecord(studentId, classId, sensor, question, prediction, measurements, conclusion, graphSnapshot) {
+    const recordId = this.generateUuid();
+    const record = {
+      id: recordId,
+      student_id: studentId,
+      class_id: classId,
+      sensor,
+      question,
+      prediction,
+      measurements,
+      conclusion,
+      graph_snapshot: graphSnapshot,
+      created_at: new Date()
+    };
+    this.cache.scibit_records[recordId] = record;
+    this.save();
+    return record;
+  }
+
+  async getScibitRecords(studentId) {
+    return Object.values(this.cache.scibit_records || {})
+      .filter(r => r.student_id === studentId)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
+
+  /* ---- SciBot (햄스터S 과학실) 전용 DB CRUD ---- */
+  async createScibotTeacher(email, passwordHash) {
+    const emailKey = email.toLowerCase().trim();
+    const id = this.generateUuid();
+    this.cache.scibot_teachers[emailKey] = { id, email: emailKey, passwordHash, createdAt: new Date() };
+    this.save();
+    return this.cache.scibot_teachers[emailKey];
+  }
+
+  async getScibotTeacher(email) {
+    return this.cache.scibot_teachers[email.toLowerCase().trim()] || null;
+  }
+
+  async createScibotClass(teacherId, className, code, students) {
+    const classId = this.generateUuid();
+    const classObj = {
+      id: classId,
+      code: code.toUpperCase().trim(),
+      name: className,
+      teacher_id: teacherId,
+      createdAt: new Date()
+    };
+    this.cache.scibot_classes[classId] = classObj;
+    
+    // 학생 등록
+    students.forEach((s, idx) => {
+      const studentId = this.generateUuid();
+      this.cache.scibot_students[studentId] = {
+        id: studentId,
+        class_id: classId,
+        name: s.name,
+        avatar_index: s.avatar_index || 0,
+        password_sequence: s.password_sequence || []
+      };
+    });
+    this.save();
+    return classObj;
+  }
+
+  async getScibotClasses(teacherId) {
+    return Object.values(this.cache.scibot_classes || {})
+      .filter(c => c.teacher_id === teacherId)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }
+
+  async getScibotClassByCode(code) {
+    const codeClean = code.toUpperCase().trim();
+    const classObj = Object.values(this.cache.scibot_classes || {}).find(c => c.code === codeClean);
+    if (!classObj) return null;
+    
+    const students = Object.values(this.cache.scibot_students || {}).filter(s => s.class_id === classObj.id);
+    return { class: classObj, students };
+  }
+
+  async createScibotRecord(studentId, classId, sensor, question, prediction, measurements, conclusion, graphSnapshot) {
+    const recordId = this.generateUuid();
+    const record = {
+      id: recordId,
+      student_id: studentId,
+      class_id: classId,
+      sensor,
+      question,
+      prediction,
+      measurements,
+      conclusion,
+      graph_snapshot: graphSnapshot,
+      created_at: new Date()
+    };
+    this.cache.scibot_records[recordId] = record;
+    this.save();
+    return record;
+  }
+
+  async getScibotRecords(studentId) {
+    return Object.values(this.cache.scibot_records || {})
+      .filter(r => r.student_id === studentId)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
+
 }
 
 module.exports = new Database();

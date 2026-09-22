@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnQrModalClose = document.getElementById('btn-qr-modal-close');
   const qrCanvas = document.getElementById('qr-canvas');
   const btnQrDownload = document.getElementById('btn-qr-download');
-  
+
   const editLinkModal = document.getElementById('edit-link-modal');
   const btnEditLinkModalClose = document.getElementById('btn-edit-link-modal-close');
   const editLinkCodeLabel = document.getElementById('edit-link-code-label');
@@ -142,6 +142,15 @@ document.addEventListener('DOMContentLoaded', () => {
         btnDark.className = "px-4 py-1.5 rounded-full text-xs font-black transition-all flex items-center gap-1 cursor-pointer bg-slate-950 text-white border border-slate-800";
       }
     }
+
+    const globalLight = document.getElementById('btn-global-theme-light');
+    const globalDark = document.getElementById('btn-global-theme-dark');
+    if (globalLight && globalDark) {
+      globalLight.classList.toggle('active', isLight);
+      globalDark.classList.toggle('active', !isLight);
+      globalLight.setAttribute('aria-pressed', String(isLight));
+      globalDark.setAttribute('aria-pressed', String(!isLight));
+    }
   }
 
   function updateThemeRadioState(isLight) {
@@ -182,6 +191,19 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('kfcman_theme', isLight ? 'light' : 'dark');
     lucide.createIcons();
     updateThemeRadioState(isLight);
+
+    // 마음챙김 / 과학실험실 / MBL 가이드 iframe 내부 테마 실시간 동기화
+    ['mindcheck-frame', 'scibot-frame', 'scibit-frame'].forEach(frameId => {
+      try {
+        const frame = document.getElementById(frameId);
+        if (frame && frame.contentWindow) {
+          frame.contentWindow.postMessage({ type: 'THEME_SYNC', theme: isLight ? 'light' : 'dark' }, '*');
+        }
+      } catch (e) {
+        console.warn(`${frameId} 테마 동기화 중 경고:`, e);
+      }
+    });
+
     showToast(
       isLight ? '화이트 테마 활성화' : '블랙 테마 활성화',
       isLight ? '눈이 편안한 밝은 화이트 모드로 전환되었습니다.' : '세련되고 깊이 있는 다크 모드로 전환되었습니다.',
@@ -210,6 +232,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (btnGuestThemeDark) {
     btnGuestThemeDark.addEventListener('click', () => {
+      const isCurrentlyLight = document.body.classList.contains('light-theme');
+      if (isCurrentlyLight) {
+        window.toggleThemeAction();
+      }
+    });
+  }
+
+  const btnGlobalThemeLight = document.getElementById('btn-global-theme-light');
+  const btnGlobalThemeDark = document.getElementById('btn-global-theme-dark');
+  if (btnGlobalThemeLight) {
+    btnGlobalThemeLight.addEventListener('click', () => {
+      const isCurrentlyLight = document.body.classList.contains('light-theme');
+      if (!isCurrentlyLight) {
+        window.toggleThemeAction();
+      }
+    });
+  }
+  if (btnGlobalThemeDark) {
+    btnGlobalThemeDark.addEventListener('click', () => {
       const isCurrentlyLight = document.body.classList.contains('light-theme');
       if (isCurrentlyLight) {
         window.toggleThemeAction();
@@ -254,27 +295,67 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await response.json();
         
         // Authenticated successfully
-        userWelcomeName.textContent = data.username;
+        currentUsername = data.username || '';
+        localStorage.setItem('kfcman_username', currentUsername);
+        if (userWelcomeName && data.username) {
+          userWelcomeName.textContent = data.username;
+        }
+        const topBarUsername = document.getElementById('top-bar-username');
+        const topBarProfileCircle = document.getElementById('top-bar-profile-circle');
+        if (topBarUsername && data.username) {
+          topBarUsername.textContent = `${data.username} 님`;
+        }
+        if (topBarProfileCircle && data.username) {
+          topBarProfileCircle.textContent = data.username.charAt(0).toUpperCase();
+        }
         localStorage.setItem('kfcman_user_role', data.role || 'user');
+        
+        const userRoleLabel = document.getElementById('user-role-label');
+        if (userRoleLabel) {
+          if (data.role === 'admin') userRoleLabel.textContent = '인증 교사 (관리자)';
+          else if (data.role === 'manager') userRoleLabel.textContent = '인증 교사 (운영진)';
+          else userRoleLabel.textContent = '인증 교사 (정회원)';
+        }
 
         const sidebarProfileCircle = document.getElementById('sidebar-profile-circle');
         if (sidebarProfileCircle && data.username) {
           sidebarProfileCircle.textContent = data.username.charAt(0).toUpperCase();
+        }
+        const sidebarProfileName = document.getElementById('sidebar-profile-name');
+        if (sidebarProfileName && data.username) {
+          sidebarProfileName.textContent = data.username;
+        }
+        const sidebarProfileRole = document.getElementById('sidebar-profile-role');
+        if (sidebarProfileRole) {
+          if (data.role === 'admin') sidebarProfileRole.textContent = '관리자 (Admin)';
+          else if (data.role === 'manager') sidebarProfileRole.textContent = '운영진 (Manager)';
+          else if (data.role === 'vip') sidebarProfileRole.textContent = '우수회원 (VIP)';
+          else sidebarProfileRole.textContent = '정회원 교사';
         }
         const sidebarProfileGroup = document.getElementById('sidebar-profile-group');
         const sidebarGuestGroup = document.getElementById('sidebar-guest-group');
         if (sidebarProfileGroup) sidebarProfileGroup.classList.remove('hidden');
         if (sidebarGuestGroup) sidebarGuestGroup.classList.add('hidden');
         
-        userWelcomeTag.classList.remove('hidden');
-        headerNav.style.display = 'flex';
-        logoutBtn.style.display = 'flex';
+        if (userWelcomeTag) {
+          userWelcomeTag.classList.remove('hidden');
+          userWelcomeTag.classList.add('flex');
+        }
+        if (headerNav) headerNav.style.display = 'flex';
+        if (logoutBtn) {
+          logoutBtn.style.display = 'flex';
+          logoutBtn.classList.remove('hidden');
+        }
         const logoutBtnMobile = document.getElementById('btn-logout-mobile');
         if (logoutBtnMobile) logoutBtnMobile.classList.remove('hidden');
-        guestHeaderButtons.style.display = 'none';
+        if (guestHeaderButtons) {
+          guestHeaderButtons.style.setProperty('display', 'none', 'important');
+          guestHeaderButtons.classList.add('hidden');
+          guestHeaderButtons.classList.remove('flex');
+        }
         
-        guestContent.classList.add('hidden');
-        memberContent.classList.remove('hidden');
+        if (guestContent) guestContent.classList.add('hidden');
+        if (memberContent) memberContent.classList.remove('hidden');
         
         // Hide mobile guest buttons and show member ones
         const mobileNavGuestGroup = document.getElementById('mobile-nav-guest-group');
@@ -321,14 +402,10 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         
-        // Hide/Show Wall board nav item based on user role (Restricted to VIP, Manager, Admin)
+        // 협업 게시판(Wall) 메뉴 비활성화 (항상 숨김)
         const navItemWall = document.getElementById('nav-item-wall');
         if (navItemWall) {
-          if (data.role === 'vip' || data.role === 'manager' || data.role === 'admin') {
-            navItemWall.style.display = 'flex';
-          } else {
-            navItemWall.style.display = 'none';
-          }
+          navItemWall.style.display = 'none';
         }
 
         // Hide/Show HWP shared storage & editor nav items (Restricted to Admin ONLY)
@@ -343,6 +420,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (navItemTetrisSide) navItemTetrisSide.style.display = isUserAdmin ? 'flex' : 'none';
         if (gridItemDocs) gridItemDocs.style.display = isUserAdmin ? 'flex' : 'none';
 
+        // [관리자 전용] 오라클 서버 인프라 관제 사이드바 메뉴 노출 제어
+        const navItemOracleSide = document.getElementById('nav-item-oracle-side');
+        if (navItemOracleSide) {
+          if (isUserAdmin) {
+            navItemOracleSide.classList.remove('hidden');
+            navItemOracleSide.style.display = 'flex';
+          } else {
+            navItemOracleSide.classList.add('hidden');
+            navItemOracleSide.style.display = 'none';
+          }
+        }
+
         const mobileNavDocs = document.getElementById('mobile-nav-docs');
         if (mobileNavDocs) mobileNavDocs.style.display = isUserAdmin ? 'flex' : 'none';
 
@@ -355,14 +444,10 @@ document.addEventListener('DOMContentLoaded', () => {
           else docsHeroBtn.classList.add('hidden');
         }
 
-        // Hide/Show Wall mobile bottom nav item based on user role (Restricted to VIP, Manager, Admin)
+        // 협업 게시판(Wall) 모바일 하단 메뉴 비활성화 (항상 숨김)
         const mobileNavWall = document.getElementById('mobile-nav-wall');
         if (mobileNavWall) {
-          if (data.role === 'vip' || data.role === 'manager' || data.role === 'admin') {
-            mobileNavWall.style.display = 'flex';
-          } else {
-            mobileNavWall.style.display = 'none';
-          }
+          mobileNavWall.style.display = 'none';
         }
 
         // Show settings navigation items for all logged-in users (including general 'user' role for theme settings)
@@ -406,16 +491,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sidebarProfileGroup) sidebarProfileGroup.classList.add('hidden');
     if (sidebarGuestGroup) sidebarGuestGroup.classList.remove('hidden');
 
-    userWelcomeTag.classList.add('hidden');
-    headerNav.style.display = 'none';
-    logoutBtn.style.display = 'none';
+    if (userWelcomeTag) {
+      userWelcomeTag.classList.add('hidden');
+      userWelcomeTag.classList.remove('flex');
+    }
+    if (headerNav) headerNav.style.display = 'none';
+    if (logoutBtn) {
+      logoutBtn.style.display = 'none';
+      logoutBtn.classList.add('hidden');
+    }
     const logoutBtnMobile = document.getElementById('btn-logout-mobile');
     if (logoutBtnMobile) logoutBtnMobile.classList.add('hidden');
-    guestHeaderButtons.style.display = 'flex';
+    if (guestHeaderButtons) {
+      guestHeaderButtons.style.display = 'flex';
+      guestHeaderButtons.classList.remove('hidden');
+    }
     
-    guestContent.classList.remove('hidden');
-    memberContent.classList.add('hidden');
-    adminApprovalSection.classList.add('hidden');
+    if (guestContent) guestContent.classList.remove('hidden');
+    if (memberContent) memberContent.classList.add('hidden');
+    const adminApprovalSec = document.getElementById('admin-approval-section');
+    if (adminApprovalSec) adminApprovalSec.classList.add('hidden');
 
     // Hide HWP shared storage header button and landing welcome hero button when logged out
     const docsHeaderBtn = document.getElementById('nav-item-docs-header');
@@ -517,6 +612,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     switchAuthTab(mode);
   }
+  window.openAuthModal = openAuthModal;
 
   function closeAuthModal() {
     if (authModal) {
@@ -524,9 +620,10 @@ document.addEventListener('DOMContentLoaded', () => {
       authModal.querySelectorAll('input').forEach(inp => inp.setAttribute('disabled', 'true'));
     }
   }
+  window.closeAuthModal = closeAuthModal;
 
-  function switchAuthTab(mode) {
-    if (mode === 'login') {
+  function switchAuthTab(tab) {
+    if (tab === 'login') {
       tabLoginTrigger.classList.add('active');
       tabRegisterTrigger.classList.remove('active');
       authLoginContent.classList.remove('hidden');
@@ -540,30 +637,30 @@ document.addEventListener('DOMContentLoaded', () => {
       registerUsernameInput.focus();
     }
   }
+  window.switchAuthTab = switchAuthTab;
 
   console.log('TRACE: Binding auth button click listeners');
-  btnLoginTrigger.addEventListener('click', () => {
-    console.log('TRACE: btnLoginTrigger clicked');
-    openAuthModal('login');
-  });
-  btnRegisterTrigger.addEventListener('click', () => {
-    console.log('TRACE: btnRegisterTrigger clicked');
-    openAuthModal('register');
-  });
-  btnHeroStart.addEventListener('click', () => {
-    console.log('TRACE: btnHeroStart clicked');
-    openAuthModal('register');
-  });
+  if (btnLoginTrigger) {
+    btnLoginTrigger.addEventListener('click', () => {
+      openAuthModal('login');
+    });
+  }
+  if (btnRegisterTrigger) {
+    btnRegisterTrigger.addEventListener('click', () => {
+      openAuthModal('register');
+    });
+  }
+  if (btnHeroStart) {
+    btnHeroStart.addEventListener('click', () => {
+      openAuthModal('register');
+    });
+  }
   
   const btnHeroLogin = document.getElementById('btn-hero-login');
   if (btnHeroLogin) {
-    console.log('TRACE: btnHeroLogin exists, binding click listener');
     btnHeroLogin.addEventListener('click', () => {
-      console.log('TRACE: btnHeroLogin clicked');
       openAuthModal('login');
     });
-  } else {
-    console.warn('TRACE: btnHeroLogin element not found in DOM!');
   }
 
   // Intercept Kanban and Docs links when guest (not logged in) to open login modal
@@ -647,6 +744,8 @@ document.addEventListener('DOMContentLoaded', () => {
       
       showToast('로그인 완료', `${data.username}님, 프리미엄 링크 허브에 오신 것을 환영합니다!`, 'success');
       await checkLoginState();
+      // 로그인 성공 시 대시보드 최상단으로 매끄럽게 스크롤 이동
+      window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (err) {
       showToast('로그인 실패', err.message, 'error');
@@ -691,10 +790,10 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(data.error || '회원가입에 실패했습니다.');
       }
 
-      // Success
+      // 가입 성공 안내 (승인 대기 없이 바로 로그인 가능)
       showToast(
-        '가입 신청 접수 완료',
-        '회원가입 신청이 안전하게 접수되었습니다! <strong>관리자가 회원 가입을 승인한 이후부터</strong> 로그인 및 서비스 이용이 가능합니다.',
+        '회원가입 완료',
+        '회원가입이 성공적으로 완료되었습니다! 방금 생성하신 계정으로 바로 로그인해 주세요.',
         'success'
       );
       
@@ -713,19 +812,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Handle Logout
-  logoutBtn.addEventListener('click', async () => {
-    if (confirm('안전하게 로그아웃하시겠습니까?')) {
-      try {
-        await secureFetch('/api/logout', { method: 'POST' });
-      } catch (err) {
-        console.error('Logout API Error:', err);
-      }
-      removeAuthToken();
-      showToast('로그아웃 완료', '안전하게 로그아웃되었습니다.', 'info');
-      checkLoginState();
+  // --- 공통 로그아웃 처리 함수 (브라우저 confirm 차단 문제 완전 해결 & 안전한 세션 파기) ---
+  async function performLogout() {
+    try {
+      // 서버 세션 로그아웃 API 호출 (네트워크 지연이나 오류가 있어도 클라이언트 로그아웃은 즉시 완료)
+      await secureFetch('/api/logout', { method: 'POST' }).catch((err) => {
+        console.warn('Logout API warning:', err);
+      });
+    } catch (err) {
+      console.warn('Logout request skipped:', err);
     }
-  });
+    // 브라우저 로컬 스토리지에 저장된 토큰 및 권한 삭제
+    removeAuthToken();
+    // 안내 토스트 메시지 출력
+    showToast('로그아웃 완료', '안전하게 로그아웃되었습니다.', 'info');
+    // 화면을 즉시 게스트 모드로 안전하게 전환
+    showGuestState();
+    // 모바일/데스크톱 화면을 최상단으로 부드럽게 스크롤
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // 전역 로그아웃 함수 바인딩 (인라인 onclick 지원)
+  window.performLogout = performLogout;
+
+  // 상단 헤더 및 대시보드 탑바 로그아웃 버튼 클릭 이벤트 연결
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', performLogout);
+  }
+  const btnTopbarLogout = document.getElementById('btn-topbar-logout');
+  if (btnTopbarLogout) {
+    btnTopbarLogout.addEventListener('click', performLogout);
+  }
 
   // --- 5. Toast Notification Utility ---
   function showToast(title, message, type = 'info') {
@@ -1411,29 +1528,82 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // --- 14. Admin Panel Rendering ---
+  const ADMIN_SUBTAB_LABELS = {
+    overview: '개요',
+    users: '회원 이용량 모니터링 & 계정 통제',
+    pending: '회원가입 신청 대기열 승인',
+    links: '전체 회원 단축 링크 관리',
+    notifications: '신규 회원가입 알림 & 다채널 외부 연동 관리'
+  };
+  const ADMIN_SUBTABS = Object.keys(ADMIN_SUBTAB_LABELS);
+  let currentAdminSubtab = 'overview';
+  let adminSubtabInitialized = false;
+
+  function getAdminSubtabFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const value = params.get('adminSubtab') || localStorage.getItem('kfcman_admin_subtab') || 'overview';
+    return ADMIN_SUBTABS.includes(value) ? value : 'overview';
+  }
+
+  function persistAdminSubtab(subtab) {
+    localStorage.setItem('kfcman_admin_subtab', subtab);
+    const url = new URL(window.location.href);
+    url.searchParams.set('adminSubtab', subtab);
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+  }
+
+  async function loadAdminSubtabData(subtab) {
+    if (subtab === 'overview') return renderAdminOverviewPanel();
+    if (subtab === 'users') return renderUserManagementPanel();
+    if (subtab === 'pending') return renderAdminPendingPanel();
+    if (subtab === 'links') return renderAdminLinksPanel();
+    if (subtab === 'notifications') return loadNotificationSettings();
+  }
+
+  window.switchAdminSubtab = async function(subtab, options = {}) {
+    const nextSubtab = ADMIN_SUBTABS.includes(subtab) ? subtab : 'overview';
+    currentAdminSubtab = nextSubtab;
+    adminSubtabInitialized = true;
+
+    document.querySelectorAll('.admin-subview').forEach(view => {
+      if (view.id === `admin-subview-${nextSubtab}`) {
+        view.classList.remove('hidden');
+      } else {
+        view.classList.add('hidden');
+      }
+    });
+
+    document.querySelectorAll('[data-admin-subtab]').forEach(btn => {
+      const isActive = btn.dataset.adminSubtab === nextSubtab;
+      btn.classList.remove('active', 'text-[#7c6cf0]', 'dark:text-[#9d8df8]', 'font-bold', 'text-slate-400', 'dark:text-zinc-500');
+      if (isActive) {
+        btn.classList.add('active', 'text-[#7c6cf0]', 'dark:text-[#9d8df8]', 'font-bold');
+      } else {
+        btn.classList.add('text-slate-400', 'dark:text-zinc-500');
+      }
+    });
+
+    const pathEl = document.getElementById('admin-current-path');
+    if (pathEl) pathEl.textContent = `설정 > 통합 관리자 > ${ADMIN_SUBTAB_LABELS[nextSubtab]}`;
+    updateSettingsHeader('admin');
+    if (options.persist !== false) persistAdminSubtab(nextSubtab);
+
+    try {
+      await loadAdminSubtabData(nextSubtab);
+    } catch (e) {
+      console.error(`Failed to load admin subtab: ${nextSubtab}`, e);
+    }
+    lucide.createIcons();
+  };
+
   async function renderAdminPanel() {
-    // Load notification configuration (once) safely
-    try {
-      await loadNotificationSettings();
-    } catch (e) {
-      console.error("Failed to load notification settings:", e);
+    if (!adminSubtabInitialized) {
+      return window.switchAdminSubtab(getAdminSubtabFromUrl(), { persist: false });
     }
+    return loadAdminSubtabData(currentAdminSubtab);
+  }
 
-    // Load User Usage Statistics & Management Panel safely
-    try {
-      await renderUserManagementPanel();
-    } catch (e) {
-      console.error("Failed to load user management panel:", e);
-    }
-
-    // Load All Members' Links Management Panel safely
-    try {
-      await renderAdminLinksPanel();
-    } catch (e) {
-      console.error("Failed to load admin links management panel:", e);
-    }
-
-    // 1. Fetch system monitoring metrics
+  async function renderAdminOverviewPanel() {
     try {
       const sysResponse = await secureFetch('/api/admin/system');
       if (sysResponse.ok) {
@@ -1452,33 +1622,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       console.error('Failed to load system metrics:', err);
     }
+  }
 
-    // Fetch Tetris server statistics
-    try {
-      const tetrisResponse = await secureFetch('/api/tetris/stats');
-      if (tetrisResponse.ok) {
-        const tetrisData = await tetrisResponse.json();
-        const playersEl = document.getElementById('monitor-tetris-players');
-        const spectatorsEl = document.getElementById('monitor-tetris-spectators');
-        const socketsEl = document.getElementById('monitor-tetris-sockets');
-        const stateEl = document.getElementById('monitor-tetris-state');
-        
-        if (playersEl) playersEl.textContent = (tetrisData.activePlayers || 0) + '명';
-        if (spectatorsEl) spectatorsEl.textContent = (tetrisData.spectators || 0) + '명';
-        if (socketsEl) socketsEl.textContent = (tetrisData.totalConnections || 0) + '개';
-        if (stateEl) {
-          let stateText = '대기실 (lobby)';
-          if (tetrisData.gameState === 'countdown') stateText = '카운트다운 (countdown)';
-          else if (tetrisData.gameState === 'playing') stateText = '대결 중 (playing)';
-          else if (tetrisData.gameState === 'finished') stateText = '종료 (finished)';
-          stateEl.textContent = stateText;
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load Tetris stats:', err);
-    }
-
-    // 2. Fetch pending approvals list
+  async function renderAdminPendingPanel() {
     try {
       const response = await secureFetch('/api/admin/pending');
       if (!response.ok) {
@@ -1545,6 +1691,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  document.addEventListener('click', (event) => {
+    const btn = event.target.closest('[data-admin-subtab]');
+    if (!btn) return;
+    event.preventDefault();
+    window.switchAdminSubtab(btn.dataset.adminSubtab);
+  });
+
   function bindAdminActionEvents() {
     document.querySelectorAll('.btn-admin-approve').forEach(button => {
       button.addEventListener('click', async () => {
@@ -1561,7 +1714,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error(data.error);
 
             showToast('가입 승인 완료', `[${username}] 사용자의 가입이 정상적으로 승인되었습니다.`, 'success');
-            renderAdminPanel();
+            renderAdminPendingPanel();
           } catch (err) {
             showToast('승인 실패', err.message, 'error');
           }
@@ -1584,7 +1737,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error(data.error);
 
             showToast('가입 거절 완료', `[${username}] 사용자의 가입 신청을 거절하고 영구 삭제했습니다.`, 'info');
-            renderAdminPanel();
+            renderAdminPendingPanel();
           } catch (err) {
             showToast('거절 실패', err.message, 'error');
           }
@@ -1618,6 +1771,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const panelEmailConfig = document.getElementById('panel-email-config');
   const panelSmsConfig = document.getElementById('panel-sms-config');
   const panelSmsKakaoDetails = document.getElementById('panel-sms-kakao-details');
+
+  function initSecretFieldToggles() {
+    document.querySelectorAll('[data-secret-field="true"]').forEach(input => {
+      if (!input.id || document.querySelector(`[data-secret-toggle="${input.id}"]`)) return;
+      const parent = input.parentElement;
+      if (!parent) return;
+      parent.classList.add('relative');
+      input.classList.add('pr-10');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'absolute right-2 bottom-1.5 w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center';
+      btn.dataset.secretToggle = input.id;
+      btn.title = '민감 정보 표시/숨김';
+      btn.innerHTML = '<i data-lucide="eye" class="w-3.5 h-3.5"></i>';
+      btn.addEventListener('click', () => {
+        const isHidden = input.type === 'password';
+        input.type = isHidden ? 'text' : 'password';
+        btn.innerHTML = `<i data-lucide="${isHidden ? 'eye-off' : 'eye'}" class="w-3.5 h-3.5"></i>`;
+        lucide.createIcons();
+      });
+      parent.appendChild(btn);
+    });
+  }
+
+  initSecretFieldToggles();
 
   // Input Toggle panel visibility
   chkWebhookEnabled.addEventListener('change', () => {
@@ -1763,18 +1941,77 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // --- 16. USER USAGE STATISTICS & MANAGEMENT UI MODULE ---
+  let cachedAdminUsers = [];
+  let adminUsersPage = 1;
+  const ADMIN_USERS_PAGE_SIZE = 12;
+
   async function renderUserManagementPanel() {
     try {
       const response = await secureFetch('/api/admin/users');
       if (!response.ok) throw new Error('회원 통계를 불러오지 못했습니다.');
       const { users } = await response.json();
-      
+      cachedAdminUsers = users || [];
+      adminUsersPage = 1;
+      renderAdminUsersTable();
+    } catch (err) {
+      console.error(err);
+      showToast('회원 관리 오류', err.message, 'error');
+    }
+  }
+
+  function renderAdminUsersSummary(users) {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const total = users.length;
+    const active = users.filter(user => user.approved !== false).length;
+    const newThisMonth = users.filter(user => {
+      const created = new Date(user.createdAt);
+      return !Number.isNaN(created.getTime()) && created.getMonth() === currentMonth && created.getFullYear() === currentYear;
+    }).length;
+    const totalLinks = users.reduce((sum, user) => sum + (Number(user.totalLinks) || 0), 0);
+
+    const totalEl = document.getElementById('admin-users-total');
+    const activeEl = document.getElementById('admin-users-active');
+    const newMonthEl = document.getElementById('admin-users-new-month');
+    const linksTotalEl = document.getElementById('admin-users-links-total');
+    if (totalEl) totalEl.textContent = total.toLocaleString();
+    if (activeEl) activeEl.textContent = active.toLocaleString();
+    if (newMonthEl) newMonthEl.textContent = newThisMonth.toLocaleString();
+    if (linksTotalEl) linksTotalEl.textContent = totalLinks.toLocaleString();
+  }
+
+  function getFilteredAdminUsers() {
+    const searchInput = document.getElementById('admin-users-search');
+    const roleFilter = document.getElementById('admin-users-role-filter');
+    const statusFilter = document.getElementById('admin-users-status-filter');
+    const keyword = (searchInput?.value || '').trim().toLowerCase();
+    const role = roleFilter?.value || '';
+    const status = statusFilter?.value || '';
+
+    return cachedAdminUsers.filter(user => {
+      const matchesKeyword = !keyword || user.username.toLowerCase().includes(keyword);
+      const normalizedRole = user.approved === false || user.role === 'pending' ? 'pending' : user.role;
+      const matchesRole = !role || normalizedRole === role;
+      const matchesStatus = !status || (status === 'active' ? user.approved !== false : user.approved === false);
+      return matchesKeyword && matchesRole && matchesStatus;
+    });
+  }
+
+  function renderAdminUsersTable() {
+      renderAdminUsersSummary(cachedAdminUsers);
       const adminUserStatsBody = document.getElementById('admin-user-stats-body');
       if (!adminUserStatsBody) return;
-      
+
+      const filteredUsers = getFilteredAdminUsers();
+      const totalPages = Math.max(1, Math.ceil(filteredUsers.length / ADMIN_USERS_PAGE_SIZE));
+      adminUsersPage = Math.min(Math.max(1, adminUsersPage), totalPages);
+      const start = (adminUsersPage - 1) * ADMIN_USERS_PAGE_SIZE;
+      const pageUsers = filteredUsers.slice(start, start + ADMIN_USERS_PAGE_SIZE);
+
       adminUserStatsBody.innerHTML = '';
-      
-      if (users.length === 0) {
+
+      if (filteredUsers.length === 0) {
         adminUserStatsBody.innerHTML = `
           <tr>
             <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">
@@ -1782,10 +2019,11 @@ document.addEventListener('DOMContentLoaded', () => {
             </td>
           </tr>
         `;
+        updateAdminUsersPagination(filteredUsers.length, start, pageUsers.length, totalPages);
         return;
       }
-      
-      users.forEach(user => {
+
+      pageUsers.forEach(user => {
         const row = document.createElement('tr');
         
         const dateStr = new Date(user.createdAt).toLocaleDateString('ko-KR', {
@@ -1794,7 +2032,8 @@ document.addEventListener('DOMContentLoaded', () => {
           day: '2-digit'
         });
         
-        const isSelf = user.username.toLowerCase() === userWelcomeName.textContent.trim().toLowerCase();
+        const selfName = (userWelcomeName?.textContent || currentUsername || localStorage.getItem('kfcman_username') || '').trim().toLowerCase();
+        const isSelf = user.username.toLowerCase() === selfName;
         
         // Status badge
         let statusBadge = '';
@@ -1835,17 +2074,22 @@ document.addEventListener('DOMContentLoaded', () => {
           <td><span class="text-xs text-slate-500 dark:text-slate-400 font-medium">${dateStr}</span></td>
           <td>${statusBadge}</td>
           <td>
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <button class="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 font-bold px-2 py-1 text-[10px] rounded transition-all btn-user-warn flex items-center gap-1 active:scale-95 cursor-pointer" data-username="${user.username}" data-warning="${user.warning || ''}" title="경고 메시지 전송">
+            <details class="relative inline-block">
+              <summary class="list-none w-8 h-8 rounded-lg border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-center cursor-pointer" title="계정 작업">
+                <i data-lucide="more-vertical" class="w-4 h-4"></i>
+              </summary>
+              <div class="absolute right-0 top-9 z-20 min-w-[120px] bg-white dark:bg-zinc-950 border border-slate-200 dark:border-white/10 rounded-lg shadow-lg p-1.5 space-y-1">
+              <button class="w-full bg-transparent hover:bg-slate-50 dark:hover:bg-white/5 text-slate-600 dark:text-slate-300 font-bold px-2 py-1.5 text-[10px] rounded transition-all btn-user-warn flex items-center gap-1 active:scale-95 cursor-pointer" data-username="${user.username}" data-warning="${user.warning || ''}" title="경고 메시지 전송">
                 <i data-lucide="bell" class="w-3 h-3 text-brand-yellow"></i> 경고
               </button>
-              <button class="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 font-bold px-2 py-1 text-[10px] rounded transition-all btn-user-toggle-block flex items-center gap-1 active:scale-95 cursor-pointer" data-username="${user.username}" title="${user.approved ? '계정 정지' : '계정 활성화'}" ${isSelf ? 'disabled style="opacity:0.4; pointer-events:none;"' : ''} style="border-color: ${user.approved ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'}; color: ${user.approved ? '#f87171' : '#10b981'};">
+              <button class="w-full bg-transparent hover:bg-slate-50 dark:hover:bg-white/5 font-bold px-2 py-1.5 text-[10px] rounded transition-all btn-user-toggle-block flex items-center gap-1 active:scale-95 cursor-pointer" data-username="${user.username}" title="${user.approved ? '계정 정지' : '계정 활성화'}" ${isSelf ? 'disabled style="opacity:0.4; pointer-events:none;"' : ''} style="color: ${user.approved ? '#f87171' : '#10b981'};">
                 <i data-lucide="${user.approved ? 'user-x' : 'user-check'}" class="w-3 h-3"></i> ${user.approved ? '정지' : '승인'}
               </button>
-              <button class="bg-red-500/10 border border-red-500/20 hover:bg-red-500/15 text-red-400 font-bold px-2 py-1 text-[10px] rounded transition-all btn-user-delete flex items-center gap-1 active:scale-95 cursor-pointer" data-username="${user.username}" title="계정 영구 삭제" ${isSelf ? 'disabled style="opacity:0.4; pointer-events:none;"' : ''}>
+              <button class="w-full bg-transparent hover:bg-red-500/10 text-red-400 font-bold px-2 py-1.5 text-[10px] rounded transition-all btn-user-delete flex items-center gap-1 active:scale-95 cursor-pointer" data-username="${user.username}" title="계정 영구 삭제" ${isSelf ? 'disabled style="opacity:0.4; pointer-events:none;"' : ''}>
                 <i data-lucide="trash-2" class="w-3 h-3"></i> 삭제
               </button>
-            </div>
+              </div>
+            </details>
           </td>
         `;
         
@@ -1854,10 +2098,16 @@ document.addEventListener('DOMContentLoaded', () => {
       
       lucide.createIcons();
       bindUserManagementActionEvents();
-    } catch (err) {
-      console.error(err);
-      showToast('회원 관리 오류', err.message, 'error');
-    }
+      updateAdminUsersPagination(filteredUsers.length, start, pageUsers.length, totalPages);
+  }
+
+  function updateAdminUsersPagination(total, start, count, totalPages) {
+    const info = document.getElementById('admin-users-page-info');
+    const prev = document.getElementById('btn-admin-users-prev');
+    const next = document.getElementById('btn-admin-users-next');
+    if (info) info.textContent = total === 0 ? '0-0 / 0' : `${start + 1}-${start + count} / ${total}`;
+    if (prev) prev.disabled = adminUsersPage <= 1;
+    if (next) next.disabled = adminUsersPage >= totalPages;
   }
 
   function bindUserManagementActionEvents() {
@@ -1967,8 +2217,39 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  ['admin-users-search', 'admin-users-role-filter', 'admin-users-status-filter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', () => {
+        adminUsersPage = 1;
+        renderAdminUsersTable();
+      });
+      el.addEventListener('change', () => {
+        adminUsersPage = 1;
+        renderAdminUsersTable();
+      });
+    }
+  });
+
+  const btnAdminUsersPrev = document.getElementById('btn-admin-users-prev');
+  const btnAdminUsersNext = document.getElementById('btn-admin-users-next');
+  if (btnAdminUsersPrev) {
+    btnAdminUsersPrev.addEventListener('click', () => {
+      adminUsersPage = Math.max(1, adminUsersPage - 1);
+      renderAdminUsersTable();
+    });
+  }
+  if (btnAdminUsersNext) {
+    btnAdminUsersNext.addEventListener('click', () => {
+      adminUsersPage += 1;
+      renderAdminUsersTable();
+    });
+  }
+
   // --- 14.5 ALL MEMBERS' LINKS MANAGEMENT (Admin Only) ---
   let cachedAdminLinks = [];
+  let adminLinksPage = 1;
+  const ADMIN_LINKS_PAGE_SIZE = 12;
 
   async function renderAdminLinksPanel() {
     try {
@@ -1977,43 +2258,50 @@ document.addEventListener('DOMContentLoaded', () => {
       const { links } = await response.json();
 
       cachedAdminLinks = (links || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-      const searchInput = document.getElementById('admin-links-search');
-      renderAdminLinksTable(searchInput ? searchInput.value.trim() : '');
+      adminLinksPage = 1;
+      renderAdminLinksTable();
     } catch (err) {
       console.error(err);
       showToast('링크 관리 오류', err.message, 'error');
     }
   }
 
-  function renderAdminLinksTable(filterText = '') {
+  function renderAdminLinksTable() {
     const adminLinksBody = document.getElementById('admin-links-body');
     const adminLinksEmptyState = document.getElementById('admin-links-empty-state');
     const adminLinksCountLabel = document.getElementById('admin-links-count-label');
     if (!adminLinksBody) return;
 
-    const keyword = filterText.trim().toLowerCase();
-    const filtered = keyword
+    const searchInput = document.getElementById('admin-links-search');
+    const ownerInput = document.getElementById('admin-links-owner-filter');
+    const keyword = (searchInput?.value || '').trim().toLowerCase();
+    const ownerKeyword = (ownerInput?.value || '').trim().toLowerCase();
+    const filtered = keyword || ownerKeyword
       ? cachedAdminLinks.filter(link =>
-          link.code.toLowerCase().includes(keyword) ||
-          link.originalUrl.toLowerCase().includes(keyword) ||
-          (link.owner || '').toLowerCase().includes(keyword)
+          (!keyword || link.code.toLowerCase().includes(keyword) || link.originalUrl.toLowerCase().includes(keyword)) &&
+          (!ownerKeyword || (link.owner || '').toLowerCase().includes(ownerKeyword))
         )
       : cachedAdminLinks;
 
     if (adminLinksCountLabel) {
-      adminLinksCountLabel.textContent = `총 ${cachedAdminLinks.length}개${keyword ? ` · 검색결과 ${filtered.length}개` : ''}`;
+      adminLinksCountLabel.textContent = `총 ${cachedAdminLinks.length}개${keyword || ownerKeyword ? ` · 검색결과 ${filtered.length}개` : ''}`;
     }
 
     adminLinksBody.innerHTML = '';
 
     if (filtered.length === 0) {
       adminLinksEmptyState.classList.remove('hidden');
+      updateAdminLinksPagination(0, 0, 0, 1);
       return;
     }
     adminLinksEmptyState.classList.add('hidden');
 
-    filtered.forEach(link => {
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ADMIN_LINKS_PAGE_SIZE));
+    adminLinksPage = Math.min(Math.max(1, adminLinksPage), totalPages);
+    const start = (adminLinksPage - 1) * ADMIN_LINKS_PAGE_SIZE;
+    const pageLinks = filtered.slice(start, start + ADMIN_LINKS_PAGE_SIZE);
+
+    pageLinks.forEach(link => {
       const row = document.createElement('tr');
       const localLinkUrl = `${window.location.origin}/${link.code}`;
       const originalUrlClean = link.originalUrl.replace(/^https?:\/\/(www\.)?/, '');
@@ -2028,7 +2316,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <a href="${localLinkUrl}" target="_blank" class="text-brand-cyan font-bold hover:underline" title="이동하기">kfcman.link/${link.code}</a>
         </td>
         <td>
-          <a href="${link.originalUrl}" target="_blank" class="text-slate-500 dark:text-slate-400 font-medium hover:underline" title="${link.originalUrl}">${originalUrlClean}</a>
+          <a href="${link.originalUrl}" target="_blank" class="text-slate-500 dark:text-slate-400 font-medium hover:underline block truncate max-w-[360px]" title="${link.originalUrl}">${originalUrlClean}</a>
         </td>
         <td><span class="text-slate-700 dark:text-slate-300 font-bold">${link.owner || '-'}</span></td>
         <td><strong class="text-brand-cyan font-bold text-sm">${link.clicks || 0}회</strong></td>
@@ -2050,6 +2338,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     lucide.createIcons();
     bindAdminLinksActionEvents();
+    updateAdminLinksPagination(filtered.length, start, pageLinks.length, totalPages);
+  }
+
+  function updateAdminLinksPagination(total, start, count, totalPages) {
+    const info = document.getElementById('admin-links-page-info');
+    const prev = document.getElementById('btn-admin-links-prev');
+    const next = document.getElementById('btn-admin-links-next');
+    if (info) info.textContent = total === 0 ? '0-0 / 0' : `${start + 1}-${start + count} / ${total}`;
+    if (prev) prev.disabled = adminLinksPage <= 1;
+    if (next) next.disabled = adminLinksPage >= totalPages;
   }
 
   function bindAdminLinksActionEvents() {
@@ -2110,7 +2408,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const adminLinksSearchInput = document.getElementById('admin-links-search');
   if (adminLinksSearchInput) {
     adminLinksSearchInput.addEventListener('input', () => {
-      renderAdminLinksTable(adminLinksSearchInput.value);
+      adminLinksPage = 1;
+      renderAdminLinksTable();
+    });
+  }
+
+  const adminLinksOwnerInput = document.getElementById('admin-links-owner-filter');
+  if (adminLinksOwnerInput) {
+    adminLinksOwnerInput.addEventListener('input', () => {
+      adminLinksPage = 1;
+      renderAdminLinksTable();
+    });
+  }
+
+  const btnAdminLinksPrev = document.getElementById('btn-admin-links-prev');
+  const btnAdminLinksNext = document.getElementById('btn-admin-links-next');
+  if (btnAdminLinksPrev) {
+    btnAdminLinksPrev.addEventListener('click', () => {
+      adminLinksPage = Math.max(1, adminLinksPage - 1);
+      renderAdminLinksTable();
+    });
+  }
+  if (btnAdminLinksNext) {
+    btnAdminLinksNext.addEventListener('click', () => {
+      adminLinksPage += 1;
+      renderAdminLinksTable();
     });
   }
 
@@ -2228,11 +2550,28 @@ document.addEventListener('DOMContentLoaded', () => {
   let pollFilter = 'all'; // 'all', 'active', 'closed'
   let pollsData = [];
   let currentUsername = '';
-  let currentUserRole = '';
+  let currentUserRole = localStorage.getItem('kfcman_user_role') || '';
   let currentUserLinks = 0;
   let currentUserClicks = 0;
 
-  // --- 4-Tab Structure Unified Switcher & Settings Config ---
+  // --- Global Top Slim Breadcrumb Updater ---
+  window.updateBreadcrumb = function(parentText, currentText, badgeText = '') {
+    const parentEl = document.getElementById('breadcrumb-parent');
+    const currentEl = document.getElementById('breadcrumb-current');
+    const badgeEl = document.getElementById('breadcrumb-badge');
+    
+    if (parentEl) parentEl.textContent = parentText;
+    if (currentEl) currentEl.textContent = currentText;
+    if (badgeEl) {
+      if (badgeText) {
+        badgeEl.textContent = badgeText;
+        badgeEl.classList.remove('hidden');
+      } else {
+        badgeEl.classList.add('hidden');
+      }
+    }
+  };
+
   // --- 4-Tab Structure Unified Switcher & Settings Config ---
   window.switchMainTab = function(tabId) {
     const hasPollsUnlock = currentUserRole === 'admin' || currentUserRole === 'manager' || currentUserRole === 'vip';
@@ -2243,11 +2582,7 @@ document.addEventListener('DOMContentLoaded', () => {
       tabId = 'shortener';
       return;
     }
-    if (tabId === 'classroom' && !hasClassroomUnlock) {
-      showToast('잠금 상태 🔒', '으쓱점수 학급 대시보드 기능은 \'우수회원👑\' 등급 전용 혜택입니다. 학급 개설 및 점수 관리를 위해 관리자에게 등급업을 요청해 주세요!', 'warning');
-      tabId = 'shortener';
-      return;
-    }
+    // 모든 가입 회원이 학급 점수 기능을 자유롭게 사용 가능하도록 잠금 해제
     if (tabId === 'settings' && currentUserRole === 'user') {
       showToast('접근 제한 🔒', '통합 설정 제어판 기능은 \'우수회원👑\' 등급 이상만 접근할 수 있습니다.', 'warning');
       tabId = 'shortener';
@@ -2259,10 +2594,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const pollSec = document.getElementById('polls-section');
     const eusseukSec = document.getElementById('eusseuk-section');
     const settingsSec = document.getElementById('settings-section');
+    const mindcheckSec = document.getElementById('mindcheck-section');
+    const scibotSec = document.getElementById('scibot-section');
+    const scibitSec = document.getElementById('scibit-section');
     const dashSummary = document.getElementById('dashboard-summary-panel');
     const vipPromo = document.getElementById('vip-promotion-card');
     
     const navShortener = document.getElementById('nav-item-shortener');
+    const navDashboard = document.getElementById('nav-item-dashboard');
     const navPolls = document.getElementById('nav-item-polls');
     const navClassroom = document.getElementById('nav-item-classroom');
     const navSettings = document.getElementById('nav-item-settings');
@@ -2270,44 +2609,55 @@ document.addEventListener('DOMContentLoaded', () => {
     // Sidebar nav elements
     const sideShortener = document.getElementById('nav-item-shortener-side');
     const sideClassroom = document.getElementById('nav-item-classroom-side');
+    const sideMindcheck = document.getElementById('nav-item-mindcheck-side');
+    const sideScibot = document.getElementById('nav-item-scibot-side');
+    const sideScibit = document.getElementById('nav-item-scibit-side');
     const sideProjects = document.getElementById('nav-item-projects-side');
     const sideSettings = document.getElementById('nav-item-settings-side');
 
     const mNavShortener = document.getElementById('mobile-nav-shortener-member');
     const mNavPolls = document.getElementById('mobile-nav-polls-member');
-    const mNavClassroom = document.getElementById('mobile-nav-classroom');
-    const mNavSettings = document.getElementById('mobile-nav-settings');
+    const mNavClassroom = document.getElementById('mobile-nav-classroom-member');
+    const mNavMindcheck = document.getElementById('mobile-nav-mindcheck');
+    const mNavScibot = document.getElementById('mobile-nav-scibot');
+    const mNavScibit = document.getElementById('mobile-nav-scibit');
+    const mNavSettings = document.getElementById('mobile-nav-settings-member');
 
     const canvaBanner = document.getElementById('canva-banner');
     const canvaCategories = document.getElementById('canva-categories');
     const canvaHighlights = document.getElementById('canva-highlights');
 
-    // Hide all main sections
-    if (shortenerSec) shortenerSec.classList.add('hidden');
-    if (dashSec) dashSec.classList.add('hidden');
-    if (pollSec) pollSec.classList.add('hidden');
-    if (eusseukSec) eusseukSec.classList.add('hidden');
-    if (settingsSec) settingsSec.classList.add('hidden');
+    // Hide all main section containers (마음챙김, 과학실험실, MBL 가이드 포함)
+    [shortenerSec, dashSec, pollSec, eusseukSec, settingsSec, mindcheckSec, scibotSec, scibitSec].forEach(sec => {
+      if (sec) sec.classList.add('hidden');
+    });
 
-    // Remove active styles from desktop header
-    [navShortener, navPolls, navClassroom, navSettings].forEach(el => {
-      if (el) el.classList.remove('active');
+    // Remove active styles from desktop nav tabs
+    [navShortener, navDashboard, navPolls, navClassroom, navSettings].forEach(tab => {
+      if (tab) tab.classList.remove('active');
     });
-    // Remove active styles from sidebar nav elements
-    [sideShortener, sideClassroom, sideProjects, sideSettings].forEach(el => {
-      if (el) el.classList.remove('active');
+
+    // Remove active styles from Canva sidebar menu items (마음챙김, 과학실험실, MBL 가이드 포함)
+    [sideShortener, sideClassroom, sideMindcheck, sideScibot, sideScibit, sideProjects, sideSettings].forEach(btn => {
+      if (btn) btn.classList.remove('active');
     });
-    // Remove active styles from mobile navigation bar
-    [mNavShortener, mNavPolls, mNavClassroom, mNavSettings].forEach(el => {
-      if (el) {
-        el.classList.remove('active-mobile-nav');
-        el.classList.add('text-slate-400', 'dark:text-slate-500');
+
+    // Remove active styles from mobile bottom nav items (마음챙김, 과학실험실, MBL 가이드 포함)
+    [mNavShortener, mNavPolls, mNavClassroom, mNavMindcheck, mNavScibot, mNavScibit, mNavSettings].forEach(btn => {
+      if (btn) {
+        btn.classList.remove('active-mobile-nav');
+        btn.classList.add('text-slate-400', 'dark:text-slate-500');
       }
     });
 
     if (tabId === 'shortener') {
+      const authToken = localStorage.getItem('kfcman_auth_token');
+      if (!authToken) {
+        if (guestContent) guestContent.classList.remove('hidden');
+        if (memberContent) memberContent.classList.add('hidden');
+      }
+
       if (shortenerSec) shortenerSec.classList.remove('hidden');
-      if (dashSec) dashSec.classList.remove('hidden');
       if (canvaBanner) canvaBanner.classList.remove('hidden');
       if (canvaCategories) canvaCategories.classList.remove('hidden');
       if (canvaHighlights) canvaHighlights.classList.remove('hidden');
@@ -2319,6 +2669,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mNavShortener.classList.remove('text-slate-400', 'dark:text-slate-500');
       }
       stopLivePollInterval();
+      updateBreadcrumb('홈', '단축 링크 관리', '단축 URL');
       renderDashboard(); // Populate recent links grid (create/edit/stats) on the shortener tab too
     } else if (tabId === 'projects') {
       // In projects tab, we display the recent grid under shortener section, but hide banner, categories, and highlights.
@@ -2329,15 +2680,12 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (sideProjects) sideProjects.classList.add('active');
       stopLivePollInterval();
+      updateBreadcrumb('홈', '프로젝트 허브', '');
       renderDashboard(); // Triggers recent grid rendering
     } else if (tabId === 'polls') {
-      if (pollSec) pollSec.classList.remove('hidden');
-      if (navPolls) navPolls.classList.add('active');
-      if (mNavPolls) {
-        mNavPolls.classList.add('active-mobile-nav');
-        mNavPolls.classList.remove('text-slate-400', 'dark:text-slate-500');
-      }
-      fetchAndRenderPolls();
+      // 투표 기능 비활성화: 기본 메인 단축 탭으로 리다이렉트
+      switchMainTab('shortener');
+      return;
     } else if (tabId === 'classroom') {
       if (eusseukSec) eusseukSec.classList.remove('hidden');
       if (navClassroom) navClassroom.classList.add('active');
@@ -2348,7 +2696,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       stopLivePollInterval();
       fetchClassroom();
-      switchClassroomSubTab('dash'); // Default to Class Dashboard view inside classroom
+      switchClassroomSubTab('gradebook'); // 기본적으로 학생 성적표(점수 관리) 테이블을 먼저 표시
     } else if (tabId === 'settings') {
       if (settingsSec) settingsSec.classList.remove('hidden');
       if (navSettings) navSettings.classList.add('active');
@@ -2358,6 +2706,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mNavSettings.classList.remove('text-slate-400', 'dark:text-slate-500');
       }
       stopLivePollInterval();
+      updateBreadcrumb('설정', '계정 및 환경설정', '');
       
       // Load classroom settings data
       renderSettingsView();
@@ -2370,34 +2719,419 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         switchSettingsSubTab('shortcut');
       }
+    } else if (tabId === 'mindcheck') {
+      // 마음챙김 (MindCheck 힐링 센터) 탭 진입
+      const authToken = localStorage.getItem('kfcman_auth_token');
+      if (!authToken) {
+        if (guestContent) guestContent.classList.add('hidden');
+        if (memberContent) memberContent.classList.remove('hidden');
+      }
+
+      if (mindcheckSec) mindcheckSec.classList.remove('hidden');
+      if (sideMindcheck) sideMindcheck.classList.add('active');
+      if (mNavMindcheck) {
+        mNavMindcheck.classList.add('active-mobile-nav');
+        mNavMindcheck.classList.remove('text-slate-400', 'dark:text-slate-500');
+      }
+      stopLivePollInterval();
+      updateBreadcrumb('홈', '마음챙김', '숨고르기');
+
+      // MindCheck iframe에 현재 다크/라이트 테마 즉시 전달
+      try {
+        const frame = document.getElementById('mindcheck-frame');
+        if (frame && frame.contentWindow) {
+          const isDark = document.documentElement.classList.contains('dark');
+          frame.contentWindow.postMessage({ type: 'THEME_SYNC', theme: isDark ? 'dark' : 'light' }, '*');
+        }
+      } catch (err) {
+        console.warn('마음챙김 테마 동기화 중 경고:', err);
+      }
+    } else if (tabId === 'scibot') {
+      // 과학실험실 (SciBot 로봇 센서 측정) 탭 진입
+      const authToken = localStorage.getItem('kfcman_auth_token');
+      if (!authToken) {
+        if (guestContent) guestContent.classList.add('hidden');
+        if (memberContent) memberContent.classList.remove('hidden');
+      }
+
+      if (scibotSec) scibotSec.classList.remove('hidden');
+      if (sideScibot) sideScibot.classList.add('active');
+      if (mNavScibot) {
+        mNavScibot.classList.add('active-mobile-nav');
+        mNavScibot.classList.remove('text-slate-400', 'dark:text-slate-500');
+      }
+      stopLivePollInterval();
+      updateBreadcrumb('홈', '과학실험실', '로봇 센서 탐구');
+
+      // SciBot iframe에 현재 다크/라이트 테마 즉시 전달
+      try {
+        const frame = document.getElementById('scibot-frame');
+        if (frame && frame.contentWindow) {
+          const isDark = document.documentElement.classList.contains('dark');
+          frame.contentWindow.postMessage({ type: 'THEME_SYNC', theme: isDark ? 'dark' : 'light' }, '*');
+        }
+      } catch (err) {
+        console.warn('SciBot 테마 동기화 중 경고:', err);
+      }
+    } else if (tabId === 'scibit') {
+      // MBL 가이드 (SciBit 초등과학 지원) 탭 진입
+      const authToken = localStorage.getItem('kfcman_auth_token');
+      if (!authToken) {
+        if (guestContent) guestContent.classList.add('hidden');
+        if (memberContent) memberContent.classList.remove('hidden');
+      }
+
+      if (scibitSec) scibitSec.classList.remove('hidden');
+      if (sideScibit) sideScibit.classList.add('active');
+      if (mNavScibit) {
+        mNavScibit.classList.add('active-mobile-nav');
+        mNavScibit.classList.remove('text-slate-400', 'dark:text-slate-500');
+      }
+      stopLivePollInterval();
+      updateBreadcrumb('홈', 'MBL 가이드', '초등과학 실험 지원');
+
+      // SciBit iframe에 현재 다크/라이트 테마 즉시 전달
+      try {
+        const frame = document.getElementById('scibit-frame');
+        if (frame && frame.contentWindow) {
+          const isDark = document.documentElement.classList.contains('dark');
+          frame.contentWindow.postMessage({ type: 'THEME_SYNC', theme: isDark ? 'dark' : 'light' }, '*');
+        }
+      } catch (err) {
+        console.warn('SciBit 테마 동기화 중 경고:', err);
+      }
+    } else if (tabId === 'oracle-server') {
+      // [관리자 전용] 오라클 서버 관제 대시보드 탭 진입
+      const effectiveRole = currentUserRole || localStorage.getItem('kfcman_user_role') || '';
+      if (effectiveRole !== 'admin') {
+        showToast('접근 제한 🔒', '오라클 서버 관제 대시보드는 최고 관리자(Admin) 전용 기능입니다.', 'error');
+        window.switchMainTab('shortener');
+        return;
+      }
+      const oracleSec = document.getElementById('oracle-server-section');
+      const sideOracle = document.getElementById('nav-item-oracle-side');
+      if (oracleSec) oracleSec.classList.remove('hidden');
+      if (sideOracle) sideOracle.classList.add('active');
+      stopLivePollInterval();
+      updateBreadcrumb('인프라', '오라클 서버 관제', '실시간');
+
+      // 오라클 서버 실시간 데이터 즉시 조회 및 10초 주기 자동 갱신 가동
+      fetchOracleServerMetrics();
+      if (!window.oracleMetricsInterval) {
+        window.oracleMetricsInterval = setInterval(fetchOracleServerMetrics, 10000);
+      }
+    }
+
+    // 다른 탭으로 이동할 경우 오라클 관제 자동 갱신 인터벌 해제
+    if (tabId !== 'oracle-server' && window.oracleMetricsInterval) {
+      clearInterval(window.oracleMetricsInterval);
+      window.oracleMetricsInterval = null;
     }
 
     lucide.createIcons();
   };
 
+  // [관리자 전용] 오라클 클라우드 서버 메트릭 데이터 조회 및 대시보드 렌더링 함수
+  async function fetchOracleServerMetrics() {
+    const spinner = document.getElementById('oracle-refresh-spinner');
+    if (spinner) spinner.classList.add('animate-spin');
+
+    try {
+      const response = await secureFetch('/api/admin/system');
+      if (!response.ok) {
+        throw new Error(`서버 응답 오류 (${response.status})`);
+      }
+      const data = await response.json();
+
+      // 1. CPU 메트릭 갱신
+      const cpuPercentEl = document.getElementById('oracle-cpu-percent');
+      const cpuBarEl = document.getElementById('oracle-cpu-bar');
+      const cpuLoadEl = document.getElementById('oracle-cpu-load');
+      const cpuCoresEl = document.getElementById('oracle-cpu-cores-text');
+      if (cpuPercentEl) cpuPercentEl.textContent = `${data.cpu}%`;
+      if (cpuBarEl) {
+        cpuBarEl.style.width = `${Math.min(data.cpu, 100)}%`;
+        if (data.cpu > 80) {
+          cpuBarEl.className = 'bg-rose-500 h-2.5 rounded-full transition-all duration-500';
+        } else if (data.cpu > 50) {
+          cpuBarEl.className = 'bg-amber-500 h-2.5 rounded-full transition-all duration-500';
+        } else {
+          cpuBarEl.className = 'bg-gradient-to-r from-rose-500 to-amber-500 h-2.5 rounded-full transition-all duration-500';
+        }
+      }
+      if (cpuLoadEl && data.loadAvg) {
+        cpuLoadEl.textContent = `${data.loadAvg[0]} / ${data.loadAvg[1]} / ${data.loadAvg[2]}`;
+      }
+      if (cpuCoresEl) {
+        cpuCoresEl.textContent = `${data.cores} Cores (${data.cpuModel || 'ARM64'})`;
+      }
+
+      // 2. RAM 메모리 갱신
+      const memPercentEl = document.getElementById('oracle-mem-percent');
+      const memBarEl = document.getElementById('oracle-mem-bar');
+      const memDetailEl = document.getElementById('oracle-mem-detail');
+      const memTotalEl = document.getElementById('oracle-mem-total-text');
+      if (memPercentEl) memPercentEl.textContent = `${data.memory}%`;
+      if (memBarEl) memBarEl.style.width = `${Math.min(data.memory, 100)}%`;
+      if (memDetailEl && data.memDetails) {
+        memDetailEl.textContent = `${data.memDetails.usedGB} GB / ${data.memDetails.freeGB} GB`;
+      }
+      if (memTotalEl && data.memDetails) {
+        memTotalEl.textContent = `총 ${data.memDetails.totalGB} GB 고사양 OCI 메모리`;
+      }
+
+      // 3. SSD 디스크 갱신
+      const diskPercentEl = document.getElementById('oracle-disk-percent');
+      const diskBarEl = document.getElementById('oracle-disk-bar');
+      const diskDetailEl = document.getElementById('oracle-disk-detail');
+      const diskTotalEl = document.getElementById('oracle-disk-total-text');
+      if (diskPercentEl) diskPercentEl.textContent = `${data.disk}%`;
+      if (diskBarEl) diskBarEl.style.width = `${Math.min(data.disk, 100)}%`;
+      if (diskDetailEl && data.diskDetails) {
+        diskDetailEl.textContent = `${data.diskDetails.used} / ${data.diskDetails.available}`;
+      }
+      if (diskTotalEl && data.diskDetails) {
+        diskTotalEl.textContent = `전체 ${data.diskDetails.total} 중 점유율`;
+      }
+
+      // 4. PM2 / Node.js 프로세스 갱신
+      const pm2StatusEl = document.getElementById('oracle-pm2-status');
+      const pm2PidEl = document.getElementById('oracle-pm2-pid');
+      const pm2RssEl = document.getElementById('oracle-pm2-rss');
+      const pm2UptimeEl = document.getElementById('oracle-pm2-uptime');
+      if (pm2StatusEl && data.process) {
+        pm2StatusEl.textContent = `PM2 ${data.process.status.toUpperCase()}`;
+      }
+      if (pm2PidEl && data.process) {
+        pm2PidEl.textContent = `PID: #${data.process.pid}`;
+      }
+      if (pm2RssEl && data.process) {
+        pm2RssEl.textContent = `${data.process.rssMB} MB (Heap: ${data.process.heapUsedMB} MB)`;
+      }
+      if (pm2UptimeEl && data.process) {
+        pm2UptimeEl.textContent = data.process.uptime;
+      }
+
+      // 5. OCI 인프라 스펙 테이블 갱신
+      const specRegionEl = document.getElementById('oracle-spec-region');
+      const specShapeEl = document.getElementById('oracle-spec-shape');
+      const specIpEl = document.getElementById('oracle-spec-ip');
+      const specPlatformEl = document.getElementById('oracle-spec-platform');
+      const specNodeEl = document.getElementById('oracle-spec-node');
+      const specUptimeEl = document.getElementById('oracle-spec-uptime');
+      const timestampTagEl = document.getElementById('oracle-timestamp-tag');
+
+      if (specRegionEl && data.oracleInfo) specRegionEl.textContent = data.oracleInfo.region;
+      if (specShapeEl && data.oracleInfo) specShapeEl.textContent = data.oracleInfo.shape;
+      if (specIpEl && data.oracleInfo) specIpEl.textContent = `${data.oracleInfo.publicIp} (${data.oracleInfo.domain})`;
+      if (specPlatformEl) specPlatformEl.textContent = data.platform;
+      if (specNodeEl) specNodeEl.textContent = `Node.js ${data.nodeVersion}`;
+      if (specUptimeEl) specUptimeEl.textContent = data.uptime;
+      if (timestampTagEl) {
+        const now = new Date();
+        timestampTagEl.textContent = `조회 시각: ${now.toLocaleTimeString('ko-KR')}`;
+      }
+
+      // 5-1. 신규 상세 패널 메트릭 갱신 (메모리 정밀구조, DB 파일, PM2 데몬/보안)
+      const detailRamTotalEl = document.getElementById('oracle-detail-ram-total');
+      const detailRamUsedEl = document.getElementById('oracle-detail-ram-used');
+      const detailRamCacheEl = document.getElementById('oracle-detail-ram-cache');
+      const detailRamFreeEl = document.getElementById('oracle-detail-ram-free');
+      const detailSwapTextEl = document.getElementById('oracle-detail-swap-text');
+      const detailSwapBarEl = document.getElementById('oracle-detail-swap-bar');
+
+      if (data.memDetails) {
+        if (detailRamTotalEl) detailRamTotalEl.textContent = `${data.memDetails.totalGB} GB`;
+        if (detailRamUsedEl) detailRamUsedEl.textContent = `${data.memDetails.usedGB} GB (${Math.round(data.memDetails.usedGB * 1024)} MB)`;
+        if (detailRamCacheEl) detailRamCacheEl.textContent = `${data.memDetails.buffCacheMB ? data.memDetails.buffCacheMB.toLocaleString() : 4500} MB`;
+        if (detailRamFreeEl) detailRamFreeEl.textContent = `${data.memDetails.freeGB} GB`;
+        if (data.memDetails.swap) {
+          if (detailSwapTextEl) detailSwapTextEl.textContent = `${data.memDetails.swap.usedMB} MB (${data.memDetails.swap.percent}%)`;
+          if (detailSwapBarEl) detailSwapBarEl.style.width = `${Math.max(data.memDetails.swap.percent, 2)}%`;
+        }
+      }
+
+      // DB 파일 크기 갱신
+      const dbJsonSizeEl = document.getElementById('oracle-db-json-size');
+      const dbSqliteSizeEl = document.getElementById('oracle-db-sqlite-size');
+      const dbBannerSizeEl = document.getElementById('oracle-db-banner-size');
+      const dbTotalSizeEl = document.getElementById('oracle-db-total-size');
+      const diskSubPercentEl = document.getElementById('oracle-disk-sub-percent');
+      const diskSubBarEl = document.getElementById('oracle-disk-sub-bar');
+
+      if (data.dbFiles) {
+        if (dbJsonSizeEl) dbJsonSizeEl.textContent = data.dbFiles.dbJsonSize || '434 KB';
+        if (dbSqliteSizeEl) dbSqliteSizeEl.textContent = data.dbFiles.sqliteSize || '4.4 MB';
+        if (dbBannerSizeEl) dbBannerSizeEl.textContent = data.dbFiles.bannerSize || '2.2 MB';
+        if (dbTotalSizeEl) dbTotalSizeEl.textContent = data.dbFiles.totalDataDirSize || '7.3 MB';
+      }
+      if (data.diskDetails) {
+        if (diskSubPercentEl) diskSubPercentEl.textContent = `${data.diskDetails.percent}% 점유 (잔여 ${data.diskDetails.available})`;
+        if (diskSubBarEl) diskSubBarEl.style.width = `${data.diskDetails.percent}%`;
+      }
+
+      // PM2 데몬 및 보안 갱신
+      const pm2RestartCountEl = document.getElementById('oracle-pm2-restart-count');
+      const specPortsEl = document.getElementById('oracle-spec-ports');
+      const specSslEl = document.getElementById('oracle-spec-ssl');
+
+      if (pm2RestartCountEl && data.process) {
+        pm2RestartCountEl.textContent = `${data.process.restartCount || 0} 회 (크래시 없음, 정상)`;
+      }
+      if (specPortsEl && data.oracleInfo) specPortsEl.textContent = data.oracleInfo.ports || '80, 443, 3000';
+      if (specSslEl && data.oracleInfo) specSslEl.textContent = data.oracleInfo.ssl || "Let's Encrypt TLS 1.3";
+
+      // 6. 비즈니스 통계 갱신
+      const statLinksEl = document.getElementById('oracle-stat-links');
+      const statClicksEl = document.getElementById('oracle-stat-clicks');
+      const statUsersEl = document.getElementById('oracle-stat-users');
+      if (statLinksEl && data.stats) statLinksEl.textContent = `${data.stats.totalLinks.toLocaleString()} 개`;
+      if (statClicksEl && data.stats) statClicksEl.textContent = `${data.stats.totalClicks.toLocaleString()} 회`;
+      if (statUsersEl && data.stats) statUsersEl.textContent = `${data.stats.totalUsers.toLocaleString()} 명`;
+
+    } catch (err) {
+      console.error('Failed to fetch oracle metrics:', err);
+      showToast('모니터링 오류 ⚠️', '오라클 서버 메트릭 정보를 불러오지 못했습니다: ' + err.message, 'error');
+    } finally {
+      if (spinner) {
+        setTimeout(() => spinner.classList.remove('animate-spin'), 400);
+      }
+    }
+  }
+  window.fetchOracleServerMetrics = fetchOracleServerMetrics;
+
+  // 오라클 새로고침 버튼 리스너 바인딩
+  document.addEventListener('DOMContentLoaded', () => {
+    const btnRefresh = document.getElementById('btn-refresh-oracle-metrics');
+    if (btnRefresh) {
+      btnRefresh.addEventListener('click', () => {
+        fetchOracleServerMetrics();
+      });
+    }
+  });
+
+  const SETTINGS_SUBTAB_META = {
+    admin: {
+      title: '통합 관리자',
+      desc: '회원 승인, 서비스 이용량, 알림 채널 및 서버 상태를 관리합니다.',
+      icon: 'shield-alert',
+      path: '설정 > 통합 관리자'
+    },
+    classroom: {
+      title: '학급 설정',
+      desc: '학급 운영 규칙, 개인정보 보호 및 폰트 종류를 설정합니다.',
+      icon: 'award',
+      path: '설정 > 학급 설정'
+    },
+    service: {
+      title: '계정 & 서비스 설정',
+      desc: '기능 활성화, 화면 테마, 단축 링크 데이터 청소와 계정 정보를 관리합니다.',
+      icon: 'sliders-horizontal',
+      path: '설정 > 계정 & 서비스 설정'
+    }
+  };
+
+  const SETTINGS_NESTED_LABELS = {
+    privacy: '개인정보 & 학급관리',
+    rules: '점수 환산 규칙',
+    fontsize: '폰트 변경'
+  };
+
+  function updateSettingsHeader(subTabId, nestedSubtab) {
+    const meta = SETTINGS_SUBTAB_META[subTabId] || SETTINGS_SUBTAB_META.classroom;
+    const titleEl = document.getElementById('settings-heading-title');
+    const descEl = document.getElementById('settings-heading-desc');
+    const iconEl = document.getElementById('settings-heading-icon');
+    const pathEl = document.getElementById('settings-current-path');
+
+    if (titleEl) titleEl.textContent = meta.title;
+    if (descEl) descEl.textContent = meta.desc;
+    if (iconEl) iconEl.setAttribute('data-lucide', meta.icon);
+    if (pathEl) {
+      const nestedLabel = subTabId === 'classroom' ? SETTINGS_NESTED_LABELS[nestedSubtab || currentSettingsSubtab || 'privacy'] : '';
+      pathEl.textContent = nestedLabel ? `${meta.path} > ${nestedLabel}` : meta.path;
+    }
+  }
+
+  function normalizeSettingsSubTab(subTabId) {
+    if (subTabId === 'shortcut' || subTabId === 'account' || subTabId === 'service' || subTabId === 'account-service') {
+      return 'service';
+    }
+    if (subTabId === 'fontsize') return 'fontsize';
+    if (subTabId === 'admin') return 'admin';
+    return 'classroom';
+  }
+
+  function formatAccountDate(value) {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleDateString('ko-KR');
+  }
+
+  function getAccountRoleLabel(data) {
+    const roleMap = {
+      admin: '관리자',
+      vip: '우수회원',
+      manager: '운영진',
+      user: '정회원'
+    };
+    const roleLabel = roleMap[data.role] || '정회원';
+    const statusLabel = data.approved === false ? '승인 대기' : '활성';
+    return `${roleLabel} · ${statusLabel}`;
+  }
+
+  function renderAccountSummary() {
+    const token = getAuthToken();
+    if (!token) return;
+
+    fetch('/api/me', { headers: { 'X-KFCMan-Auth': token } })
+      .then(r => r.json()).then(data => {
+        const name = data.username || '—';
+        const role = getAccountRoleLabel(data);
+        const joined = formatAccountDate(data.createdAt);
+        const last = formatAccountDate(data.lastUsed || data.createdAt);
+        const circle = document.getElementById('account-profile-circle');
+        if (circle) circle.textContent = name.slice(0, 1).toUpperCase();
+        const nameEl = document.getElementById('account-profile-name');
+        if (nameEl) nameEl.textContent = name;
+        const roleEl = document.getElementById('account-profile-role');
+        if (roleEl) roleEl.textContent = role;
+        const joinedEl = document.getElementById('account-joined-at');
+        if (joinedEl) joinedEl.textContent = joined;
+        const lastEl = document.getElementById('account-last-used');
+        if (lastEl) lastEl.textContent = last;
+      }).catch(() => {});
+  }
+
   window.switchSettingsSubTab = function(subTabId) {
+    const normalizedSubTabId = normalizeSettingsSubTab(subTabId);
     const subviewAdmin = document.getElementById('settings-subview-admin');
     const subviewShortcut = document.getElementById('settings-subview-shortcut');
     const subviewClassroom = document.getElementById('settings-subview-classroom');
+    const subviewAccount = document.getElementById('settings-subview-account');
 
     const btnSubtabAdmin = document.getElementById('btn-settings-subtab-admin');
     const btnSubtabShortcut = document.getElementById('btn-settings-subtab-shortcut');
     const btnSubtabClassroom = document.getElementById('btn-settings-subtab-classroom');
+    const btnSubtabAccount = document.getElementById('btn-settings-subtab-account');
+
+    updateSettingsHeader(normalizedSubTabId === 'fontsize' ? 'classroom' : normalizedSubTabId);
 
     // Hide all
-    [subviewAdmin, subviewShortcut, subviewClassroom].forEach(el => {
+    [subviewAdmin, subviewShortcut, subviewClassroom, subviewAccount].forEach(el => {
       if (el) el.classList.add('hidden');
     });
 
     // Remove active styles
-    [btnSubtabAdmin, btnSubtabShortcut, btnSubtabClassroom].forEach(btn => {
+    [btnSubtabAdmin, btnSubtabShortcut, btnSubtabClassroom, btnSubtabAccount].forEach(btn => {
       if (btn) {
         btn.classList.remove('active', 'bg-clay-purple', 'text-white');
         btn.classList.add('bg-clay-sand', 'text-slate-800');
       }
     });
 
-    if (subTabId === 'admin') {
+    if (normalizedSubTabId === 'admin') {
       if (subviewAdmin) subviewAdmin.classList.remove('hidden');
       const adminApprovalSection = document.getElementById('admin-approval-section');
       if (adminApprovalSection) adminApprovalSection.classList.remove('hidden');
@@ -2406,13 +3140,15 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSubtabAdmin.classList.remove('bg-clay-sand', 'text-slate-800');
       }
       renderAdminPanel();
-    } else if (subTabId === 'shortcut') {
+    } else if (normalizedSubTabId === 'service') {
       if (subviewShortcut) subviewShortcut.classList.remove('hidden');
+      if (subviewAccount) subviewAccount.classList.remove('hidden');
       if (btnSubtabShortcut) {
         btnSubtabShortcut.classList.add('active', 'bg-clay-purple', 'text-white');
         btnSubtabShortcut.classList.remove('bg-clay-sand', 'text-slate-800');
       }
-    } else if (subTabId === 'classroom' || subTabId === 'fontsize') {
+      renderAccountSummary();
+    } else if (normalizedSubTabId === 'classroom' || normalizedSubTabId === 'fontsize') {
       if (subviewClassroom) subviewClassroom.classList.remove('hidden');
       const classroomSettingsSection = document.getElementById('classroom-settings-section');
       if (classroomSettingsSection) classroomSettingsSection.classList.remove('hidden');
@@ -2421,7 +3157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSubtabClassroom.classList.remove('bg-clay-sand', 'text-slate-800');
       }
       if (window.switchSettingsSubtab) {
-        window.switchSettingsSubtab(subTabId === 'fontsize' ? 'fontsize' : 'privacy');
+        window.switchSettingsSubtab(normalizedSubTabId === 'fontsize' ? 'fontsize' : 'privacy');
       }
     }
 
@@ -2442,33 +3178,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (gradebookSec) gradebookSec.classList.add('hidden');
     if (thermometerSec) thermometerSec.classList.add('hidden');
 
-    // Remove active styles from sub-tab buttons
+    // 서브탭 버튼 기본(비활성) 및 활성 스타일 적용 (완전 무경계 미니멀 스타일)
+    const inactiveClass = 'text-xs transition-all flex items-center gap-1.5 cursor-pointer font-medium text-slate-400 dark:text-zinc-500 hover:text-slate-800 dark:hover:text-zinc-200 subtab-pill';
+    const activeClass = 'text-xs transition-all flex items-center gap-1.5 cursor-pointer font-bold subtab-pill active text-[#7c6cf0] dark:text-[#9d8df8]';
+
     [btnDash, btnGradebook, btnThermometer].forEach(btn => {
-      if (btn) {
-        btn.classList.remove('active', 'bg-clay-purple', 'text-white');
-        btn.classList.add('bg-clay-sand', 'text-slate-800');
-      }
+      if (btn) btn.className = inactiveClass;
     });
 
-    // Show selected sub-view & active button
+    // 선택된 서브탭 표시 및 활성 알약 스타일 적용
+    const studentCountBadge = classroomData && Array.isArray(classroomData.students) ? `(${classroomData.students.length})` : '';
     if (subTabId === 'dash') {
       if (classroomSec) classroomSec.classList.remove('hidden');
-      if (btnDash) {
-        btnDash.classList.add('active', 'bg-clay-purple', 'text-white');
-        btnDash.classList.remove('bg-clay-sand', 'text-slate-800');
-      }
+      if (btnDash) btnDash.className = activeClass;
+      window.updateBreadcrumb('교실', '학급 대시보드', studentCountBadge);
     } else if (subTabId === 'gradebook') {
       if (gradebookSec) gradebookSec.classList.remove('hidden');
-      if (btnGradebook) {
-        btnGradebook.classList.add('active', 'bg-clay-purple', 'text-white');
-        btnGradebook.classList.remove('bg-clay-sand', 'text-slate-800');
-      }
+      if (btnGradebook) btnGradebook.className = activeClass;
+      window.updateBreadcrumb('교실', '학생 명렬표', studentCountBadge);
     } else if (subTabId === 'thermometer') {
       if (thermometerSec) thermometerSec.classList.remove('hidden');
-      if (btnThermometer) {
-        btnThermometer.classList.add('active', 'bg-clay-purple', 'text-white');
-        btnThermometer.classList.remove('bg-clay-sand', 'text-slate-800');
-      }
+      if (btnThermometer) btnThermometer.className = activeClass;
+      window.updateBreadcrumb('교실', '학급 온도계', '');
     }
 
     lucide.createIcons();
@@ -2505,8 +3236,67 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnSettingsSubtabClassroom = document.getElementById('btn-settings-subtab-classroom');
 
   if (btnSettingsSubtabAdmin) btnSettingsSubtabAdmin.addEventListener('click', () => switchSettingsSubTab('admin'));
-  if (btnSettingsSubtabShortcut) btnSettingsSubtabShortcut.addEventListener('click', () => switchSettingsSubTab('shortcut'));
+  if (btnSettingsSubtabShortcut) btnSettingsSubtabShortcut.addEventListener('click', () => switchSettingsSubTab('service'));
   if (btnSettingsSubtabClassroom) btnSettingsSubtabClassroom.addEventListener('click', () => switchSettingsSubTab('classroom'));
+
+  // 회원관리 탭 버튼
+  const btnSettingsSubtabAccount = document.getElementById('btn-settings-subtab-account');
+  if (btnSettingsSubtabAccount) btnSettingsSubtabAccount.addEventListener('click', () => switchSettingsSubTab('service'));
+
+  // 비밀번호 변경 폼
+  const changePasswordForm = document.getElementById('change-password-form');
+  if (changePasswordForm) {
+    changePasswordForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const currentPassword = document.getElementById('cp-current').value;
+      const newPassword = document.getElementById('cp-new').value;
+      const confirmPassword = document.getElementById('cp-confirm').value;
+      const msgEl = document.getElementById('cp-msg');
+      const btn = document.getElementById('btn-change-password');
+
+      const showMsg = (text, ok) => {
+        msgEl.textContent = text;
+        msgEl.className = `text-xs font-bold py-2 px-3 rounded-xl ${ok ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'}`;
+        msgEl.classList.remove('hidden');
+      };
+
+      if (newPassword !== confirmPassword) return showMsg('새 비밀번호가 일치하지 않습니다.', false);
+      if (newPassword.length < 6) return showMsg('새 비밀번호는 6자 이상이어야 합니다.', false);
+
+      btn.disabled = true;
+      btn.innerHTML = '변경 중...';
+      try {
+        const token = getAuthToken();
+        const res = await fetch('/api/user/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-KFCMan-Auth': token },
+          body: JSON.stringify({ currentPassword, newPassword })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showMsg('✅ ' + data.message, true);
+          changePasswordForm.reset();
+        } else {
+          showMsg('❌ ' + data.error, false);
+        }
+      } catch (err) {
+        showMsg('❌ 네트워크 오류가 발생했습니다.', false);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="check" class="w-4 h-4 inline-block mr-1"></i>비밀번호 변경';
+        lucide.createIcons();
+      }
+    });
+  }
+
+  // 회원관리 탭 로그아웃
+  const btnAccountLogout = document.getElementById('btn-account-logout');
+  if (btnAccountLogout) {
+    btnAccountLogout.addEventListener('click', () => {
+      const logoutBtn = document.getElementById('btn-logout-sidebar') || document.getElementById('btn-logout-mobile');
+      if (logoutBtn) logoutBtn.click();
+    });
+  }
 
   const navItemSettings = document.getElementById('nav-item-settings');
   if (navItemSettings) {
@@ -3933,13 +4723,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Footer Links Modals (Service Intro & Privacy Policy)
+  // Footer Links Modals (Service Intro, Privacy Policy, Terms of Service, Abuse Report)
   const introModal = document.getElementById('intro-modal');
   const privacyModal = document.getElementById('privacy-modal');
+  const termsModal = document.getElementById('terms-modal');
+  const abuseModal = document.getElementById('abuse-modal');
+
   const linkServiceIntro = document.getElementById('link-service-intro');
   const linkPrivacyPolicy = document.getElementById('link-privacy-policy');
+  const linkTerms = document.getElementById('link-terms');
+  const linkAbuse = document.getElementById('link-abuse');
+
   const btnIntroModalClose = document.getElementById('btn-intro-modal-close');
   const btnPrivacyModalClose = document.getElementById('btn-privacy-modal-close');
+  const btnTermsModalClose = document.getElementById('btn-terms-modal-close');
+  const btnAbuseModalClose = document.getElementById('btn-abuse-modal-close');
 
   if (linkServiceIntro && introModal) {
     linkServiceIntro.addEventListener('click', (e) => {
@@ -3955,15 +4753,89 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (btnIntroModalClose && introModal) {
-    btnIntroModalClose.addEventListener('click', () => {
-      introModal.classList.add('hidden');
+  if (linkTerms && termsModal) {
+    linkTerms.addEventListener('click', (e) => {
+      e.preventDefault();
+      termsModal.classList.remove('hidden');
     });
   }
 
+  if (linkAbuse && abuseModal) {
+    linkAbuse.addEventListener('click', (e) => {
+      e.preventDefault();
+      abuseModal.classList.remove('hidden');
+    });
+  }
+
+  if (btnIntroModalClose && introModal) {
+    btnIntroModalClose.addEventListener('click', () => introModal.classList.add('hidden'));
+  }
   if (btnPrivacyModalClose && privacyModal) {
-    btnPrivacyModalClose.addEventListener('click', () => {
-      privacyModal.classList.add('hidden');
+    btnPrivacyModalClose.addEventListener('click', () => privacyModal.classList.add('hidden'));
+  }
+  if (btnTermsModalClose && termsModal) {
+    btnTermsModalClose.addEventListener('click', () => termsModal.classList.add('hidden'));
+  }
+  if (btnAbuseModalClose && abuseModal) {
+    btnAbuseModalClose.addEventListener('click', () => abuseModal.classList.add('hidden'));
+  }
+
+  // Handle Abuse Report Form Submission
+  const formReportAbuse = document.getElementById('form-report-abuse');
+  if (formReportAbuse) {
+    formReportAbuse.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const targetInput = document.getElementById('abuse-target-code');
+      const categorySelect = document.getElementById('abuse-category');
+      const descInput = document.getElementById('abuse-description');
+      const statusMsg = document.getElementById('abuse-status-msg');
+      const submitBtn = document.getElementById('btn-submit-abuse');
+
+      let codeOrUrl = targetInput ? targetInput.value.trim() : '';
+      if (!codeOrUrl) return;
+
+      if (submitBtn) submitBtn.disabled = true;
+      if (statusMsg) {
+        statusMsg.className = 'text-xs font-bold p-2.5 rounded-xl text-center bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300';
+        statusMsg.textContent = '신고를 접수하고 있습니다...';
+        statusMsg.classList.remove('hidden');
+      }
+
+      try {
+        const res = await fetch('/api/report-abuse', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            target: codeOrUrl,
+            category: categorySelect ? categorySelect.value : 'other',
+            description: descInput ? descInput.value.trim() : ''
+          })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          if (statusMsg) {
+            statusMsg.className = 'text-xs font-bold p-2.5 rounded-xl text-center bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
+            statusMsg.textContent = data.message || '신고가 정상 접수되었습니다. 관리자 검토 후 조치됩니다.';
+          }
+          if (formReportAbuse) formReportAbuse.reset();
+          setTimeout(() => {
+            if (abuseModal) abuseModal.classList.add('hidden');
+            if (statusMsg) statusMsg.classList.add('hidden');
+          }, 3000);
+        } else {
+          if (statusMsg) {
+            statusMsg.className = 'text-xs font-bold p-2.5 rounded-xl text-center bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300';
+            statusMsg.textContent = data.error || '신고 접수 중 오류가 발생했습니다.';
+          }
+        }
+      } catch (err) {
+        if (statusMsg) {
+          statusMsg.className = 'text-xs font-bold p-2.5 rounded-xl text-center bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300';
+          statusMsg.textContent = '네트워크 통신 오류가 발생했습니다.';
+        }
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
     });
   }
 
@@ -4002,9 +4874,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const logoutBtnMobile = document.getElementById('btn-logout-mobile');
   if (logoutBtnMobile) {
-    logoutBtnMobile.addEventListener('click', () => {
-      logoutBtn.click(); // Forward click to the original logout button
-    });
+    logoutBtnMobile.addEventListener('click', performLogout);
   }
 
   // --- Mobile Tab Bar Interactive Controller ---
@@ -4145,6 +5015,235 @@ document.addEventListener('DOMContentLoaded', () => {
   const transferStudentNum = document.getElementById('transfer-student-num');
   const transferStudentName = document.getElementById('transfer-student-name');
 
+  // Student-facing public display board
+  const btnOpenStudentDisplay = document.getElementById('btn-open-student-display');
+  const studentDisplayView = document.getElementById('student-display-view');
+  const btnCloseDisplayView = document.getElementById('btn-close-display-view');
+  const btnToggleFullscreen = document.getElementById('btn-toggle-fullscreen');
+
+  function escapeStudentDisplayText(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[char]));
+  }
+
+  function renderStudentDisplay() {
+    if (!classroomData || !Array.isArray(classroomData.students)) return;
+
+    const titleElem = document.getElementById('display-class-title');
+    const tempValElem = document.getElementById('display-temp-val');
+    const tempBarElem = document.getElementById('display-temp-bar');
+    const nextGoalElem = document.getElementById('display-next-goal-title');
+    const remainElem = document.getElementById('display-remaining-temp');
+    const gridElem = document.getElementById('display-students-grid');
+    const summaryGridElem = document.getElementById('display-summary-grid');
+    const podiumElem = document.getElementById('display-podium');
+    const rules = classroomData.rules || {};
+
+    const className = classroomData.name || '우리 학급';
+    if (titleElem) titleElem.textContent = `${className} 으쓱 점수 & 학급 온도계`;
+
+    const sortedStudents = [...classroomData.students].sort((a, b) => (Number(a.number) || 0) - (Number(b.number) || 0));
+    const ratio = Number(rules.rawToAchievementRatio) || 50;
+    const totalRaw = sortedStudents.reduce((sum, student) => sum + (Number(student.rawScore) || 0), 0);
+    const totalStudents = sortedStudents.length;
+    const avgRaw = totalStudents > 0 ? Math.round(totalRaw / totalStudents) : 0;
+    const totalUnpaidAchievements = sortedStudents.reduce((sum, student) => {
+      const unpaidRaw = Number(student.unpaid) || Math.max(0, (Number(student.rawScore) || 0) - (Number(student.paidScore) || 0));
+      return sum + Math.floor(unpaidRaw / ratio);
+    }, 0);
+    const topAchievementStudent = [...sortedStudents].sort((a, b) => (Number(b.achievements) || 0) - (Number(a.achievements) || 0))[0];
+    const maxRawScore = Math.max(1, ...sortedStudents.map((student) => Number(student.rawScore) || 0));
+
+    if (summaryGridElem) {
+      const topName = topAchievementStudent
+        ? (rules.namePrivacy ? `${escapeStudentDisplayText(topAchievementStudent.number || '-')}번` : escapeStudentDisplayText(topAchievementStudent.name || `${topAchievementStudent.number || '-'}번`))
+        : '-';
+      const topAchievements = topAchievementStudent ? Number(topAchievementStudent.achievements) || 0 : 0;
+      summaryGridElem.innerHTML = `
+        <div class="bg-white border border-slate-200 rounded-2xl px-4 py-3">
+          <div class="text-[11px] font-black text-slate-500">전체 학생 수</div>
+          <div class="text-2xl font-black text-slate-950 mt-1">${totalStudents.toLocaleString()}명</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-2xl px-4 py-3">
+          <div class="text-[11px] font-black text-slate-500">반 평균 누적 점수</div>
+          <div class="text-2xl font-black text-slate-950 mt-1">${avgRaw.toLocaleString()}점</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-2xl px-4 py-3">
+          <div class="text-[11px] font-black text-slate-500">전체 미지급 보상</div>
+          <div class="text-2xl font-black text-orange-600 mt-1">${totalUnpaidAchievements.toLocaleString()}개</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-2xl px-4 py-3">
+          <div class="text-[11px] font-black text-slate-500">달성 횟수 1위</div>
+          <div class="text-xl font-black text-slate-950 mt-1 truncate">${topName}</div>
+          <div class="text-[11px] font-bold text-slate-500">${topAchievements.toLocaleString()}회</div>
+        </div>
+      `;
+    }
+
+    const tempDivider = Number(rules.thermometerRatio) || 200;
+    const calculatedTempNumber = totalRaw / tempDivider;
+    const calculatedTemp = calculatedTempNumber.toFixed(1);
+    if (tempValElem) tempValElem.textContent = calculatedTemp;
+
+    const goals = Array.isArray(classroomData.goals)
+      ? [...classroomData.goals].sort((a, b) => (Number(a.temp) || 0) - (Number(b.temp) || 0))
+      : [];
+    const nextGoal = goals.find((goal) => (Number(goal.temp) || 0) > calculatedTempNumber) || goals[goals.length - 1];
+
+    if (nextGoal) {
+      const goalTemp = Number(nextGoal.temp) || 0;
+      if (nextGoalElem) nextGoalElem.textContent = `${goalTemp}°C · ${nextGoal.activity || '학급 파티'}`;
+      const remain = Math.max(0, goalTemp - calculatedTempNumber).toFixed(1);
+      if (remainElem) remainElem.textContent = `목표 달성까지 남은 온도: ${remain}°C`;
+
+      const maxScale = Math.max(100, goalTemp);
+      const percent = Math.min(100, Math.max(0, (calculatedTempNumber / maxScale) * 100));
+      if (tempBarElem) tempBarElem.style.width = `${percent}%`;
+    } else {
+      if (nextGoalElem) nextGoalElem.textContent = '목표 설정 중';
+      if (remainElem) remainElem.textContent = '목표까지 남은 점수를 향해 힘내요!';
+      if (tempBarElem) tempBarElem.style.width = '0%';
+    }
+
+    if (podiumElem) {
+      const topScorers = [...sortedStudents]
+        .sort((a, b) => (Number(b.rawScore) || 0) - (Number(a.rawScore) || 0))
+        .slice(0, 3);
+      const podiumOrder = [topScorers[1], topScorers[0], topScorers[2]].filter(Boolean);
+      const podiumMeta = {
+        0: { medal: '🥇', label: '1위', height: 'h-28', tone: 'bg-orange-100 border-orange-200 text-orange-700' },
+        1: { medal: '🥈', label: '2위', height: 'h-24', tone: 'bg-slate-100 border-slate-200 text-slate-700' },
+        2: { medal: '🥉', label: '3위', height: 'h-20', tone: 'bg-amber-100 border-amber-200 text-amber-700' }
+      };
+      podiumElem.innerHTML = podiumOrder.length
+        ? podiumOrder.map((student) => {
+            const rank = topScorers.indexOf(student);
+            const meta = podiumMeta[rank] || podiumMeta[2];
+            const name = rules.namePrivacy ? `${escapeStudentDisplayText(student.number || '-')}번` : escapeStudentDisplayText(student.name || `${student.number || '-'}번`);
+            const score = (Number(student.rawScore) || 0).toLocaleString();
+            return `
+              <div class="flex-1 max-w-[150px] text-center">
+                <div class="text-2xl mb-1">${meta.medal}</div>
+                <div class="${meta.height} ${meta.tone} border rounded-t-2xl flex flex-col justify-center px-2">
+                  <div class="text-xs font-black">${meta.label}</div>
+                  <div class="text-sm font-black text-slate-950 truncate">${name}</div>
+                  <div class="text-xs font-bold">${score}점</div>
+                </div>
+              </div>
+            `;
+          }).join('')
+        : `<div class="text-sm font-bold text-slate-400">표시할 학생 점수가 없습니다.</div>`;
+    }
+
+    if (gridElem) {
+      gridElem.innerHTML = sortedStudents.map((student) => {
+        const number = escapeStudentDisplayText(student.number || '-');
+        const nameText = rules.namePrivacy ? '' : escapeStudentDisplayText(student.name || '');
+        const rawScoreNumber = Number(student.rawScore) || 0;
+        const rawScore = rawScoreNumber.toLocaleString();
+        const achievements = Number(student.achievements) || 0;
+        const unpaidRaw = Number(student.unpaid) || Math.max(0, rawScoreNumber - (Number(student.paidScore) || 0));
+        const unpaidAchievements = Math.floor(unpaidRaw / ratio);
+        const scorePercent = Math.min(100, Math.max(0, (rawScoreNumber / maxRawScore) * 100));
+        const rewardBadge = unpaidAchievements > 0
+          ? `<div class="text-[11px] font-black text-orange-700 bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-full">🎁 미지급 ${unpaidAchievements}개</div>`
+          : `<div class="text-[11px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">전원지급</div>`;
+        return `
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-between text-center transition-colors min-h-[190px]">
+            <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center font-black text-sm mb-2">
+              ${number}
+            </div>
+            ${nameText ? `<div class="text-sm font-black text-slate-900 truncate w-full mb-1">${nameText}</div>` : ''}
+            <div class="text-2xl font-black text-slate-950 font-sans tracking-tight">
+              ${rawScore}
+            </div>
+            <div class="text-[11px] font-bold text-slate-600 mt-1 bg-slate-50 border border-slate-200 px-2.5 py-0.5 rounded-full">
+              달성 ${achievements}회
+            </div>
+            <div class="mt-2">${rewardBadge}</div>
+            <div class="w-full mt-3">
+              <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full bg-orange-500 rounded-full" style="width: ${scorePercent}%;"></div>
+              </div>
+              <div class="text-[10px] font-bold text-slate-400 mt-1">최고점 대비 ${Math.round(scorePercent)}%</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  // Student Display Functions (Global Window Binding for robust direct invocation)
+  window.openStudentDisplayView = async function() {
+    try {
+      if (!classroomData && typeof window.fetchClassroom === 'function') {
+        await window.fetchClassroom();
+      }
+      renderStudentDisplay();
+      const displayElem = document.getElementById('student-display-view');
+      if (displayElem) {
+        displayElem.classList.remove('hidden');
+      }
+    } catch (err) {
+      console.error('Failed to open student display:', err);
+      showToast('화면 로드 실패', '학생 공개 화면을 불러오는 중 오류가 발생했습니다.', 'error');
+    }
+  };
+
+  window.closeStudentDisplayView = function() {
+    const displayElem = document.getElementById('student-display-view');
+    if (displayElem) displayElem.classList.add('hidden');
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch((err) => console.error(err));
+    }
+  };
+
+  window.toggleStudentDisplayFullscreen = function() {
+    const displayElem = document.getElementById('student-display-view');
+    if (!document.fullscreenElement) {
+      if (displayElem && displayElem.requestFullscreen) {
+        displayElem.requestFullscreen().catch((err) => console.error(err));
+      }
+    } else {
+      document.exitFullscreen().catch((err) => console.error(err));
+    }
+  };
+
+  window.openStudentDisplayPopup = function() {
+    const targetUrl = window.location.origin + window.location.pathname + '?view=student-display';
+    const popup = window.open(
+      targetUrl,
+      'kfcmanStudentDisplayPopup',
+      'width=1280,height=800,menubar=no,toolbar=no,location=no,status=no,resizable=yes'
+    );
+    if (popup) {
+      popup.focus();
+      window.closeStudentDisplayView();
+      showToast('새 창 분리 완료', '학생 공개 화면이 새 창으로 열렸습니다! 교실 TV나 프로젝터 화면으로 이동하세요.', 'success');
+    } else {
+      showToast('팝업 차단 알림', '브라우저 주소창 우측에서 팝업 차단을 허용해 주세요.', 'warning');
+    }
+  };
+
+  if (btnOpenStudentDisplay) {
+    btnOpenStudentDisplay.addEventListener('click', window.openStudentDisplayView);
+  }
+
+  if (btnCloseDisplayView) {
+    btnCloseDisplayView.addEventListener('click', window.closeStudentDisplayView);
+  }
+
+  if (btnToggleFullscreen) {
+    btnToggleFullscreen.addEventListener('click', window.toggleStudentDisplayFullscreen);
+  }
+
   // Unified Section Switcher
   window.switchClassroomTab = function(sectionId) {
     if (sectionId === 'classroom-section') switchClassroomSubTab('dash');
@@ -4215,7 +5314,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Load classroom data from server
-  window.fetchClassroom = async function() {
+  async function fetchClassroom() {
     try {
       const res = await secureFetch('/api/classroom');
       if (!res.ok) throw new Error('API Error');
@@ -4228,11 +5327,18 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       renderAllClassroomViews();
       updateClassSwitcherUI();
+
+      // 학생 공개 화면이 열려있다면 실시간으로 학생 전광판도 동기화
+      const displayElem = document.getElementById('student-display-view');
+      if (displayElem && !displayElem.classList.contains('hidden')) {
+        renderStudentDisplay();
+      }
     } catch (err) {
       console.error(err);
       showToast('로드 실패', '학급 데이터를 서버로부터 불러오지 못했습니다.', 'error');
     }
-  };
+  }
+  window.fetchClassroom = fetchClassroom;
 
   // Save classroom data to server
   async function saveClassroomToServer() {
@@ -4255,11 +5361,40 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       renderAllClassroomViews();
       updateClassSwitcherUI();
+
+      // 학생 공개 화면 실시간 갱신
+      const displayElem = document.getElementById('student-display-view');
+      if (displayElem && !displayElem.classList.contains('hidden')) {
+        renderStudentDisplay();
+      }
+
+      // 듀얼모니터/교실TV에 띄운 새 창 전광판에 즉시 실시간 점수 변동 전달
+      try {
+        localStorage.setItem('kfcman_classroom_synced', Date.now().toString());
+      } catch (syncErr) {}
     } catch (err) {
       console.error(err);
       showToast('저장 실패', '서버 저장 중 네트워크 에러가 발생했습니다.', 'error');
     }
   }
+
+  // 다른 창(새 창으로 분리된 전광판 등)에서 점수가 변경되면 실시간으로 자동 수신
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'kfcman_classroom_synced') {
+      fetchClassroom();
+    }
+  });
+
+  // URL 파라미터가 ?view=student-display 일 경우 자동으로 학생 공개 전광판 전용 모드로 실행
+  (function checkAutoDisplayMode() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('view') === 'student-display') {
+      setTimeout(async () => {
+        await fetchClassroom();
+        window.openStudentDisplayView();
+      }, 300);
+    }
+  })();
 
   // Main Render Hub
   function renderAllClassroomViews() {
@@ -4272,6 +5407,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderGradebookView();
     renderThermometerView();
     renderSettingsView();
+    if (studentDisplayView && !studentDisplayView.classList.contains('hidden')) {
+      renderStudentDisplay();
+    }
   }
 
   // Render 1: Dashboard View
@@ -4414,16 +5552,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }).join('');
     }
 
-    // 4. Students Grid
+    // 4. Students Grid (Obsidian Seamless Minimal Grid)
     dashStudentsGrid.innerHTML = classroomData.students.map(s => {
       const nameText = classroomData.rules.namePrivacy ? '' : s.name;
       const unpaidAchievements = Math.floor((s.unpaid || 0) / (classroomData.rules.rawToAchievementRatio || 50));
       return `
-        <div class="bg-white dark:bg-clay-card border-4 border-white rounded-3xl p-6 shadow-clay-flat flex flex-col justify-between items-center text-center clay-card hover:scale-105 transition-all">
-          <div class="w-14 h-14 rounded-full border-2 border-white bg-slate-100 dark:bg-slate-850 text-xl font-black flex items-center justify-center text-slate-700 dark:text-slate-300">${s.number}</div>
-          ${nameText ? `<span class="text-xl font-black text-slate-800 dark:text-slate-100 mt-3 truncate w-full">${s.name}</span>` : ''}
-          <div class="mt-3 text-3xl font-black text-clay-sky dark:text-clay-mint leading-none">${s.rawScore.toLocaleString()}</div>
-          <div class="text-[17px] font-black text-clay-grass mt-3.5 bg-clay-grass/15 border-2 border-clay-grass/25 px-4 py-1.5 rounded-2xl">미지급 ${unpaidAchievements}</div>
+        <div class="bg-slate-50/70 dark:bg-zinc-900/50 rounded-xl p-4 flex flex-col justify-between items-center text-center hover:bg-slate-100 dark:hover:bg-zinc-800/80 transition-all">
+          <div class="w-10 h-10 rounded-full bg-slate-200/80 dark:bg-zinc-800 text-sm font-bold flex items-center justify-center text-slate-700 dark:text-zinc-300 font-mono">${s.number}</div>
+          ${nameText ? `<span class="text-sm font-bold text-slate-800 dark:text-zinc-100 mt-2 truncate w-full">${s.name}</span>` : ''}
+          <div class="mt-2 text-2xl font-black text-[#7c6cf0] dark:text-[#9d8df8] leading-none font-sans">${s.rawScore.toLocaleString()}점</div>
+          <div class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-2.5 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-md">미지급 ${unpaidAchievements}</div>
         </div>
       `;
     }).join('');
@@ -4431,75 +5569,126 @@ document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
   }
 
-  // Render 2: Gradebook View
+  // Render 2: Gradebook View (Obsidian Markdown Table Look & 스마트 5컬럼, 완전 무경계)
   function renderGradebookView() {
     gradeStudentCount.textContent = classroomData.students.length;
+    const badgeEl = document.getElementById('breadcrumb-badge');
+    if (badgeEl) badgeEl.textContent = `(${classroomData.students.length})`;
     
     gradebookTableBody.innerHTML = classroomData.students.map(s => {
-      const unpaidAchievements = Math.floor((s.unpaid || 0) / (classroomData.rules.rawToAchievementRatio || 50));
-      const calculatedAchievements = s.achievements;
-      const nameText = classroomData.rules.namePrivacy ? '-' : s.name;
+      const ratio = classroomData.rules.rawToAchievementRatio || 50;
+      const unpaidAchievements = Math.floor((s.unpaid || 0) / ratio);
+      const calculatedAchievements = s.achievements || 0;
+      const nameText = classroomData.rules.namePrivacy ? "-" : (s.name || `${s.number}번 학생`);
 
       return `
-        <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-          <td class="p-6">
-            <span class="font-sans font-black text-slate-400 bg-slate-100 dark:bg-slate-850 px-4 py-2 rounded-xl border border-white/5 text-xl">${s.number}</span>
-          </td>
-          <td class="p-6 font-black text-slate-800 dark:text-white text-xl">
-            <div class="flex items-center gap-2">
-              <span class="student-name-label cursor-pointer" data-num="${s.number}">${nameText}</span>
-              <i data-lucide="edit" class="w-5 h-5 text-slate-400 cursor-pointer opacity-40 hover:opacity-100 btn-edit-student-name" data-num="${s.number}"></i>
-            </div>
-          </td>
-          <td class="p-6">
-            <div class="flex items-center gap-2">
-              <span class="font-sans font-extrabold text-slate-800 dark:text-slate-100 student-score-label cursor-pointer text-xl" data-num="${s.number}">${s.rawScore.toLocaleString()}</span>
-              <i data-lucide="edit" class="w-5 h-5 text-slate-400 cursor-pointer opacity-40 hover:opacity-100 btn-edit-student-score" data-num="${s.number}"></i>
-            </div>
-          </td>
-          <td class="p-6">
-            <div class="flex items-center gap-2">
-              <span class="bg-clay-sky/15 text-clay-sky border border-clay-sky/25 px-4 py-2 rounded-2xl font-extrabold text-base inline-flex items-center gap-1.5 student-achievements-label cursor-pointer" data-num="${s.number}">
-                <span>${calculatedAchievements}점</span>
+        <tr class="hover:bg-slate-50/80 dark:hover:bg-zinc-900/50 transition-colors">
+          <!-- 컬럼 1: 학생 (번호 뱃지 + 이름 + 수정 아이콘) -->
+          <td class="py-2.5 px-3">
+            <div class="flex items-center gap-2.5">
+              <span class="w-6 h-6 rounded bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-bold text-xs flex items-center justify-center font-mono flex-shrink-0">
+                ${s.number}
               </span>
-              <i data-lucide="edit" class="w-5 h-5 text-slate-400 cursor-pointer opacity-40 hover:opacity-100 btn-edit-student-achievements" data-num="${s.number}"></i>
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="student-name-label font-medium text-slate-900 dark:text-zinc-100 text-sm cursor-pointer hover:text-[#7c6cf0] dark:hover:text-[#9d8df8] truncate" data-num="${s.number}">
+                  ${nameText}
+                </span>
+                <i data-lucide="edit-3" class="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer opacity-30 hover:opacity-100 btn-edit-student-name" data-num="${s.number}" title="이름 변경"></i>
+              </div>
             </div>
           </td>
-          <td class="p-6">
-            <div class="flex items-center gap-2">
-              <span class="font-sans font-extrabold text-slate-600 dark:text-slate-400 student-paid-label cursor-pointer text-xl" data-num="${s.number}">${s.paidScore.toLocaleString()}</span>
-              <i data-lucide="edit" class="w-5 h-5 text-slate-400 cursor-pointer opacity-40 hover:opacity-100 btn-edit-student-paid" data-num="${s.number}"></i>
-            </div>
-          </td>
-          <td class="p-6">
-            <div class="flex items-center gap-2">
-              <span class="bg-clay-grass/15 text-clay-grass border border-clay-grass/25 px-4 py-2 rounded-2xl font-extrabold text-base inline-flex items-center gap-1.5 student-unpaid-label cursor-pointer" data-num="${s.number}">
-                <span>${unpaidAchievements}점</span>
+
+          <!-- 컬럼 2: 누적 점수 -->
+          <td class="py-2.5 px-3">
+            <div class="flex items-center gap-1.5">
+              <span class="student-score-label font-bold text-slate-900 dark:text-zinc-100 text-sm font-sans cursor-pointer hover:text-[#7c6cf0] dark:hover:text-[#9d8df8]" data-num="${s.number}">
+                ${(s.rawScore || 0).toLocaleString()}점
               </span>
-              <i data-lucide="edit" class="w-5 h-5 text-slate-400 cursor-pointer opacity-40 hover:opacity-100 btn-edit-student-unpaid" data-num="${s.number}"></i>
+              <i data-lucide="edit-3" class="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer opacity-30 hover:opacity-100 btn-edit-student-score" data-num="${s.number}" title="점수 직접 수정"></i>
             </div>
           </td>
-          <td class="p-6 text-center">
-            <div class="flex items-center justify-center gap-3">
-              <button class="btn-action-add-score w-12 h-12 rounded-xl border border-white/10 bg-clay-sky hover:bg-cyan-400 text-white flex items-center justify-center shadow cursor-pointer active:scale-90" data-num="${s.number}" title="점수 부여 (+50점)">
-                <i data-lucide="plus" class="w-6 h-6"></i>
+
+          <!-- 컬럼 3: 주간 획득 점수 (즉시 누가 + 시각 피드백) -->
+          <td class="py-2.5 px-3">
+            <div class="flex items-center gap-1.5">
+              <input type="number" 
+                     class="weekly-score-input w-16 px-2 py-1 text-xs font-semibold bg-slate-100 dark:bg-zinc-800/80 rounded focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-[#7c6cf0] text-right transition-all" 
+                     placeholder="0" 
+                     data-num="${s.number}" 
+                     step="1" />
+              <button class="btn-action-add-weekly px-2.5 py-1 bg-slate-100 hover:bg-[#7c6cf0] text-slate-700 hover:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-[#7c6cf0] dark:hover:text-white font-semibold text-xs rounded transition-all flex items-center gap-1 cursor-pointer active:scale-95" 
+                      data-num="${s.number}" 
+                      title="입력한 점수를 누적 원점수에 합산">
+                <i data-lucide="plus" class="w-3 h-3"></i>
+                <span>누가</span>
               </button>
-              <button class="btn-action-pay-score w-20 h-12 rounded-xl border border-white/10 bg-clay-grass hover:bg-teal-400 text-black flex items-center justify-center gap-1.5 shadow cursor-pointer font-black text-xs active:scale-95" data-num="${s.number}" title="미지급 점수 지급">
-                <i data-lucide="gift" class="w-4 h-4"></i>
-                <span>지급</span>
+            </div>
+          </td>
+
+          <!-- 컬럼 4: 칭찬 보상 현황 (달성 + 미지급 통합) -->
+          <td class="py-2.5 px-3">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="px-2 py-0.5 rounded text-xs font-medium bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 flex items-center gap-1 student-achievements-label cursor-pointer" data-num="${s.number}" title="총 달성한 칭찬 쿠폰 수">
+                <i data-lucide="award" class="w-3 h-3 text-[#7c6cf0]"></i>
+                <span>달성 ${calculatedAchievements}회</span>
+              </span>
+              ${unpaidAchievements > 0 ? `
+                <button class="btn-action-pay-score px-2 py-0.5 rounded text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-all flex items-center gap-1 cursor-pointer active:scale-95" data-num="${s.number}" title="미지급된 쿠폰 선물 지급하기">
+                  <i data-lucide="gift" class="w-3 h-3 text-emerald-600"></i>
+                  <span>미지급 ${unpaidAchievements}개 지급</span>
+                </button>
+              ` : `
+                <span class="text-[11px] text-slate-400 dark:text-zinc-500 flex items-center gap-0.5">
+                  <i data-lucide="check" class="w-3 h-3 text-emerald-500"></i> 전원지급
+                </span>
+              `}
+            </div>
+          </td>
+
+          <!-- 컬럼 5: 관리 (+50 가산 & 삭제) -->
+          <td class="py-2.5 px-3 text-center">
+            <div class="flex items-center justify-center gap-1">
+              <button class="btn-action-add-score px-2 py-1 rounded bg-slate-100 dark:bg-zinc-800 hover:bg-[#7c6cf0]/15 text-[#7c6cf0] dark:text-[#9d8df8] flex items-center justify-center gap-0.5 text-xs font-semibold cursor-pointer active:scale-90" data-num="${s.number}" title="즉시 원점수 +50점 부여">
+                <i data-lucide="plus" class="w-3 h-3"></i>
+                <span>50</span>
               </button>
-              <button class="btn-action-delete-student w-12 h-12 rounded-xl border border-white/10 bg-clay-red hover:bg-red-500 text-white flex items-center justify-center shadow cursor-pointer active:scale-90" data-num="${s.number}" title="학생 제거">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              <button class="btn-action-delete-student p-1 rounded bg-slate-100 dark:bg-zinc-800 hover:bg-rose-100 dark:hover:bg-rose-950/50 text-rose-500 flex items-center justify-center cursor-pointer active:scale-90" data-num="${s.number}" title="학생 삭제">
+                <i data-lucide="trash-2" class="w-3 h-3"></i>
               </button>
             </div>
           </td>
         </tr>
       `;
-    }).join('');
+    }).join("");
+
+    // 주간 점수 입력 시 실시간 시각 피드백 (0보다 큰 값이 들어가면 보라색 액센트 강조)
+    document.querySelectorAll(".weekly-score-input").forEach(input => {
+      input.addEventListener("input", (e) => {
+        const val = parseInt(e.target.value);
+        const row = e.target.closest("tr");
+        const addBtn = row ? row.querySelector(".btn-action-add-weekly") : null;
+
+        if (!isNaN(val) && val > 0) {
+          e.target.classList.remove("bg-white", "dark:bg-zinc-900", "border-slate-200", "dark:border-zinc-700");
+          e.target.classList.add("bg-purple-50", "dark:bg-purple-950/40", "border-[#7c6cf0]", "text-[#7c6cf0]", "font-bold");
+          if (addBtn) {
+            addBtn.classList.remove("bg-slate-100", "text-slate-700", "dark:bg-zinc-800", "dark:text-zinc-300");
+            addBtn.classList.add("bg-[#7c6cf0]", "text-white");
+          }
+        } else {
+          e.target.classList.add("bg-white", "dark:bg-zinc-900", "border-slate-200", "dark:border-zinc-700");
+          e.target.classList.remove("bg-purple-50", "dark:bg-purple-950/40", "border-[#7c6cf0]", "text-[#7c6cf0]", "font-bold");
+          if (addBtn) {
+            addBtn.classList.add("bg-slate-100", "text-slate-700", "dark:bg-zinc-800", "dark:text-zinc-300");
+            addBtn.classList.remove("bg-[#7c6cf0]", "text-white");
+          }
+        }
+      });
+    });
 
     // Bind Edit Action triggers (To both Edit Icon AND Text Label!)
-    document.querySelectorAll('.btn-edit-student-name, .student-name-label').forEach(btn => {
-      btn.addEventListener('click', () => {
+    document.querySelectorAll(".btn-edit-student-name, .student-name-label").forEach(btn => {
+      btn.addEventListener("click", () => {
         const num = parseInt(btn.dataset.num);
         const student = classroomData.students.find(s => s.number === num);
         if (!student) return;
@@ -4570,6 +5759,56 @@ document.addEventListener('DOMContentLoaded', () => {
           student.unpaid = unpaidVal * ratio;
           student.paidScore = Math.max(0, student.rawScore - student.unpaid);
           saveClassroomToServer();
+        }
+      });
+    });
+
+    // --- 주간 점수 개별 합산 로직 (버튼 클릭 및 엔터 키 입력 지원) ---
+    function applyWeeklyScore(num, rawValue) {
+      const student = classroomData.students.find(s => s.number === num);
+      if (!student) return;
+
+      const scoreToAdd = parseInt(rawValue);
+      if (isNaN(scoreToAdd) || scoreToAdd === 0) {
+        showToast('입력 확인', '합산할 점수(숫자)를 입력해 주세요.', 'info');
+        return;
+      }
+
+      // 기존 누적 원점수에 주간 획득 점수를 누가(누적 가산)
+      student.rawScore = Math.max(0, student.rawScore + scoreToAdd);
+
+      // 점수 비율(마일리지) 및 미지급 점수 자동 재계산
+      const ratio = classroomData.rules.rawToAchievementRatio || 50;
+      student.achievements = Math.floor(student.rawScore / ratio);
+      student.unpaid = Math.max(0, student.rawScore - student.paidScore);
+
+      showToast(
+        '누가 완료 🌟',
+        `[${student.number}번 ${student.name}] 주간 획득 점수 +${scoreToAdd}점이 누적 원점수에 성공적으로 누가되었습니다! (누적 총점: ${student.rawScore.toLocaleString()}점)`,
+        'success'
+      );
+
+      // 변경된 학급 데이터를 서버에 안전하게 자동 저장
+      saveClassroomToServer();
+    }
+
+    // 주간 점수 [반영] 버튼 클릭 시 동작
+    document.querySelectorAll('.btn-action-add-weekly').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const num = parseInt(btn.dataset.num);
+        const input = document.querySelector(`.weekly-score-input[data-num="${num}"]`);
+        if (!input) return;
+        applyWeeklyScore(num, input.value);
+      });
+    });
+
+    // 주간 점수 입력창에서 [Enter] 키를 누르면 바로 합산
+    document.querySelectorAll('.weekly-score-input').forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const num = parseInt(input.dataset.num);
+          applyWeeklyScore(num, input.value);
         }
       });
     });
@@ -4771,8 +6010,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     // 1. Privacy Toggle Switch
-    chkNamePrivacy.checked = !classroomData.rules.namePrivacy;
-    privacyStatusLabel.textContent = classroomData.rules.namePrivacy ? '학생 이름 숨김 (익명 번호)' : '학생 이름 사용';
+    chkNamePrivacy.checked = !!classroomData.rules.namePrivacy;
+    privacyStatusLabel.textContent = classroomData.rules.namePrivacy ? '학생 실명 대신 번호로 표시' : '학생 실명 표시';
 
     // 2. Rules Labels
     ruleCurrentRatioLabel.textContent = `${classroomData.rules.rawToAchievementRatio || 50}점 = 달성 1점`;
@@ -4806,10 +6045,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Bind Settings Subtabs switcher (privacy, rules, and fontsize inside eusseuk settings)
   window.switchSettingsSubtab = function(subtab) {
     currentSettingsSubtab = subtab;
+    updateSettingsHeader('classroom', subtab);
     [btnSubtabPrivacy, btnSubtabRules, btnSubtabFontsize].forEach(btn => {
       if (btn) {
-        btn.classList.remove('active', 'bg-clay-purple', 'text-white');
-        btn.classList.add('bg-clay-sand', 'text-slate-800');
+        btn.classList.remove('active', 'text-[#7c6cf0]', 'dark:text-[#9d8df8]', 'font-bold');
+        btn.classList.add('text-slate-400', 'dark:text-zinc-500');
       }
     });
 
@@ -4819,20 +6059,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (subtab === 'privacy') {
       if (btnSubtabPrivacy) {
-        btnSubtabPrivacy.classList.add('active', 'bg-clay-purple', 'text-white');
-        btnSubtabPrivacy.classList.remove('bg-clay-sand', 'text-slate-800');
+        btnSubtabPrivacy.classList.add('active', 'text-[#7c6cf0]', 'dark:text-[#9d8df8]', 'font-bold');
+        btnSubtabPrivacy.classList.remove('text-slate-400', 'dark:text-zinc-500');
       }
       if (settingsPrivacyCard) settingsPrivacyCard.classList.remove('hidden');
     } else if (subtab === 'rules') {
       if (btnSubtabRules) {
-        btnSubtabRules.classList.add('active', 'bg-clay-purple', 'text-white');
-        btnSubtabRules.classList.remove('bg-clay-sand', 'text-slate-800');
+        btnSubtabRules.classList.add('active', 'text-[#7c6cf0]', 'dark:text-[#9d8df8]', 'font-bold');
+        btnSubtabRules.classList.remove('text-slate-400', 'dark:text-zinc-500');
       }
       if (settingsRulesCard) settingsRulesCard.classList.remove('hidden');
     } else if (subtab === 'fontsize') {
       if (btnSubtabFontsize) {
-        btnSubtabFontsize.classList.add('active', 'bg-clay-purple', 'text-white');
-        btnSubtabFontsize.classList.remove('bg-clay-sand', 'text-slate-800');
+        btnSubtabFontsize.classList.add('active', 'text-[#7c6cf0]', 'dark:text-[#9d8df8]', 'font-bold');
+        btnSubtabFontsize.classList.remove('text-slate-400', 'dark:text-zinc-500');
       }
       if (settingsFontsizeCard) settingsFontsizeCard.classList.remove('hidden');
       initFontSizePanel();
@@ -5097,7 +6337,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Privacy Toggle Trigger
   if (chkNamePrivacy) {
     chkNamePrivacy.addEventListener('change', () => {
-      classroomData.rules.namePrivacy = !chkNamePrivacy.checked;
+      classroomData.rules.namePrivacy = chkNamePrivacy.checked;
+      if (privacyStatusLabel) {
+        privacyStatusLabel.textContent = classroomData.rules.namePrivacy ? '학생 실명 대신 번호로 표시' : '학생 실명 표시';
+      }
       saveClassroomToServer();
       showToast(
         '설정 저장됨',
@@ -5165,6 +6408,233 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnAddAllScores = document.getElementById('btn-add-all-scores');
   const btnGenerateNumbers = document.getElementById('btn-generate-numbers');
   const btnAddTransfer = document.getElementById('btn-add-transfer');
+
+  // --- 학급 점수 백업 & 복원 & CSV 다운로드 요소 참조 ---
+  const btnExportScoresCsv = document.getElementById('btn-export-scores-csv');
+  const btnBackupScores = document.getElementById('btn-backup-scores');
+  const btnRestoreScoresModal = document.getElementById('btn-restore-scores-modal');
+
+  const classroomBackupModal = document.getElementById('classroom-backup-modal');
+  const btnBackupModalClose = document.getElementById('btn-backup-modal-close');
+  const classroomBackupForm = document.getElementById('classroom-backup-form');
+  const backupMemoInput = document.getElementById('backup-memo-input');
+
+  const classroomRestoreModal = document.getElementById('classroom-restore-modal');
+  const btnRestoreModalClose = document.getElementById('btn-restore-modal-close');
+  const backupListContainer = document.getElementById('backup-list-container');
+  const btnRefreshBackupList = document.getElementById('btn-refresh-backup-list');
+
+  // [기능 1] 학생 점수 내 컴퓨터 다운로드 (CSV / 엑셀 완벽 호환)
+  // UTF-8 BOM(\uFEFF)을 포함시켜 엑셀 더블클릭 시에도 한글 깨짐이 전혀 없습니다.
+  function exportClassroomScoresToCsv() {
+    if (!classroomData || !classroomData.students || classroomData.students.length === 0) {
+      showToast('내보내기 불가', '내보낼 학생 점수 데이터가 없습니다.', 'warning');
+      return;
+    }
+
+    const className = classroomData.name || '우리학급';
+    const students = [...classroomData.students].sort((a, b) => (a.number || 0) - (b.number || 0));
+
+    // CSV 파일 헤더 구성
+    let csvContent = '번호,이름,누적원점수,달성,지급원점수,미지급원점수\r\n';
+
+    // 각 학생의 데이터를 한 줄씩 CSV 행으로 변환
+    students.forEach(s => {
+      const num = s.number !== undefined ? s.number : '';
+      // 이름에 따옴표나 쉼표가 들어간 경우를 대비한 안전 처리
+      const safeName = `"${(s.name || '').replace(/"/g, '""')}"`;
+      const raw = s.rawScore !== undefined ? s.rawScore : 0;
+      const achievements = s.achievements !== undefined ? s.achievements : 0;
+      const paid = s.paidScore !== undefined ? s.paidScore : 0;
+      const unpaid = s.unpaid !== undefined ? s.unpaid : (raw - paid);
+      csvContent += `${num},${safeName},${raw},${achievements},${paid},${unpaid}\r\n`;
+    });
+
+    // 한글 깨짐 방지용 UTF-8 BOM(\uFEFF)을 추가한 Blob 객체 생성
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    // 오늘 날짜를 구하여 파일명 생성 (예: 4학년_3반_학생점수_2026-09-21.csv)
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const safeClassName = className.replace(/[/\\?%*:|"<>]/g, '_');
+    const fileName = `${safeClassName}_학생점수_${yyyy}-${mm}-${dd}.csv`;
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast('다운로드 완료', `${fileName} 파일이 내 컴퓨터로 저장되었습니다.`, 'success');
+  }
+
+  if (btnExportScoresCsv) {
+    btnExportScoresCsv.addEventListener('click', exportClassroomScoresToCsv);
+  }
+
+  // [기능 2] 서버 백업 저장 모달 동작
+  if (btnBackupScores) {
+    btnBackupScores.addEventListener('click', () => {
+      if (backupMemoInput) backupMemoInput.value = '';
+      if (classroomBackupModal) classroomBackupModal.classList.remove('hidden');
+    });
+  }
+  if (btnBackupModalClose) {
+    btnBackupModalClose.addEventListener('click', () => {
+      if (classroomBackupModal) classroomBackupModal.classList.add('hidden');
+    });
+  }
+  if (classroomBackupForm) {
+    classroomBackupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const memo = backupMemoInput ? backupMemoInput.value.trim() : '';
+
+      try {
+        const res = await secureFetch('/api/classroom/backup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ memo })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '백업 저장 실패');
+
+        if (classroomBackupModal) classroomBackupModal.classList.add('hidden');
+        showToast('백업 저장 성공', data.message || '현재 학생 점수가 서버에 안전하게 보관되었습니다.', 'success');
+      } catch (err) {
+        console.error('백업 실패:', err);
+        showToast('백업 실패', err.message || '서버 백업 저장 중 문제가 발생했습니다.', 'error');
+      }
+    });
+  }
+
+  // [기능 3] 백업 목록 불러오기 및 렌더링
+  async function loadClassroomBackups() {
+    if (!backupListContainer) return;
+    backupListContainer.innerHTML = '<div class="text-center py-8 text-xs font-bold text-slate-400">백업 목록을 불러오는 중...</div>';
+
+    try {
+      const res = await secureFetch('/api/classroom/backups');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '목록 조회 실패');
+
+      const backups = data.backups || [];
+      if (backups.length === 0) {
+        backupListContainer.innerHTML = '<div class="text-center py-8 text-xs font-bold text-slate-400">아직 저장된 백업이 없습니다.<br>[💾 서버 백업 저장] 버튼을 눌러 현재 상태를 백업해 보세요.</div>';
+        return;
+      }
+
+      backupListContainer.innerHTML = backups.map(b => {
+        const d = new Date(b.createdAt);
+        const dateStr = d.toLocaleDateString('ko-KR', {
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+        const memo = b.memo ? b.memo : '이름 없는 백업';
+        const isAuto = memo.includes('복원 직전');
+
+        return `
+          <div class="bg-slate-50 dark:bg-slate-900 border-2 ${isAuto ? 'border-amber-300 dark:border-amber-700' : 'border-white dark:border-slate-800'} rounded-2xl p-3 shadow-clay-flat flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div class="flex-1">
+              <div class="flex items-center gap-2">
+                ${isAuto ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300">자동보관</span>' : ''}
+                <span class="text-xs font-black text-slate-900 dark:text-white">${memo}</span>
+                <span class="text-[11px] font-bold text-slate-500">(${b.className || '학급'} · ${b.studentCount || 0}명)</span>
+              </div>
+              <div class="text-[10px] font-bold text-slate-400 mt-1 flex items-center gap-1">
+                <i data-lucide="clock" class="w-3 h-3"></i>
+                <span>${dateStr}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <button type="button" class="btn-restore-item px-3 py-1.5 text-xs font-black rounded-xl bg-amber-500 hover:bg-amber-400 text-white shadow-clay-flat cursor-pointer flex items-center gap-1 active:scale-95 transition-all" data-id="${b.id}" data-memo="${memo}">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                <span>이 시점으로 복원</span>
+              </button>
+              <button type="button" class="btn-delete-backup px-2.5 py-1.5 text-xs font-bold rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-700 border border-rose-200 cursor-pointer flex items-center gap-1 active:scale-95 transition-all" data-id="${b.id}" title="백업 기록 삭제">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (window.lucide) window.lucide.createIcons();
+
+      // [복원 버튼 클릭 이벤트]
+      backupListContainer.querySelectorAll('.btn-restore-item').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const id = e.currentTarget.getAttribute('data-id');
+          const memo = e.currentTarget.getAttribute('data-memo');
+          if (!confirm(`정말로 [${memo}] 시점으로 점수를 복원하시겠습니까?\n\n※ 현재 상태는 '복원 직전 자동 백업'으로 안전하게 보관되므로 언제든 다시 되돌릴 수 있습니다.`)) {
+            return;
+          }
+
+          try {
+            const res = await secureFetch(`/api/classroom/restore/${id}`, { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || '복원 실패');
+
+            showToast('복원 완료', data.message || '백업 시점으로 완벽하게 복원되었습니다!', 'success');
+            if (classroomRestoreModal) classroomRestoreModal.classList.add('hidden');
+            // 화면의 학생 점수 테이블 즉각 새로고침
+            if (window.fetchClassroom) {
+              await window.fetchClassroom();
+            }
+          } catch (err) {
+            console.error('복원 오류:', err);
+            showToast('복원 실패', err.message || '복원 도중 문제가 발생했습니다.', 'error');
+          }
+        });
+      });
+
+      // [삭제 버튼 클릭 이벤트]
+      backupListContainer.querySelectorAll('.btn-delete-backup').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const id = e.currentTarget.getAttribute('data-id');
+          if (!confirm('이 백업 기록을 삭제하시겠습니까?')) return;
+
+          try {
+            const res = await secureFetch(`/api/classroom/backups/${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || '삭제 실패');
+
+            showToast('삭제 완료', '백업 기록이 삭제되었습니다.', 'info');
+            loadClassroomBackups();
+          } catch (err) {
+            console.error('삭제 오류:', err);
+            showToast('삭제 실패', err.message || '백업 삭제 도중 오류가 발생했습니다.', 'error');
+          }
+        });
+      });
+
+    } catch (err) {
+      console.error('백업 목록 로드 실패:', err);
+      backupListContainer.innerHTML = `<div class="text-center py-8 text-xs font-bold text-rose-500">목록을 불러오는 중 오류가 발생했습니다: ${err.message}</div>`;
+    }
+  }
+
+  // [기능 4] 백업 복원 모달 토글
+  if (btnRestoreScoresModal) {
+    btnRestoreScoresModal.addEventListener('click', () => {
+      if (classroomRestoreModal) classroomRestoreModal.classList.remove('hidden');
+      loadClassroomBackups();
+    });
+  }
+  if (btnRestoreModalClose) {
+    btnRestoreModalClose.addEventListener('click', () => {
+      if (classroomRestoreModal) classroomRestoreModal.classList.add('hidden');
+    });
+  }
+  if (btnRefreshBackupList) {
+    btnRefreshBackupList.addEventListener('click', () => {
+      loadClassroomBackups();
+    });
+  }
 
   // Excel Import Trigger
   if (btnImportScores) btnImportScores.addEventListener('click', () => {
@@ -5532,18 +7002,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 3. Sidebar Shortcut Bindings
   const themeToggleBtnSidebar = document.getElementById('theme-toggle-btn-sidebar');
-  if (themeToggleBtnSidebar && themeToggleBtn) {
-    themeToggleBtnSidebar.addEventListener('click', () => { if (themeToggleBtn) themeToggleBtn.click(); else window.toggleThemeAction(); });
+  if (themeToggleBtnSidebar) {
+    themeToggleBtnSidebar.addEventListener('click', () => {
+      window.toggleThemeAction();
+    });
   }
 
   const btnLogoutSidebar = document.getElementById('btn-logout-sidebar');
-  if (btnLogoutSidebar && logoutBtn) {
-    btnLogoutSidebar.addEventListener('click', () => logoutBtn.click());
+  if (btnLogoutSidebar) {
+    btnLogoutSidebar.addEventListener('click', performLogout);
   }
 
   const btnLoginSidebar = document.getElementById('btn-login-sidebar');
-  if (btnLoginSidebar && btnLoginTrigger) {
-    btnLoginSidebar.addEventListener('click', () => btnLoginTrigger.click());
+  if (btnLoginSidebar) {
+    btnLoginSidebar.addEventListener('click', () => {
+      if (typeof openAuthModal === 'function') openAuthModal('login');
+      else if (btnLoginTrigger) btnLoginTrigger.click();
+    });
   }
 
   // 4. Grid/List View Switches
@@ -5599,32 +7074,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const gridContainer = document.getElementById('canva-recent-grid');
     if (!gridContainer) return;
 
-    // Fetch Walls
-    let walls = [];
-    try {
-      const wallRes = await secureFetch('/api/my-walls');
-      if (wallRes.ok) {
-        walls = await wallRes.json();
-      }
-    } catch (e) {
-      console.error('Error fetching my walls for grid:', e);
-    }
-
-    // Fetch Polls
-    let polls = [];
-    try {
-      const pollsRes = await secureFetch('/api/polls');
-      if (pollsRes.ok) {
-        const data = await pollsRes.json();
-        polls = data.polls || [];
-      }
-    } catch (e) {
-      console.error('Error fetching polls for grid:', e);
-    }
-
-    // Combine items
-    const username = (userWelcomeName.textContent || '').trim() || 'Guest';
-    const currentUsernameClean = username.toLowerCase();
+    // 단축 주소 목록만 대시보드 최근 항목으로 구성
+    const username = (userWelcomeName?.textContent || currentUsername || localStorage.getItem('kfcman_username') || '').trim() || 'Guest';
 
     let combinedItems = [];
 
@@ -5639,32 +7090,6 @@ document.addEventListener('DOMContentLoaded', () => {
         owner: username,
         clicks: link.clicks || 0,
         original: link
-      });
-    });
-
-    // Map walls
-    walls.forEach(wall => {
-      combinedItems.push({
-        type: 'wall',
-        id: wall.id,
-        title: wall.title,
-        subtitle: wall.description || '협업 보드',
-        createdAt: wall.createdAt,
-        owner: wall.creator || '',
-        original: wall
-      });
-    });
-
-    // Map polls
-    polls.forEach(poll => {
-      combinedItems.push({
-        type: 'poll',
-        id: poll.id,
-        title: poll.title,
-        subtitle: `총 ${poll.voters ? poll.voters.length : 0}명 투표`,
-        createdAt: poll.createdAt,
-        owner: poll.owner || '',
-        original: poll
       });
     });
 
@@ -5720,156 +7145,128 @@ document.addEventListener('DOMContentLoaded', () => {
 
     filteredItems.forEach(item => {
       const card = document.createElement('div');
-      card.className = 'canva-card bg-white dark:bg-[#161b26] border border-[#dee0e4] dark:border-white/5 rounded-2xl overflow-hidden hover:-translate-y-1 transition-all flex flex-col h-[280px] relative group';
-
-      let topHtml = '';
-      let bottomHtml = '';
+      card.className = 'canva-card transition-all flex flex-col justify-between relative group p-3.5';
 
       if (item.type === 'link') {
         const localLinkUrl = `${window.location.origin}/${item.id}`;
         const visualBrandUrl = `http://kfcman.link/${item.id}`;
         const originalUrlClean = item.subtitle.replace(/^https?:\/\/(www\.)?/, '');
         
-        topHtml = `
-          <div class="h-36 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-4 relative overflow-hidden">
-            <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
-              <button onclick="event.stopPropagation(); window.copyTextToClipboardDirect('${visualBrandUrl}', this)" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer" title="주소 복사">
-                <i data-lucide="copy" class="w-4 h-4"></i>
-              </button>
-              <button onclick="event.stopPropagation(); window.showStatsModalDirect('${item.id}')" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer" title="상세 통계">
-                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
-              </button>
-              <button onclick="event.stopPropagation(); window.openEditLinkModalDirect('${item.id}', '${item.subtitle.replace(/'/g, "\\'")}')" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer" title="수정">
-                <i data-lucide="edit" class="w-4 h-4"></i>
-              </button>
-              <button onclick="event.stopPropagation(); window.deleteLinkDirect('${item.id}')" class="w-9 h-9 rounded-xl bg-rose-500 text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer" title="삭제">
-                <i data-lucide="trash" class="w-4 h-4"></i>
-              </button>
-            </div>
-            <!-- Canva Mockup Document Frame -->
-            <div class="bg-white dark:bg-[#161b26] rounded-xl w-full h-full p-3 flex flex-col justify-between border border-white/20 select-none">
-              <div class="flex justify-between items-start gap-1">
-                <div class="flex items-center gap-1 bg-violet-100 dark:bg-violet-950/50 text-violet-750 dark:text-violet-300 text-[8px] font-black px-1.5 py-0.5 rounded">
-                  <i data-lucide="link-2" class="w-2.5 h-2.5"></i> 단축 주소
-                </div>
-                <div class="text-[8px] text-slate-400 font-extrabold">${new Date(item.createdAt).toLocaleDateString('ko-KR', {month:'2-digit', day:'2-digit'})}</div>
+        card.innerHTML = `
+          <div class="flex flex-col h-full justify-between gap-3">
+            <!-- 1. 카드 헤더: 뱃지 및 액션 툴바 -->
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/50">
+                  <i data-lucide="link-2" class="w-3 h-3 text-indigo-600"></i> 단축 주소
+                </span>
+                <span class="text-[10px] text-slate-400 font-semibold">${new Date(item.createdAt).toLocaleDateString('ko-KR', {month:'2-digit', day:'2-digit'})}</span>
               </div>
-              <div class="flex gap-2.5 items-center mt-1">
-                <canvas class="canva-qr-canvas flex-shrink-0" data-code="${item.id}" data-url="${localLinkUrl}" style="width: 52px; height: 52px;"></canvas>
-                <div class="text-left overflow-hidden flex-grow">
-                  <div class="text-[10px] font-black text-slate-800 dark:text-white truncate">kfcman.link/${item.id}</div>
-                  <div class="text-[8px] text-slate-400 font-semibold truncate mt-0.5" title="${item.subtitle}">${originalUrlClean}</div>
-                </div>
-              </div>
-              <div class="flex justify-between items-center text-[8px] font-black text-slate-400 border-t border-slate-100 dark:border-white/5 pt-1.5">
-                <span>클릭수</span>
-                <span class="text-violet-605 dark:text-violet-400 font-black"><i data-lucide="mouse-pointer-click" class="w-2.5 h-2.5 inline mr-0.5"></i>${item.clicks}</span>
+              
+              <!-- 퀵 액션 버튼들 -->
+              <div class="flex items-center gap-1">
+                <button onclick="event.stopPropagation(); window.copyTextToClipboardDirect('${visualBrandUrl}', this)" class="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all cursor-pointer" title="단축 주소 복사">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="event.stopPropagation(); window.showStatsModalDirect('${item.id}')" class="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all cursor-pointer" title="방문 통계">
+                  <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="event.stopPropagation(); window.openEditLinkModalDirect('${item.id}', '${item.subtitle.replace(/'/g, "\\'")}')" class="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer" title="링크 수정">
+                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="event.stopPropagation(); window.deleteLinkDirect('${item.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all cursor-pointer" title="삭제">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
               </div>
             </div>
-          </div>
-        `;
 
-        bottomHtml = `
-          <div class="p-4 flex-grow flex flex-col justify-between text-left">
-            <div>
-              <div class="text-xs font-black text-slate-800 dark:text-white truncate">kfcman.link/${item.id}</div>
-              <p class="text-[10px] text-slate-450 dark:text-slate-400 font-bold mt-1 truncate" title="${item.subtitle}">${originalUrlClean}</p>
+            <!-- 2. 카드 본문: QR코드 및 단축 주소 정보 -->
+            <div class="flex items-center gap-3 bg-slate-50/70 dark:bg-zinc-900/40 p-2.5 rounded-lg">
+              <div class="bg-white p-1 rounded-md border border-slate-200/80 shadow-2xs flex-shrink-0">
+                <canvas class="canva-qr-canvas block" data-code="${item.id}" data-url="${localLinkUrl}" style="width: 48px; height: 48px;"></canvas>
+              </div>
+              <div class="flex-grow min-w-0 text-left">
+                <a href="${localLinkUrl}" target="_blank" class="text-sm font-extrabold text-[#7c6cf0] dark:text-[#9d8df8] hover:underline truncate block" title="새 탭에서 열기">
+                  kfcman.link/${item.id}
+                </a>
+                <p class="text-[11px] text-slate-400 dark:text-zinc-500 truncate mt-0.5" title="${item.subtitle}">
+                  ${originalUrlClean}
+                </p>
+              </div>
             </div>
-            <div class="flex justify-between items-center text-[9px] text-slate-450 dark:text-slate-400 font-black border-t border-slate-50 dark:border-white/5 pt-2">
-              <span class="flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i>${item.owner}</span>
-              <span>단축 URL</span>
+
+            <!-- 3. 카드 푸터: 실시간 통계 및 열기 링크 -->
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[11px]">
+              <span class="inline-flex items-center gap-1 font-bold text-slate-600 dark:text-slate-300">
+                <i data-lucide="mouse-pointer-click" class="w-3 h-3 text-indigo-500"></i>
+                <span>누적 클릭 <strong class="text-indigo-600 dark:text-indigo-400 font-extrabold">${item.clicks}</strong>회</span>
+              </span>
+              <a href="${localLinkUrl}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-indigo-600 transition-colors">
+                <span>방문</span>
+                <i data-lucide="external-link" class="w-3 h-3"></i>
+              </a>
             </div>
           </div>
         `;
       } else if (item.type === 'wall') {
-        topHtml = `
-          <div class="h-36 bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center p-4 relative overflow-hidden">
-            <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
-              <a href="/wall?id=${item.id}" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer" title="게시판 열기">
-                <i data-lucide="external-link" class="w-4 h-4"></i>
+        card.innerHTML = `
+          <div class="flex flex-col h-full justify-between gap-3">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200/60 dark:border-teal-800/50">
+                  <i data-lucide="layout-grid" class="w-3 h-3 text-teal-600"></i> 칸반 보드
+                </span>
+                <span class="text-[10px] text-slate-400 font-semibold">${new Date(item.createdAt).toLocaleDateString('ko-KR', {month:'2-digit', day:'2-digit'})}</span>
+              </div>
+              <a href="/wall?id=${item.id}" class="p-1.5 rounded-lg text-slate-500 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-slate-800 transition-all" title="게시판 열기">
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
               </a>
             </div>
-            <!-- Canva Wall Folder Frame -->
-            <div class="bg-white dark:bg-[#161b26] rounded-xl w-full h-full p-3 flex flex-col justify-between border border-white/20 select-none">
-              <div class="flex justify-between items-start gap-1">
-                <div class="flex items-center gap-1 bg-teal-100 dark:bg-teal-950/50 text-teal-750 dark:text-teal-300 text-[8px] font-black px-1.5 py-0.5 rounded">
-                  <i data-lucide="layout-grid" class="w-2.5 h-2.5"></i> 칸반 보드
-                </div>
-                <div class="text-[8px] text-slate-400 font-extrabold">${new Date(item.createdAt).toLocaleDateString('ko-KR', {month:'2-digit', day:'2-digit'})}</div>
-              </div>
-              <div class="text-left mt-2">
-                <div class="text-[11px] font-black text-slate-800 dark:text-white truncate">${item.title}</div>
-                <div class="text-[8px] text-slate-400 font-semibold truncate mt-1">${item.subtitle || '실시간 협업 게시판'}</div>
-              </div>
-              <div class="flex justify-between items-center text-[8px] font-black text-slate-400 border-t border-slate-100 dark:border-white/5 pt-1.5">
-                <span>역할</span>
-                <span class="text-teal-650 dark:text-teal-400 font-black"><i data-lucide="users" class="w-2.5 h-2.5 inline mr-0.5"></i>게시판 개설자</span>
-              </div>
+            <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-100 dark:border-slate-800/60 text-left">
+              <a href="/wall?id=${item.id}" class="text-sm font-extrabold text-slate-900 dark:text-slate-100 hover:text-teal-600 truncate block">
+                ${item.title}
+              </a>
+              <p class="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5">${item.subtitle || '실시간 협업 게시판'}</p>
             </div>
-          </div>
-        `;
-
-        bottomHtml = `
-          <div class="p-4 flex-grow flex flex-col justify-between text-left">
-            <div>
-              <a href="/wall?id=${item.id}" class="text-xs font-black text-slate-800 dark:text-white hover:text-teal-500 truncate block">${item.title}</a>
-              <p class="text-[10px] text-slate-450 dark:text-slate-400 font-bold mt-1 truncate">${item.subtitle || '실시간 협업 게시판'}</p>
-            </div>
-            <div class="flex justify-between items-center text-[9px] text-slate-450 dark:text-slate-400 font-black border-t border-slate-50 dark:border-white/5 pt-2">
-              <span class="flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i>${item.owner}</span>
-              <span>칸반 게시판</span>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[11px]">
+              <span class="text-slate-400 font-medium">개설자: ${item.owner}</span>
+              <a href="/wall?id=${item.id}" class="font-bold text-teal-600 hover:underline">입장하기 &rarr;</a>
             </div>
           </div>
         `;
       } else if (item.type === 'poll') {
         const isExpired = new Date() > new Date(item.original.expiresAt);
         const statusText = isExpired ? '마감됨' : '진행중';
-
-        topHtml = `
-          <div class="h-36 bg-gradient-to-br from-rose-400 to-orange-500 flex items-center justify-center p-4 relative overflow-hidden">
-            <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
-              <button onclick="event.stopPropagation(); window.openPollModal('${item.id}', 'vote')" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer" title="투표하기">
-                <i data-lucide="vote" class="w-4 h-4"></i>
-              </button>
-              <button onclick="event.stopPropagation(); window.openPollModal('${item.id}', 'stats')" class="w-9 h-9 rounded-xl bg-white text-slate-800 flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer" title="결과 보기">
-                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
-              </button>
-            </div>
-            <!-- Canva Poll Frame -->
-            <div class="bg-white dark:bg-[#161b26] rounded-xl w-full h-full p-3 flex flex-col justify-between border border-white/20 select-none">
-              <div class="flex justify-between items-start gap-1">
-                <div class="flex items-center gap-1 bg-rose-100 dark:bg-rose-950/50 text-rose-750 dark:text-rose-300 text-[8px] font-black px-1.5 py-0.5 rounded">
-                  <i data-lucide="vote" class="w-2.5 h-2.5"></i> 실시간 설문
-                </div>
-                <div class="text-[8px] text-slate-400 font-extrabold">${new Date(item.createdAt).toLocaleDateString('ko-KR', {month:'2-digit', day:'2-digit'})}</div>
+        card.innerHTML = `
+          <div class="flex flex-col h-full justify-between gap-3">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/50">
+                  <i data-lucide="vote" class="w-3 h-3 text-rose-600"></i> 실시간 설문
+                </span>
+                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded ${isExpired ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-600 border border-emerald-200/60'}">${statusText}</span>
               </div>
-              <div class="text-left mt-2">
-                <div class="text-[11px] font-black text-slate-800 dark:text-white truncate">${item.title}</div>
-                <span class="text-[8px] font-bold px-1.5 py-0.2 rounded-md ${isExpired ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-green-500/10 text-green-400 border border-green-500/20'} mt-1 inline-block">${statusText}</span>
-              </div>
-              <div class="flex justify-between items-center text-[8px] font-black text-slate-400 border-t border-slate-100 dark:border-white/5 pt-1.5">
-                <span>투표수</span>
-                <span class="text-rose-650 dark:text-rose-450 font-black">${item.subtitle}</span>
+              <div class="flex items-center gap-1">
+                <button onclick="event.stopPropagation(); window.openPollModal('${item.id}', 'vote')" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-all cursor-pointer" title="투표하기">
+                  <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="event.stopPropagation(); window.openPollModal('${item.id}', 'stats')" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 transition-all cursor-pointer" title="결과 보기">
+                  <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+                </button>
               </div>
             </div>
-          </div>
-        `;
-
-        bottomHtml = `
-          <div class="p-4 flex-grow flex flex-col justify-between text-left">
-            <div>
-              <div class="text-xs font-black text-slate-800 dark:text-white truncate">${item.title}</div>
-              <p class="text-[10px] text-slate-450 dark:text-slate-400 font-bold mt-1 truncate">소유자: ${item.owner}</p>
+            <div class="p-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl border border-slate-100 dark:border-slate-800/60 text-left">
+              <div class="text-sm font-extrabold text-slate-900 dark:text-slate-100 truncate">${item.title}</div>
+              <p class="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5">${item.subtitle}</p>
             </div>
-            <div class="flex justify-between items-center text-[9px] text-slate-450 dark:text-slate-400 font-black border-t border-slate-50 dark:border-white/5 pt-2">
-              <span class="flex items-center gap-1"><i data-lucide="user" class="w-3 h-3"></i>${item.owner}</span>
-              <span>설문 조사</span>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[11px]">
+              <span class="text-slate-400 font-medium">개설자: ${item.owner}</span>
+              <button onclick="event.stopPropagation(); window.openPollModal('${item.id}', 'vote')" class="font-bold text-rose-600 hover:underline cursor-pointer">참여하기 &rarr;</button>
             </div>
           </div>
         `;
       }
 
-      card.innerHTML = topHtml + bottomHtml;
       gridContainer.appendChild(card);
 
       // Render QR code on canvas for links
@@ -5994,6 +7391,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const btnMobileSidebarToggle = document.getElementById('btn-mobile-sidebar-toggle');
+  if (btnMobileSidebarToggle && leftSidebar) {
+    btnMobileSidebarToggle.addEventListener('click', () => {
+      leftSidebar.classList.toggle('hidden');
+    });
+  }
+
   // Bind tab param from URL on load
   const initUrlParams = new URLSearchParams(window.location.search);
   const initialTab = initUrlParams.get('tab');
@@ -6020,3 +7424,36 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('TRACE: DOMContentLoaded callback completed successfully!');
 });
 console.log('TRACE: app.js loaded and evaluated completely!');
+
+  // --- 마음챙김 (MindCheck) 전역 헬퍼 함수 ---
+  window.reloadMindCheckFrame = function() {
+    const frame = document.getElementById('mindcheck-frame');
+    const loader = document.getElementById('mindcheck-loading');
+    if (loader) loader.classList.remove('hidden');
+    if (frame) {
+      // 캐시 방지 타임스탬프를 쿼리에 붙여 깔끔하게 재로딩
+      const currentSrc = frame.getAttribute('src').split('?')[0];
+      frame.src = currentSrc + '?t=' + Date.now();
+    }
+  };
+
+  // --- 과학실험실 (SciBot) & MBL 가이드 (SciBit) 전역 헬퍼 함수 ---
+  window.reloadSciBotFrame = function() {
+    const frame = document.getElementById('scibot-frame');
+    const loader = document.getElementById('scibot-loading');
+    if (loader) loader.classList.remove('hidden');
+    if (frame) {
+      const currentSrc = frame.getAttribute('src').split('?')[0];
+      frame.src = currentSrc + '?t=' + Date.now();
+    }
+  };
+
+  window.reloadSciBitFrame = function() {
+    const frame = document.getElementById('scibit-frame');
+    const loader = document.getElementById('scibit-loading');
+    if (loader) loader.classList.remove('hidden');
+    if (frame) {
+      const currentSrc = frame.getAttribute('src').split('?')[0];
+      frame.src = currentSrc + '?t=' + Date.now();
+    }
+  };

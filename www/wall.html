@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+  <script>
+    (function () {
+      try {
+        const savedTheme = localStorage.getItem('kfcman_theme');
+        const legacyTheme = localStorage.getItem('darkMode');
+        const theme = savedTheme === 'light' || savedTheme === 'dark'
+          ? savedTheme
+          : legacyTheme === 'enabled'
+            ? 'dark'
+            : legacyTheme === 'disabled'
+              ? 'light'
+              : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.style.colorScheme = theme;
+      } catch (error) {
+        document.documentElement.classList.remove('dark');
+      }
+    }());
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>KFC MAN-WALL - 실시간 협업 알림 보드</title>
@@ -23,20 +44,20 @@
           colors: {
             clay: {
               card: '#ffffff',
-              night: '#0c0f17',
-              cardDark: '#131824',
-              purple: '#8b5cf6',
-              sky: '#06b6d4',
-              mint: '#10b981',
-              grass: '#84cc16',
-              toy: '#f59e0b',
-              sand: '#f8fafc',
+              night: '#0b1420',
+              cardDark: '#14202f',
+              purple: '#6c7bd6',
+              sky: '#139aa5',
+              mint: '#a9d6f1',
+              grass: '#139aa5',
+              toy: '#8f9be6',
+              sand: '#eeeff2',
             }
           },
           boxShadow: {
-            'clay-flat': '4px 4px 0px 0px rgba(167, 139, 250, 0.45)',
-            'clay-flat-lg': '8px 8px 0px 0px rgba(167, 139, 250, 0.35)',
-            'clay-flat-sm': '2px 2px 0px 0px rgba(167, 139, 250, 0.55)',
+            'clay-flat': '0 14px 30px -18px rgba(9, 35, 63, 0.4)',
+            'clay-flat-lg': '0 22px 50px -24px rgba(9, 35, 63, 0.45)',
+            'clay-flat-sm': '0 8px 18px -12px rgba(9, 35, 63, 0.35)',
           }
         }
       }
@@ -251,95 +272,1023 @@
 
     /* Mobile-first Chatroom View Switcher & Icon-only Header Options */
     @media (max-width: 767px) {
-      #chat-layout-container {
-        display: flex !important;
-        flex-direction: column;
-        height: calc(100vh - 310px) !important;
-      }
-      #chat-layout-container > div:nth-child(1) { /* Left Panel: Chatroom List */
-        width: 100% !important;
-        flex-grow: 1 !important;
-        display: flex !important;
-      }
-      #chat-layout-container > div:nth-child(2) { /* Right Panel: Conversation Screen */
-        width: 100% !important;
-        flex-grow: 1 !important;
-        display: none !important;
-      }
-      
-      #chat-layout-container.show-chat-room > div:nth-child(1) {
-        display: none !important;
-      }
-      #chat-layout-container.show-chat-room > div:nth-child(2) {
-        display: flex !important;
-      }
-      
-      /* Collapse top Board Header Info Card on mobile */
+
+      /* ── 전체 레이아웃 ── */
+      body { padding-bottom: 0 !important; }
+      #main-content { padding: 0.5rem 0.5rem 0 !important; margin-top: 0 !important; }
+
+      /* ── 보드 헤더 카드 ── */
       #board-header-card {
-        padding: 0.6rem 0.8rem !important;
+        padding: 0.55rem 0.75rem !important;
         border-width: 2px !important;
-        border-radius: 1.25rem !important;
-        gap: 0.5rem !important;
-        flex-direction: column !important;
+        border-radius: 1rem !important;
+        gap: 0.4rem !important;
+        flex-direction: row !important;
         align-items: center !important;
-        text-align: center !important;
+        flex-wrap: wrap !important;
       }
       #board-header-card > div:first-child {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 100%;
+        flex: 1 1 auto;
+        min-width: 0;
       }
-      #board-title {
-        font-size: 1.15rem !important;
-      }
-      #visitor-badge {
-        padding: 0.15rem 0.5rem !important;
-        font-size: 0.7rem !important;
-      }
-      #board-topic {
-        font-size: 0.75rem !important;
-        text-align: center !important;
-      }
-      #board-desc {
-        display: none !important; /* Hide description text */
-      }
-      
+      #board-title { font-size: 1rem !important; }
+      #visitor-badge { padding: 0.1rem 0.4rem !important; font-size: 0.65rem !important; }
+      #board-topic { font-size: 0.7rem !important; }
+      #board-desc { display: none !important; }
+
       #board-header-card .flex-wrap {
-        width: auto !important;
-        margin-top: 0.25rem !important;
-        gap: 0.35rem !important;
-        flex-direction: row !important;
-        justify-content: center !important;
-        display: flex !important;
+        flex-wrap: nowrap !important;
+        gap: 0.3rem !important;
+        margin-top: 0 !important;
       }
       #board-header-card button.btn,
       #board-header-card a.btn {
-        width: 2.5rem !important;
-        height: 2.5rem !important;
-        min-width: 2.5rem !important;
-        max-width: 2.5rem !important;
-        padding: 0 !important;
-        border-radius: 0.75rem !important;
-        border-width: 2px !important;
-        flex-grow: 0 !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        width: 2.25rem !important; height: 2.25rem !important;
+        min-width: 2.25rem !important; max-width: 2.25rem !important;
+        padding: 0 !important; border-radius: 0.65rem !important;
+        border-width: 2px !important; flex-grow: 0 !important;
+        display: inline-flex !important; align-items: center !important; justify-content: center !important;
       }
-      #board-header-card button.btn svg,
-      #board-header-card button.btn i,
-      #board-header-card a.btn svg,
-      #board-header-card a.btn i {
-        width: 1.25rem !important;
-        height: 1.25rem !important;
-        margin: 0 !important;
+      #board-header-card button.btn svg, #board-header-card button.btn i,
+      #board-header-card a.btn svg, #board-header-card a.btn i {
+        width: 1.1rem !important; height: 1.1rem !important; margin: 0 !important;
+      }
+      #board-header-card button.btn span, #board-header-card a.btn span { display: none !important; }
+
+      /* ── 카드 그리드 ── */
+      #cards-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.6rem !important;
+        max-height: calc(100dvh - 220px) !important;
+        padding-right: 0.25rem !important;
+      }
+
+      /* ── 채팅 레이아웃 ── */
+      #chat-layout-container {
+        display: flex !important;
+        flex-direction: column !important;
+        height: calc(100dvh - 165px) !important;
+        gap: 0 !important;
+      }
+      #chat-layout-container > div:nth-child(1) {
+        width: 100% !important; height: 100% !important;
+        flex-grow: 1 !important; display: flex !important;
+        border-radius: 1rem !important;
+      }
+      #chat-layout-container > div:nth-child(2) {
+        width: 100% !important; height: 100% !important;
+        flex-grow: 1 !important; display: none !important;
+        border-radius: 1rem !important;
+      }
+      #chat-layout-container.show-chat-room > div:nth-child(1) { display: none !important; }
+      #chat-layout-container.show-chat-room > div:nth-child(2) { display: flex !important; }
+
+      /* ── 채팅방 목록 패널 ── */
+      #chat-layout-container > div:nth-child(1) {
+        padding: 0.6rem !important;
+      }
+
+      /* ── 채팅 헤더: 모바일에서 제목+버튼 분리 ── */
+      #chat-room-header {
+        flex-wrap: wrap !important;
+        gap: 0.35rem !important;
+        padding: 0.5rem 0.75rem !important;
+      }
+      #chat-room-header-left {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+      }
+      #chat-room-header-left h3,
+      #chat-room-header-left p { max-width: 100% !important; }
+      #chat-active-room-tag { display: none !important; }
+      #chat-room-header-right {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        gap: 0.3rem !important;
+        overflow-x: auto !important;
+        flex: 0 0 auto !important;
+        max-width: 100% !important;
+      }
+      /* ── 채팅 헤더 버튼들 ── */
+      #chat-active-room-ai-img-btn,
+      #chat-active-room-summary-btn,
+      #chat-active-room-share-btn,
+      #chat-active-room-like-btn,
+      #chat-active-room-edit-btn,
+      #chat-active-room-delete-btn {
+        width: 1.75rem !important; height: 1.75rem !important;
+        min-width: 1.75rem !important;
+        border-radius: 0.45rem !important;
         flex-shrink: 0 !important;
       }
-      #board-header-card button.btn span,
-      #board-header-card a.btn span {
-        display: none !important; /* Make buttons icon-only */
+      #chat-active-room-ai-img-btn i,
+      #chat-active-room-summary-btn i,
+      #chat-active-room-share-btn i,
+      #chat-active-room-like-btn i,
+      #chat-active-room-edit-btn i,
+      #chat-active-room-delete-btn i { width: 0.75rem !important; height: 0.75rem !important; }
+
+      /* ── 채팅방 이미지 높이 제한 ── */
+      #chat-room-image-section img,
+      #chat-room-image-section { max-height: 40vw !important; }
+
+      /* ── 채팅 입력창 ── */
+      #chat-message-input {
+        font-size: 16px !important; /* iOS 자동 줌 방지 */
       }
+
+      /* ── 채팅 말풍선 폰트 ── */
+      #chat-messages-container { font-size: 0.8rem !important; }
+
+      /* ── 저장된 주제별 톡방 섹션 ── */
+      #saved-topics-section { margin-top: 0.5rem !important; }
+
+      /* ── 스크롤바 숨김 (모바일) ── */
+      #cards-grid::-webkit-scrollbar,
+      #chat-layout-container::-webkit-scrollbar { display: none; }
+
+      /* ── AI 생성 모달 ── */
+      #ai-topic-modal > div { padding: 1.25rem !important; border-radius: 1.25rem !important; }
+      #ai-generate-prompt-input { font-size: 16px !important; }
+
+      /* ── 번호 선택 그리드 ── */
+      #number-buttons-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 0.5rem !important;
+      }
+
+      /* ── 로비 카드 ── */
+      #board-header-card-lobby { padding: 0.75rem !important; }
+
+      /* ── Safe area (iPhone 노치/홈바) ── */
+      #chat-layout-container > div:nth-child(2) > div:last-child {
+        padding-bottom: max(0.75rem, env(safe-area-inset-bottom)) !important;
+      }
+    }
+
+    /* 아주 작은 화면 (375px 이하) */
+    @media (max-width: 375px) {
+      #board-title { font-size: 0.9rem !important; }
+      #cards-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 0.4rem !important; }
+      #chat-layout-container { height: calc(100dvh - 155px) !important; }
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Modern design refresh — retuned to Future School palette */
+    :root {
+      --surface: #ffffff;
+      --surface-strong: #ffffff;
+      --surface-muted: #e9f3fb;
+      --line: rgba(9, 35, 63, 0.1);
+      --line-strong: rgba(9, 35, 63, 0.16);
+      --text-soft: #31516c;
+      --brand-a: #09233f;
+      --brand-b: #077bd7;
+      --brand-c: #077bd7;
+      --shadow-soft: rgba(9, 35, 63, 0.25) 0px 4px 4px 0px;
+      --shadow-card: 0 20px 45px -28px rgba(9, 35, 63, 0.45);
+    }
+
+    .dark {
+      --surface: #0e2135;
+      --surface-strong: #0a1a2b;
+      --surface-muted: #12283c;
+      --line: rgba(205, 232, 250, 0.16);
+      --line-strong: rgba(205, 232, 250, 0.26);
+      --text-soft: #b7c8d6;
+      --brand-a: #f4fbff;
+      --brand-b: #55b7ff;
+      --brand-c: #55b7ff;
+      --shadow-soft: rgba(0, 0, 0, 0.4) 0px 4px 4px 0px;
+      --shadow-card: 0 24px 55px -30px rgba(0, 0, 0, 0.75);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: #ffffff !important;
+      letter-spacing: 0 !important;
+    }
+
+    .dark body {
+      background: #050505 !important;
+    }
+
+    #left-sidebar,
+    header,
+    .clay-card,
+    .modal-overlay > div,
+    [id$="-modal"] > div,
+    [class*="shadow-clay-flat"],
+    [class*="shadow-clay-flat-lg"],
+    [class*="shadow-clay-flat-sm"] {
+      box-shadow: var(--shadow-card) !important;
+    }
+
+    #left-sidebar,
+    header {
+      background: var(--surface-strong) !important;
+      border-color: var(--line) !important;
+      backdrop-filter: none;
+    }
+
+    #landing-screen > div,
+    #board-header-card,
+    #board-header-card-lobby,
+    #chat-layout-container > div,
+    #saved-topics-section,
+    .clay-card,
+    .modal-overlay > div,
+    [id$="-modal"] > div {
+      background: var(--surface) !important;
+      border: 1px solid var(--line) !important;
+      border-radius: 8px !important;
+      box-shadow: var(--shadow-card) !important;
+      backdrop-filter: none;
+    }
+
+    #cards-grid {
+      scrollbar-gutter: stable;
+    }
+
+    #cards-grid > div,
+    #chat-rooms-list > div,
+    #archive-modal-list > div,
+    #visited-walls-list > div,
+    #created-walls-list > div {
+      border-width: 1px !important;
+      box-shadow: none !important;
+    }
+
+    .bg-pastel-pink,
+    .bg-pastel-yellow,
+    .bg-pastel-blue,
+    .bg-pastel-green,
+    .bg-pastel-purple {
+      border-width: 1px !important;
+      box-shadow: none !important;
+    }
+
+    .dark .bg-pastel-pink,
+    .dark .bg-pastel-yellow,
+    .dark .bg-pastel-blue,
+    .dark .bg-pastel-green,
+    .dark .bg-pastel-purple {
+      box-shadow: none !important;
+    }
+
+    .clay-card:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: var(--shadow-card) !important;
+    }
+
+    button,
+    a.btn,
+    .btn,
+    input,
+    select,
+    textarea {
+      border-radius: 8px !important;
+    }
+
+    button,
+    a.btn,
+    .btn {
+      box-shadow: none !important;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease !important;
+    }
+
+    button:hover,
+    a.btn:hover,
+    .btn:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: none !important;
+    }
+
+    input,
+    select,
+    textarea {
+      background: var(--surface) !important;
+      border: 1px solid var(--line-strong) !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32) !important;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--brand-c) !important;
+      box-shadow: rgba(255, 255, 255, 0.05) 0px 0px 0px 2px inset !important;
+      outline: none !important;
+    }
+
+    [class*="border-4"],
+    [class*="border-2"] {
+      border-width: 1px !important;
+    }
+
+    [class*="rounded-3xl"] {
+      border-radius: 8px !important;
+    }
+
+    [class*="rounded-2xl"] {
+      border-radius: 8px !important;
+    }
+
+    .text-slate-400,
+    .text-slate-500,
+    .text-slate-600 {
+      color: var(--text-soft) !important;
+    }
+
+    #left-sidebar nav a,
+    #left-sidebar nav button {
+      color: var(--text-soft) !important;
+    }
+
+    #left-sidebar nav a:hover,
+    #left-sidebar nav button:hover,
+    #left-sidebar nav .active,
+    #left-sidebar nav a.active,
+    #left-sidebar nav button.active {
+      background: rgba(23, 26, 32, 0.08) !important;
+      color: var(--brand-a) !important;
+      border-left-color: var(--brand-a) !important;
+    }
+
+    .dark #left-sidebar nav a:hover,
+    .dark #left-sidebar nav button:hover,
+    .dark #left-sidebar nav .active,
+    .dark #left-sidebar nav a.active,
+    .dark #left-sidebar nav button.active {
+      background: rgba(255, 255, 255, 0.12) !important;
+      color: var(--brand-a) !important;
+    }
+
+    #board-title,
+    #landing-screen h2 {
+      letter-spacing: 0 !important;
+      line-height: 1.08 !important;
+    }
+
+    #visitor-badge,
+    #privacy-badge,
+    #btn-toggle-privacy-badge {
+      border-width: 1px !important;
+      box-shadow: none !important;
+    }
+
+    #sidebar-logo > div:first-child,
+    #logo-link > div:first-child {
+      position: relative !important;
+      overflow: hidden !important;
+      border-radius: 4px !important;
+      border: 1px solid #000000 !important;
+      background: #171a20 !important;
+      box-shadow: none !important;
+    }
+
+    .dark #sidebar-logo > div:first-child,
+    .dark #logo-link > div:first-child {
+      border-color: #ffffff !important;
+      background: #ffffff !important;
+    }
+
+    #sidebar-logo > div:first-child svg,
+    #logo-link > div:first-child svg {
+      display: none !important;
+    }
+
+    #sidebar-logo > div:first-child::before,
+    #logo-link > div:first-child::before {
+      content: "";
+      position: absolute;
+      inset: 9px;
+      background:
+        linear-gradient(90deg, transparent 0 28%, currentColor 28% 72%, transparent 72% 100%),
+        linear-gradient(currentColor, currentColor);
+      color: #ffffff;
+      border: 2px solid currentColor;
+      border-radius: 999px;
+      transform: rotate(-35deg);
+    }
+
+    #sidebar-logo > div:first-child::after,
+    #logo-link > div:first-child::after {
+      content: "";
+      position: absolute;
+      width: 13px;
+      height: 13px;
+      right: 7px;
+      bottom: 7px;
+      border-radius: 999px;
+      background: #3e6ae1;
+      border: 2px solid #171a20;
+    }
+
+    .dark #sidebar-logo > div:first-child::before,
+    .dark #logo-link > div:first-child::before {
+      color: #000000;
+    }
+
+    .dark #sidebar-logo > div:first-child::after,
+    .dark #logo-link > div:first-child::after {
+      border-color: #ffffff;
+    }
+
+    #sidebar-logo .sidebar-text span:first-child,
+    #logo-link span:first-child {
+      color: var(--brand-a) !important;
+      font-weight: 500 !important;
+      letter-spacing: 0 !important;
+    }
+
+    #sidebar-logo .sidebar-text span:last-child,
+    #logo-link span:last-child {
+      background: none !important;
+      color: var(--brand-b) !important;
+      -webkit-text-fill-color: currentColor !important;
+      letter-spacing: 0 !important;
+    }
+
+    #logo-link span:nth-child(2) {
+      color: var(--brand-a) !important;
+    }
+
+    #left-sidebar nav svg,
+    header svg {
+      color: currentColor !important;
+      filter: none !important;
+      transition: transform 0.18s ease !important;
+    }
+
+    #left-sidebar nav svg path,
+    #left-sidebar nav svg rect,
+    #left-sidebar nav svg circle,
+    header svg path,
+    header svg rect,
+    header svg circle {
+      fill: none !important;
+      stroke: currentColor !important;
+      stroke-width: 1.8 !important;
+      opacity: 1 !important;
+    }
+
+    #left-sidebar nav a:hover svg,
+    #left-sidebar nav button:hover svg,
+    header a:hover svg,
+    header button:hover svg {
+      transform: translateY(-1px) !important;
+    }
+
+    #left-sidebar nav .active svg,
+    #left-sidebar nav a.active svg,
+    #left-sidebar nav button.active svg {
+      color: var(--brand-b) !important;
+      filter: none !important;
+      transform: none !important;
+    }
+
+    .global-theme-switcher {
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #393c41;
+      box-shadow: rgba(0, 0, 0, 0.12) 0 4px 14px 0;
+    }
+
+    .dark .global-theme-switcher {
+      background: rgba(23, 26, 32, 0.92);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .global-theme-switcher button {
+      height: 32px;
+      min-width: 68px;
+      padding: 4px 10px !important;
+      border-radius: 4px !important;
+      border: 0 !important;
+      background: transparent !important;
+      color: inherit !important;
+      font-size: 12px !important;
+      font-weight: 700 !important;
+      line-height: 1 !important;
+      box-shadow: none !important;
+    }
+
+    .global-theme-switcher button.active {
+      background: #3e6ae1 !important;
+      color: #ffffff !important;
+    }
+
+    /* Short-link portal composition */
+    :root {
+      --portal-bg: #eef7fc;
+      --portal-grid: rgba(9, 35, 63, 0.04);
+      --portal-panel: #ffffff;
+      --portal-panel-soft: #eaf3fb;
+      --portal-text: #09233f;
+      --portal-body: #31516c;
+      --portal-muted: #5b7488;
+      --portal-accent: #077bd7;
+      --portal-border: rgba(9, 35, 63, 0.1);
+      --portal-image-opacity: 0.82;
+      --portal-image-overlay: rgba(238, 247, 252, 0.24);
+    }
+
+    .dark {
+      --portal-bg: #061421;
+      --portal-grid: rgba(160, 210, 245, 0.05);
+      --portal-panel: #0e2135;
+      --portal-panel-soft: #12283c;
+      --portal-text: #f4fbff;
+      --portal-body: #b7c8d6;
+      --portal-muted: #8fa6b8;
+      --portal-accent: #55b7ff;
+      --portal-border: rgba(205, 232, 250, 0.16);
+      --portal-image-opacity: 0.22;
+      --portal-image-overlay: rgba(6, 20, 33, 0.72);
+    }
+
+    body {
+      background-color: var(--portal-bg) !important;
+      background-image:
+        linear-gradient(var(--portal-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--portal-grid) 1px, transparent 1px) !important;
+      background-size: 48px 48px !important;
+      background-attachment: fixed !important;
+      color: var(--portal-body) !important;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(60% 45% at 15% 0%, rgba(7, 123, 215, 0.12), transparent 70%),
+        radial-gradient(55% 40% at 90% 8%, rgba(17, 169, 135, 0.1), transparent 72%);
+    }
+    .dark body::before {
+      background:
+        radial-gradient(60% 45% at 15% 0%, rgba(85, 183, 255, 0.14), transparent 70%),
+        radial-gradient(55% 40% at 90% 8%, rgba(80, 216, 184, 0.1), transparent 72%);
+    }
+
+    body > .flex.min-h-screen {
+      position: relative;
+      z-index: 1;
+      background: transparent !important;
+      color: var(--portal-body) !important;
+    }
+
+    #main-content,
+    #main-content > div {
+      background: transparent !important;
+    }
+
+    #main-content {
+      padding-top: 4.25rem !important;
+    }
+
+    #left-sidebar,
+    header {
+      background: color-mix(in srgb, var(--portal-panel) 94%, transparent) !important;
+      border-color: var(--portal-border) !important;
+    }
+
+    #landing-screen > div,
+    #board-header-card,
+    #board-header-card-lobby,
+    #chat-layout-container > div,
+    #saved-topics-section,
+    .clay-card,
+    .modal-overlay > div,
+    [id$="-modal"] > div {
+      background: var(--portal-panel) !important;
+      border: 1px solid var(--portal-border) !important;
+      border-radius: 16px !important;
+      box-shadow: var(--shadow-card) !important;
+      color: var(--portal-body) !important;
+    }
+
+    #landing-screen h2,
+    #board-title,
+    #chat-active-room-title,
+    .clay-card h1,
+    .clay-card h2,
+    .clay-card h3 {
+      color: var(--portal-text) !important;
+    }
+
+    #sidebar-logo .sidebar-text span:last-child,
+    #logo-link span:last-child {
+      background: none !important;
+      color: var(--portal-accent) !important;
+      -webkit-text-fill-color: currentColor !important;
+    }
+
+    button.bg-clay-grass,
+    button.bg-clay-purple,
+    button.bg-clay-sky,
+    a.bg-clay-grass,
+    a.bg-clay-purple,
+    a.bg-clay-sky,
+    #btn-sidebar-create {
+      background: var(--portal-accent) !important;
+      color: #ffffff !important;
+      border-color: transparent !important;
+    }
+
+    input,
+    select,
+    textarea {
+      background: var(--portal-panel) !important;
+      border-color: var(--portal-border) !important;
+      color: var(--portal-text) !important;
+    }
+
+    .global-theme-switcher {
+      top: 14px;
+      background: color-mix(in srgb, var(--portal-panel) 92%, transparent) !important;
+      border-color: var(--portal-border) !important;
+      color: var(--portal-text) !important;
+      backdrop-filter: blur(12px);
+    }
+
+    @media (max-width: 768px) {
+      #main-content {
+        padding-left: 0.85rem !important;
+        padding-right: 0.85rem !important;
+      }
+
+      #board-header-card,
+      #chat-layout-container > div {
+        border-radius: 16px !important;
+      }
+    }
+
+    /* 사이드바 레이아웃: 데스크톱에서 좌측 고정 사이드바 노출 */
+    #left-sidebar {
+      display: flex !important;
+      position: sticky !important;
+      top: 0 !important;
+      height: 100vh !important;
+      width: 15rem !important; /* 240px */
+      flex-shrink: 0 !important;
+      z-index: 90 !important;
+      border-right: 1px solid var(--portal-border) !important;
+      background: var(--portal-panel) !important;
+    }
+
+    /* 모바일에서는 사이드바 기본 숨김 처리 */
+    @media (max-width: 1023px) {
+      #left-sidebar {
+        display: none !important;
+      }
+      .lg\:hidden.fixed.bottom-0 {
+        display: flex !important;
+      }
+    }
+
+    /* 전체 레이아웃: 좌측 사이드바 + 우측 메인 작업 영역 */
+    body > .flex.min-h-screen {
+      display: flex !important;
+      flex-direction: row !important;
+      width: 100% !important;
+      min-height: 100vh !important;
+      background: transparent !important;
+    }
+
+    body > .flex.min-h-screen > .flex-grow {
+      display: flex !important;
+      flex-direction: column !important;
+      flex: 1 1 0% !important;
+      min-width: 0 !important;
+      min-height: 100vh !important;
+      background: transparent !important;
+    }
+
+    body::before {
+      background:
+        linear-gradient(180deg, rgba(238, 247, 252, 0.82), rgba(238, 247, 252, 0.97)),
+        url('/assets/future-school-hero.png') center top / cover no-repeat !important;
+      opacity: 0.18 !important;
+    }
+
+    .dark body::before {
+      background:
+        linear-gradient(180deg, rgba(5, 20, 33, 0.86), rgba(5, 20, 33, 0.98)),
+        url('/assets/future-school-hero.png') center top / cover no-repeat !important;
+      opacity: 0.2 !important;
+    }
+
+    .future-wall-header {
+      display: none !important; /* 최상단 중복 헤더 숨김 */
+    }
+
+    /* 우측 상단 슬림 헤더 */
+    #wall-top-header {
+      position: sticky !important;
+      top: 0 !important;
+      width: 100% !important;
+      height: 64px !important;
+      z-index: 80 !important;
+      display: flex !important;
+      align-items: center !important;
+      border-bottom: 1px solid var(--portal-border) !important;
+      background: color-mix(in srgb, var(--portal-panel) 88%, transparent) !important;
+      backdrop-filter: blur(18px) !important;
+      padding: 0 1.5rem !important;
+    }
+
+    .global-theme-switcher {
+      display: none !important;
+    }
+
+    #main-content {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      padding: 1.5rem 2rem !important;
+    }
+
+    @media (max-width: 768px) {
+      .future-wall-header {
+        height: 66px;
+      }
+
+      .future-wall-header__inner {
+        padding: 0 1rem;
+      }
+
+      .future-wall-title {
+        display: none;
+      }
+
+      .global-theme-switcher {
+        top: 16px !important;
+        left: auto !important;
+        right: 0.95rem !important;
+        transform: none !important;
+      }
+
+      #main-content {
+        padding-top: 5.8rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+      }
+    }
+
+    /* ===== Site-wide future-school image background ===== */
+    body { background: transparent !important; }
+    body::before {
+      content: "" !important;
+      display: block !important;
+      position: fixed !important;
+      inset: -24px !important;
+      z-index: -2 !important;
+      background: url('/assets/future-school-hero.png') center center / cover no-repeat !important;
+      filter: blur(3px) saturate(1.04) !important;
+      opacity: 1 !important;
+      pointer-events: none !important;
+    }
+    body::after {
+      content: "" !important;
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: -1 !important;
+      pointer-events: none !important;
+      background:
+        linear-gradient(rgba(9, 35, 63, 0.05) 1px, transparent 1px) 0 0 / 54px 54px,
+        linear-gradient(90deg, rgba(9, 35, 63, 0.05) 1px, transparent 1px) 0 0 / 54px 54px,
+        radial-gradient(135% 95% at 50% -8%, rgba(233, 244, 252, 0.3), rgba(233, 244, 252, 0.58) 52%, rgba(233, 244, 252, 0.74)) !important;
+    }
+    .dark body::after {
+      background:
+        linear-gradient(rgba(150, 200, 240, 0.05) 1px, transparent 1px) 0 0 / 54px 54px,
+        linear-gradient(90deg, rgba(150, 200, 240, 0.05) 1px, transparent 1px) 0 0 / 54px 54px,
+        radial-gradient(135% 95% at 50% -8%, rgba(6, 20, 33, 0.52), rgba(6, 20, 33, 0.82) 55%, rgba(6, 20, 33, 0.93)) !important;
+    }
+
+    /* Frosted-glass panels so the background image reads through the UI */
+    :root { --fs-panel: rgba(255, 255, 255, 0.72); }
+    .dark  { --fs-panel: rgba(14, 33, 53, 0.62); }
+    #landing-screen > div,
+    #board-header-card,
+    #board-header-card-lobby,
+    #chat-layout-container > div,
+    #saved-topics-section,
+    #created-walls-section,
+    #visited-walls-section,
+    .clay-card,
+    .modal-overlay > div,
+    [id$="-modal"] > div {
+      background: var(--fs-panel) !important;
+      backdrop-filter: blur(18px) saturate(1.12) !important;
+      -webkit-backdrop-filter: blur(18px) saturate(1.12) !important;
+    }
+
+    /* Remove the outline colour on every input field, site-wide */
+    input, select, textarea,
+    input:hover, select:hover, textarea:hover,
+    input:focus, select:focus, textarea:focus,
+    input:focus-visible, select:focus-visible, textarea:focus-visible {
+      border-color: transparent !important;
+      outline-color: transparent !important;
+    }
+
+    /* ============================================================
+       AURO board theme — clean light-grey canvas + white round cards
+       ============================================================ */
+    :root {
+      --auro-periwinkle: #6c7bd6;
+      --auro-periwinkle-soft: #9aa6e6;
+      --auro-teal: #139aa5;
+      --auro-sky: #a9d6f1;
+      --auro-navy: #101d2d;
+      --auro-ink: #101d2d;
+      --auro-ink-soft: #5a6b7d;
+      --auro-canvas: #eeeff2;
+      --auro-card: #ffffff;
+      --auro-border: rgba(16, 29, 45, 0.09);
+      --auro-shadow: 0 18px 42px -22px rgba(16, 29, 45, 0.3);
+      --auro-shadow-sm: 0 8px 20px -12px rgba(16, 29, 45, 0.28);
+      --auro-grad: linear-gradient(120deg, var(--auro-periwinkle), var(--auro-teal));
+    }
+    .dark {
+      --auro-ink: #eef3f8;
+      --auro-ink-soft: #9fb0c2;
+      --auro-canvas: #0b1420;
+      --auro-card: #14202f;
+      --auro-border: rgba(175, 205, 235, 0.12);
+      --auro-shadow: 0 24px 52px -24px rgba(0, 0, 0, 0.72);
+      --auro-shadow-sm: 0 10px 24px -14px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Canvas: drop the photo background, use a clean neutral surface */
+    body { background: var(--auro-canvas) !important; }
+    body::before { display: none !important; background: none !important; }
+    body::after {
+      background:
+        radial-gradient(52% 42% at 10% -2%, rgba(108, 123, 214, 0.12), transparent 70%),
+        radial-gradient(46% 36% at 94% 4%, rgba(19, 154, 165, 0.09), transparent 72%) !important;
+    }
+    .dark body::after {
+      background:
+        radial-gradient(52% 42% at 10% -2%, rgba(108, 123, 214, 0.20), transparent 70%),
+        radial-gradient(46% 36% at 94% 4%, rgba(19, 154, 165, 0.14), transparent 72%) !important;
+    }
+
+    /* Cards: solid white, generous radius, soft shadow (no photo frosting) */
+    #landing-screen > div,
+    #board-header-card,
+    #board-header-card-lobby,
+    #chat-layout-container > div,
+    #saved-topics-section,
+    #created-walls-section,
+    #visited-walls-section,
+    .clay-card:not([class*="bg-pastel"]),
+    .modal-overlay > div,
+    [id$="-modal"] > div {
+      background: var(--auro-card) !important;
+      border: 1px solid var(--auro-border) !important;
+      border-radius: 24px !important;
+      box-shadow: var(--auro-shadow) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      color: var(--auro-ink) !important;
+    }
+    /* Sticky-note cards keep their pastel colour, gain auro radius + soft shadow */
+    .clay-card[class*="bg-pastel"] {
+      border-radius: 20px !important;
+      border-width: 1px !important;
+      box-shadow: var(--auro-shadow-sm) !important;
+    }
+
+    /* Headings / text tones */
+    #landing-screen h2, #board-title, #chat-active-room-title,
+    .clay-card h1, .clay-card h2, .clay-card h3 { color: var(--auro-ink) !important; }
+
+    /* Header → auro frosted glass bar */
+    .future-wall-header {
+      background: color-mix(in srgb, var(--auro-card) 78%, transparent) !important;
+      border-bottom: 1px solid var(--auro-border) !important;
+      backdrop-filter: blur(18px) saturate(1.1) !important;
+      -webkit-backdrop-filter: blur(18px) saturate(1.1) !important;
+    }
+    .future-wall-brand { color: var(--auro-ink) !important; }
+    .future-wall-brand::before {
+      background: var(--auro-grad) !important;
+      box-shadow: inset 0 0 0 6px rgba(255, 255, 255, 0.18) !important;
+    }
+    .future-wall-title { color: var(--auro-ink-soft) !important; }
+
+    /* Accent recolour → periwinkle primary, periwinkle→teal gradient */
+    .bg-clay-purple, button.bg-clay-purple, a.bg-clay-purple,
+    #btn-sidebar-create, #btn-floating-add, #btn-lock-submit {
+      background: var(--auro-periwinkle) !important;
+      color: #ffffff !important;
+      border-color: transparent !important;
+    }
+    #btn-sidebar-create:hover, #btn-floating-add:hover { background: #5a69c9 !important; }
+    .from-clay-purple.to-clay-sky,
+    [class*="from-clay-purple"][class*="to-clay-sky"] { background-image: var(--auro-grad) !important; }
+
+    /* Floating add button: round auro glass accent */
+    #btn-floating-add {
+      border: 0 !important;
+      box-shadow: 0 18px 34px -14px rgba(108, 123, 214, 0.6) !important;
+    }
+
+    /* Auro glass utility bar (periwinkle translucent, white icons) */
+    .auro-glass-bar {
+      background: color-mix(in srgb, var(--auro-periwinkle) 55%, transparent) !important;
+      backdrop-filter: blur(16px) saturate(1.15) !important;
+      -webkit-backdrop-filter: blur(16px) saturate(1.15) !important;
+      border: 1px solid rgba(255, 255, 255, 0.25) !important;
+      border-radius: 22px !important;
+    }
+
+    /* =====================================================================
+       KAKAO THEME — board (flat white canvas, yellow accent) — overrides auro
+       ===================================================================== */
+    :root {
+      --kk-yellow: #fae100; --kk-canvas: #ffffff; --kk-card: #ffffff; --kk-surface: #eeeeee;
+      --kk-fg: #333333; --kk-ink: #111111; --kk-btn: #111111; --kk-muted: #888888; --kk-border: #dbdbdb;
+    }
+    .dark {
+      --kk-canvas: #0a0a0a; --kk-card: #161616; --kk-surface: #232323; --kk-fg: #e9e9e9;
+      --kk-ink: #ffffff; --kk-btn: #2b2b2b; --kk-muted: #9a9a9a; --kk-border: #333333;
+    }
+    body { background: var(--kk-canvas) !important; color: var(--kk-fg) !important; }
+    body::before, body::after { display: none !important; background: none !important; }
+    body, button, input, select, textarea {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    }
+    [class*="bg-clip-text"], .text-transparent,
+    [class*="from-clay-purple"][class*="to-clay-sky"],
+    [class*="from-clay-sky"][class*="to-clay-mint"] {
+      background: none !important; background-image: none !important;
+      -webkit-background-clip: border-box !important; background-clip: border-box !important;
+      -webkit-text-fill-color: var(--kk-ink) !important; color: var(--kk-ink) !important;
+    }
+    /* Flat white cards */
+    #landing-screen > div, #board-header-card, #board-header-card-lobby,
+    #chat-layout-container > div, #saved-topics-section, #created-walls-section,
+    #visited-walls-section, .clay-card:not([class*="bg-pastel"]),
+    .modal-overlay > div, [id$="-modal"] > div {
+      background: var(--kk-card) !important;
+      border: 1px solid var(--kk-border) !important;
+      border-radius: 20px !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+      color: var(--kk-fg) !important;
+    }
+    .clay-card[class*="bg-pastel"] { box-shadow: none !important; border-radius: 18px !important; }
+    #landing-screen h2, #board-title, #chat-active-room-title { color: var(--kk-ink) !important; }
+    /* Header */
+    .future-wall-header {
+      background: var(--kk-canvas) !important;
+      border-color: var(--kk-border) !important;
+      backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+    }
+    .future-wall-brand, .future-wall-title { color: var(--kk-ink) !important; }
+    .future-wall-brand::before { background: var(--kk-yellow) !important; box-shadow: none !important; }
+    /* Buttons: pill; dark default, yellow floating add */
+    button, a.btn, .btn { border-radius: 999px !important; }
+    .bg-clay-purple, button.bg-clay-purple, a.bg-clay-purple,
+    #btn-sidebar-create, #btn-lock-submit {
+      background: var(--kk-btn) !important; background-image: none !important;
+      color: #ffffff !important; border-color: transparent !important;
+    }
+    #btn-floating-add {
+      background: var(--kk-yellow) !important; color: #111 !important;
+      border: 0 !important; box-shadow: none !important;
+    }
+    #btn-floating-add i, #btn-floating-add svg { color: #111 !important; }
+    input, select, textarea {
+      background: var(--kk-surface) !important; color: var(--kk-fg) !important; border-radius: 14px !important;
     }
   </style>
 </head>
@@ -347,7 +1296,7 @@
   <div class="flex min-h-screen w-screen bg-transparent transition-colors relative">
     
     <!-- Collapsible Sidebar (Desktop only) -->
-    <aside id="left-sidebar" class="hidden lg:flex w-60 flex-col items-center justify-between border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f1422] py-6 flex-shrink-0 z-[200] relative shadow-sm">
+    <aside id="left-sidebar" class="hidden lg:flex w-[268px] flex-col items-center justify-between border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f1422] py-6 flex-shrink-0 z-[200] relative shadow-sm">
       <!-- Toggle Button -->
       <button id="btn-sidebar-toggle" type="button" class="absolute top-6 -right-3 w-6 h-6 rounded-full bg-white dark:bg-slate-900 border border-slate-250 dark:border-slate-750 flex items-center justify-center shadow-md hover:scale-110 transition-all cursor-pointer z-50">
         <i data-lucide="chevron-left" class="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" id="sidebar-toggle-icon"></i>
@@ -500,6 +1449,27 @@
             </svg>
             <span class="text-sm font-black sidebar-text">설정</span>
           </a>
+
+          <!-- [관리자 전용] 오라클 서버 관제 대시보드 메뉴 바로가기 -->
+          <a href="/?tab=oracle-server" id="nav-item-oracle-side" class="hidden w-full h-11 px-4 rounded-xl flex items-center justify-between text-slate-450 dark:text-slate-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 hover:text-rose-600 dark:hover:text-rose-400 transition-all cursor-pointer font-bold group" title="오라클 클라우드 서버 실시간 인프라 관제 대시보드">
+            <div class="flex items-center gap-3 min-w-0">
+              <svg class="w-5 h-5 flex-shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 filter drop-shadow-[0_0_8px_rgba(239,68,68,0.35)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="grad-side-oracle-w" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#f43f5e" />
+                    <stop offset="100%" stop-color="#ea580c" />
+                  </linearGradient>
+                </defs>
+                <rect x="2" y="3" width="20" height="14" rx="2" stroke="url(#grad-side-oracle-w)" stroke-width="2" fill="url(#grad-side-oracle-w)" fill-opacity="0.15"/>
+                <line x1="8" y1="21" x2="16" y2="21" stroke="url(#grad-side-oracle-w)" stroke-width="2" stroke-linecap="round"/>
+                <line x1="12" y1="17" x2="12" y2="21" stroke="url(#grad-side-oracle-w)" stroke-width="2"/>
+                <circle cx="6" cy="10" r="1.5" fill="#22c55e" />
+                <path d="M11 10H18" stroke="url(#grad-side-oracle-w)" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <span class="text-sm font-black sidebar-text text-left">오라클 서버 관제</span>
+            </div>
+            <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/20 sidebar-text flex-shrink-0">관리자</span>
+          </a>
         </nav>
       </div>
 
@@ -509,7 +1479,7 @@
 
         <!-- Theme Toggle Button -->
         <div class="flex items-center justify-center w-full px-4 mb-2">
-          <button onclick="document.documentElement.classList.toggle('dark'); localStorage.setItem('darkMode', document.documentElement.classList.contains('dark') ? 'enabled' : 'disabled')" class="w-full h-10 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 flex items-center justify-center gap-2 cursor-pointer text-slate-850 dark:text-white font-bold" id="btn-sidebar-theme-toggle" title="화면 테마 변경">
+          <button type="button" data-theme-toggle class="w-full h-10 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 flex items-center justify-center gap-2 cursor-pointer text-slate-850 dark:text-white font-bold" id="btn-sidebar-theme-toggle" title="화면 테마 변경">
             <i data-lucide="moon" class="w-4.5 h-4.5 dark:hidden flex-shrink-0"></i>
             <i data-lucide="sun" class="w-4.5 h-4.5 hidden dark:block flex-shrink-0"></i>
             <span class="text-xs font-black sidebar-text">테마 변경</span>
@@ -523,7 +1493,7 @@
           </div>
           <div class="flex-grow text-left leading-tight sidebar-text min-w-0">
             <div class="text-[11px] font-black text-slate-855 dark:text-white truncate" id="sidebar-profile-name">사용자명</div>
-            <div class="text-[9px] font-bold text-slate-400">정회원</div>
+            <div class="text-[9px] font-bold text-slate-400" id="sidebar-profile-role">정회원</div>
           </div>
           <button class="w-8 h-8 rounded-lg hover:bg-rose-500/10 text-rose-500 flex items-center justify-center cursor-pointer transition-colors flex-shrink-0" id="btn-logout-sidebar" title="로그아웃">
             <i data-lucide="log-out" class="w-4 h-4"></i>
@@ -542,75 +1512,46 @@
     <!-- Right Side Content Panel -->
     <div class="flex-grow flex flex-col min-h-screen overflow-x-hidden relative" id="main-container-wrapper">
 
-      <!-- Header -->
-      <header class="lg:hidden h-20 flex items-center border-b-4 border-white bg-white dark:bg-clay-night sticky top-0 z-50 transition-colors shadow-sm px-4 md:px-0">
-    <div class="max-w-7xl mx-auto px-4 md:px-6 w-full flex justify-between items-center">
-      
-      <!-- Brand Logo & Back -->
-      <div class="flex items-center gap-3">
-        <a href="/" class="w-10 h-10 rounded-xl border-2 border-slate-900 bg-slate-50 dark:bg-slate-800 dark:border-white flex items-center justify-center shadow-clay-flat-sm text-slate-800 dark:text-white hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
-          <i data-lucide="arrow-left" class="w-5 h-5"></i>
-        </a>
-        <a href="/wall" class="font-title text-2xl font-black tracking-tight flex items-center gap-2 cursor-pointer select-none group" id="logo-link">
-          <!-- SVG Logo Mark -->
-          <div class="w-9 h-9 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shadow-sm group-hover:scale-105 group-hover:shadow-md transition-all flex-shrink-0">
-            <svg class="w-7 h-7" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="logo-grad-wall-1" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#7209b7" />
-                  <stop offset="50%" stop-color="#3a86c8" />
-                  <stop offset="100%" stop-color="#2ec4b6" />
-                </linearGradient>
-                <linearGradient id="logo-grad-wall-2" x1="100%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="#ff0054" />
-                  <stop offset="50%" stop-color="#ff9f1c" />
-                  <stop offset="100%" stop-color="#4cc9f0" />
-                </linearGradient>
-                <filter id="glow-wall" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur stdDeviation="3" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-                <clipPath id="interlock-clip-wall">
-                  <rect x="0" y="42" width="55" height="58" />
-                </clipPath>
-              </defs>
-              <rect x="22" y="38" width="56" height="24" rx="12" stroke="url(#logo-grad-wall-2)" stroke-width="10" stroke-linecap="round" fill="none" transform="rotate(45 50 50)" />
-              <rect x="22" y="38" width="56" height="24" rx="12" stroke="url(#logo-grad-wall-1)" stroke-width="10" stroke-linecap="round" fill="none" transform="rotate(-45 50 50)" />
-              <g clip-path="url(#interlock-clip-wall)">
-                <rect x="22" y="38" width="56" height="24" rx="12" stroke="url(#logo-grad-wall-2)" stroke-width="10" stroke-linecap="round" fill="none" transform="rotate(45 50 50)" />
-              </g>
-              <circle cx="50" cy="50" r="7" fill="#ffffff" class="opacity-80" />
-              <circle cx="50" cy="50" r="4" fill="#a7ffd5" filter="url(#glow-wall)" class="animate-pulse" />
-            </svg>
+      <!-- Header (softlap 스타일의 프리미엄 슬림 탑바) -->
+      <header id="wall-top-header" class="h-16 flex items-center bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-50 transition-colors px-4 md:px-8 w-full">
+        <div class="w-full flex justify-between items-center">
+          
+          <!-- 좌측 브랜딩 및 홈 바로가기 -->
+          <div class="flex items-center gap-3">
+            <a href="/" class="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-sm active:scale-95" title="홈으로 돌아가기">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            </a>
+            <a href="/wall" class="flex items-center gap-3 select-none group" id="logo-link">
+              <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white flex items-center justify-center font-black text-sm shadow-sm flex-shrink-0 group-hover:scale-105 transition-transform">
+                📌
+              </div>
+              <div class="flex flex-col text-left leading-none">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-base font-black tracking-tight text-slate-900 dark:text-white">KFCMAN<span class="text-indigo-600 dark:text-indigo-400 font-black">.WALL</span></span>
+                  <span class="hidden sm:inline-block px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/40">실시간 협업 게시판</span>
+                </div>
+                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-wider mt-0.5">교실 생각 나눔 &amp; 피드백 스페이스</span>
+              </div>
+            </a>
           </div>
-          <!-- Wordmark -->
-          <div class="flex items-center gap-0.5 text-base md:text-xl font-title">
-            <span class="text-slate-900 dark:text-white font-extrabold tracking-tight transition-transform duration-200 group-hover:translate-x-[-1px]">KFCMAN</span>
-            <span class="text-clay-grass font-black">.</span>
-            <span class="bg-gradient-to-r from-clay-sky to-clay-mint text-transparent bg-clip-text font-black">WALL</span>
+
+          <!-- 우측 제어 영역 (softlap 감성 테마 스위처) -->
+          <div class="flex items-center gap-3">
+            <button type="button" data-theme-toggle class="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center cursor-pointer transition-all active:scale-95 shadow-sm" title="화면 색상 테마 전환">
+              <i data-lucide="moon" class="w-4 h-4 dark:hidden"></i>
+              <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+            </button>
           </div>
-        </a>
-      </div>
+        </div>
+      </header>
 
-      <!-- Dark Mode Switcher -->
-      <button onclick="document.documentElement.classList.toggle('dark'); localStorage.setItem('darkMode', document.documentElement.classList.contains('dark') ? 'enabled' : 'disabled')" class="w-10 h-10 rounded-xl border-2 border-slate-900 dark:border-white bg-slate-50 dark:bg-slate-800 flex items-center justify-center shadow-clay-flat-sm text-slate-800 dark:text-white hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
-        <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
-        <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
-      </button>
-
-    </div>
-  </header>
-
-  <!-- Main Container -->
-  <main id="main-content" class="flex-grow max-w-7xl mx-auto px-4 md:px-6 mt-8 w-full relative transition-all duration-300">
+  <!-- Main Container (와이드 풀스크린 적용) -->
+  <main id="main-content" class="flex-grow w-full px-3 sm:px-4 md:px-6 mt-6 relative transition-all duration-300 max-w-none">
     
     <!-- 1. Landing Screen (If no active board) -->
-    <div id="landing-screen" class="max-w-3xl mx-auto space-y-6 mt-12 hidden">
-      <!-- Creation & Join Card -->
-      <div class="bg-white dark:bg-clay-cardDark border-4 border-violet-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-clay-flat-lg text-center lg:col-span-2">
+    <div id="landing-screen" class="w-full space-y-6 mt-6 hidden">
+      <!-- Creation & Join Card (와이드 12열 그리드 좌측 7~8열 할당) -->
+      <div class="bg-white dark:bg-clay-cardDark border-4 border-violet-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-clay-flat-lg text-center lg:col-span-7 xl:col-span-8">
         <div class="w-16 h-16 rounded-2xl border-2 border-violet-200 dark:border-slate-700 bg-clay-purple text-white flex items-center justify-center mx-auto mb-6 shadow-clay-flat">
           <svg class="w-10 h-10 filter drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -779,8 +1720,8 @@
         </form>
       </div>
 
-      <!-- Right Column: Lists -->
-      <div id="my-walls-container" class="space-y-6 hidden">
+      <!-- Right Column: Lists (와이드 12열 그리드 우측 4~5열 할당) -->
+      <div id="my-walls-container" class="space-y-6 hidden lg:col-span-5 xl:col-span-4">
         <!-- 1. Created Boards -->
         <div id="created-walls-section" class="bg-white dark:bg-clay-cardDark border-4 border-violet-200 dark:border-slate-800 rounded-3xl p-6 shadow-clay-flat-lg text-left hidden">
           <h3 class="text-xs font-black text-slate-800 dark:text-white flex items-center gap-1.5 mb-3">
@@ -983,8 +1924,8 @@
         <!-- Right Panel: Conversation Screen -->
         <div class="md:col-span-8 bg-[#bacee0] dark:bg-[#1a2332] border-4 border-yellow-100 dark:border-slate-800 rounded-3xl flex flex-col shadow-clay-flat-lg overflow-hidden h-full relative">
           <!-- Room Header -->
-          <div class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm px-5 py-4 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between z-10 flex-shrink-0">
-            <div class="flex items-center gap-3 min-w-0">
+          <div id="chat-room-header" class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm px-5 py-4 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between z-10 flex-shrink-0">
+            <div id="chat-room-header-left" class="flex items-center gap-3 min-w-0">
               <button id="chat-mobile-back-btn" class="md:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-350 cursor-pointer hover:bg-slate-200 transition-all flex items-center justify-center flex-shrink-0" title="목록으로 돌아가기">
                 <i data-lucide="chevron-left" class="w-5 h-5"></i>
               </button>
@@ -996,24 +1937,21 @@
                 <p id="chat-active-room-desc" class="text-[10px] font-bold text-slate-400 dark:text-slate-500 mt-0.5 truncate">주제 톡방을 클릭하면 대화에 참여할 수 있습니다.</p>
               </div>
             </div>
-            <div class="flex items-center gap-2">
+            <div id="chat-room-header-right" class="flex items-center gap-2">
               <button id="chat-active-room-edit-btn" class="hidden w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-750 dark:text-slate-300 flex items-center justify-center cursor-pointer transition-all" title="주제 수정">
                 <i data-lucide="edit-3" class="w-4 h-4"></i>
               </button>
               <button id="chat-active-room-delete-btn" class="hidden w-8 h-8 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-500 flex items-center justify-center cursor-pointer transition-all" title="주제 삭제">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
               </button>
-              <button id="chat-active-room-ai-img-btn" class="hidden px-2.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/20 dark:hover:bg-purple-950/40 text-[10px] font-black border border-purple-200 dark:border-purple-900/50 text-purple-650 dark:text-purple-400 flex items-center gap-1.5 cursor-pointer transition-all" title="AI 이미지 생성">
-                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-                <span>이미지 생성</span>
+              <button id="chat-active-room-ai-img-btn" class="hidden w-8 h-8 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/20 dark:hover:bg-purple-950/40 border border-purple-200 dark:border-purple-900/50 text-purple-500 dark:text-purple-400 flex items-center justify-center cursor-pointer transition-all" title="AI 이미지 생성">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
               </button>
-              <button id="chat-active-room-summary-btn" class="hidden px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-950/40 text-[10px] font-black border border-indigo-200 dark:border-indigo-900/50 text-indigo-650 dark:text-indigo-400 flex items-center gap-1.5 cursor-pointer transition-all" title="AI 의견 요약">
-                <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
-                <span>의견 요약</span>
+              <button id="chat-active-room-summary-btn" class="hidden w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/20 dark:hover:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/50 text-indigo-500 dark:text-indigo-400 flex items-center justify-center cursor-pointer transition-all" title="AI 의견 요약">
+                <i data-lucide="book-open" class="w-4 h-4"></i>
               </button>
-              <button id="chat-active-room-share-btn" class="hidden px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 text-[10px] font-black border border-emerald-200 dark:border-emerald-900/50 text-emerald-650 dark:text-emerald-400 flex items-center gap-1.5 cursor-pointer transition-all" title="주소 공유">
-                <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
-                <span>공유하기</span>
+              <button id="chat-active-room-share-btn" class="hidden w-8 h-8 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-500 dark:text-emerald-400 flex items-center justify-center cursor-pointer transition-all" title="주소 공유">
+                <i data-lucide="share-2" class="w-4 h-4"></i>
               </button>
               <button id="chat-active-room-like-btn" class="hidden px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-[10px] font-black border border-rose-200 dark:border-rose-900/50 text-rose-500 flex items-center gap-1 cursor-pointer transition-all">
                 <i data-lucide="heart" class="w-3.5 h-3.5 fill-rose-500"></i>
@@ -1380,7 +2318,7 @@
     <img id="lightbox-img" src="" alt="Fullscreen view" class="max-w-full max-h-full object-contain p-4 select-none transform transition-all duration-300 scale-95 opacity-0">
   </div>
 
-  <script src="/js/wall.js?v=1.0.23"></script>
+  <script src="/js/wall.js?v=202609062320"></script>
   <script>
     window.addEventListener('load', () => {
       if (window.lucide) {

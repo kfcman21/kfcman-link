@@ -1,6 +1,32 @@
-node_modules/
-data/db.json
-data/db.json.tmp
+# --- 비밀/자격증명 (절대 커밋 금지) ---
+*.key
+*.key.pub
+*.pem
+ssh-key-*
+config.json          # API 키(OpenAI/Gemini)·SMTP·웹훅 등 민감정보 저장 파일
 .env
+.env.*
+
+# --- 런타임 데이터 ---
+public/uploads/      # 사용자 업로드물
+*.db
+*.sqlite
+db.json
+data/
+
+# --- 의존성/빌드 ---
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# --- OS/에디터 ---
 .DS_Store
-config.json
+Thumbs.db
+.vscode/
+.idea/
+
+# --- 임시/테스트 파일 ---
+*.png
+*.bak-local
+.playwright-mcp/
+scratch/

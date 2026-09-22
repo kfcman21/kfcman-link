@@ -2,60 +2,54 @@ function initWall() {
   // Generate client UUID for slot mapping
   let clientUuid = localStorage.getItem('kfcman_wall_client_uuid');
   if (!clientUuid) {
-    clientUuid = 'uuid-' + Math.random().toString(36).substring(2, 15) + '-' + Date.now();
+    // 예측 불가한 강한 난수로 생성 (예전 Math.random 방식은 슬롯 도용 위험)
+    if (window.crypto && crypto.randomUUID) {
+      clientUuid = 'uuid-' + crypto.randomUUID();
+    } else if (window.crypto && crypto.getRandomValues) {
+      const b = new Uint8Array(16);
+      crypto.getRandomValues(b);
+      clientUuid = 'uuid-' + Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+    } else {
+      clientUuid = 'uuid-' + Math.random().toString(36).substring(2, 15) + '-' + Date.now();
+    }
     localStorage.setItem('kfcman_wall_client_uuid', clientUuid);
   }
 
-  async function generateAndUploadImage(cardTitle, activeRoomId) {
-    try {
-      const cleanTitle = cardTitle.replace(/[^\w\sㄱ-힣]/g, '').trim();
-      const finalPrompt = `A wide landscape widescreen webtoon banner illustration representing the theme: "${cleanTitle}". Beautiful Korean webtoon art style, wide-angle view, clean line art, vivid digital coloring, expressive cartoon characters, educational and friendly classroom scene, textless, wordless, absolutely no text, no letters, no words, no writing on the image, perfectly designed as a 16:9 header banner`;
-      const encodedPrompt = encodeURIComponent(finalPrompt);
-      const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=576&nologo=true&private=true`;
-
-      console.log('Generating image on client side using Pollinations...');
-      const pollinationsRes = await fetch(url);
-      if (!pollinationsRes.ok) {
-        throw new Error(`Pollinations status ${pollinationsRes.status}`);
-      }
-
-      const blob = await pollinationsRes.blob();
-      
-      // Convert Blob to Base64 data URL
-      const base64Data = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-
-      // Upload to server
-      const uploadRes = await fetch(`/api/wall/${currentWall.id}/cards/${activeRoomId}/upload-image`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64Data })
-      });
-
-      if (!uploadRes.ok) {
-        const errObj = await uploadRes.json();
-        throw new Error(errObj.error || 'Server upload failed');
-      }
-
-      const uploadData = await uploadRes.json();
-      return uploadData.image;
-    } catch (err) {
-      console.warn('Client-side generation failed, falling back to server-side generation:', err);
-      // Fall back to server-side generation (which uses Gemini/Unsplash)
-      const serverRes = await fetch(`/api/wall/${currentWall.id}/cards/${activeRoomId}/generate-image`, {
-        method: 'POST'
-      });
-      if (!serverRes.ok) {
-        const errData = await serverRes.json();
-        throw new Error(errData.error || 'AI 이미지 생성에 실패했습니다.');
-      }
-      const serverData = await serverRes.json();
-      return serverData.image;
+  // --- Toast Notification ---
+  function showWallToast(message, type = 'info', duration = 5000) {
+    let container = document.getElementById('wall-toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'wall-toast-container';
+      container.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;';
+      document.body.appendChild(container);
     }
+    const toast = document.createElement('div');
+    const colors = { info: '#6366f1', success: '#22c55e', error: '#ef4444', loading: '#f59e0b' };
+    const icons = { info: '💬', success: '✅', error: '❌', loading: '🎨' };
+    toast.style.cssText = `background:${colors[type]};color:#fff;padding:10px 20px;border-radius:999px;font-size:14px;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,0.25);pointer-events:auto;display:flex;align-items:center;gap:8px;white-space:nowrap;opacity:0;transform:translateY(12px);transition:all 0.3s ease;`;
+    toast.innerHTML = `<span>${icons[type]}</span><span>${message}</span>`;
+    container.appendChild(toast);
+    requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; });
+    if (duration > 0) {
+      setTimeout(() => {
+        toast.style.opacity = '0'; toast.style.transform = 'translateY(12px)';
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
+    return toast;
+  }
+
+  async function generateAndUploadImage(cardTitle, activeRoomId) {
+    const serverRes = await fetch(`/api/wall/${currentWall.id}/cards/${activeRoomId}/generate-image`, {
+      method: 'POST'
+    });
+    if (!serverRes.ok) {
+      const errData = await serverRes.json();
+      throw new Error(errData.error || 'AI 이미지 생성에 실패했습니다.');
+    }
+    const serverData = await serverRes.json();
+    return serverData.image;
   }
 
   // 1. Core State and Route Parsing
@@ -93,8 +87,9 @@ function initWall() {
 
   function getMyJoinedMember(wall) {
     if (!wall || !wall.members) return null;
+    // 서버가 본인 슬롯에만 isMe=true를 표시(원시 clientUuid는 더 이상 노출하지 않음)
     for (const number in wall.members) {
-      if (wall.members[number].clientUuid === clientUuid) {
+      if (wall.members[number].isMe) {
         return { number: parseInt(number), ...wall.members[number] };
       }
     }
@@ -106,6 +101,7 @@ function initWall() {
     const sidebarGuestGroup = document.getElementById('sidebar-guest-group');
     const sidebarProfileName = document.getElementById('sidebar-profile-name');
     const sidebarProfileCircle = document.getElementById('sidebar-profile-circle');
+    const sidebarProfileRole = document.getElementById('sidebar-profile-role');
     
     if (username) {
       if (sidebarProfileGroup) sidebarProfileGroup.classList.remove('hidden');
@@ -116,6 +112,12 @@ function initWall() {
       if (sidebarProfileCircle) {
         sidebarProfileCircle.textContent = username.substring(0, 1).toUpperCase();
       }
+      if (sidebarProfileRole) {
+        if (role === 'admin') sidebarProfileRole.textContent = '관리자 (Admin)';
+        else if (role === 'manager') sidebarProfileRole.textContent = '운영진 (Manager)';
+        else if (role === 'vip') sidebarProfileRole.textContent = '우수회원 (VIP)';
+        else sidebarProfileRole.textContent = '정회원 교사';
+      }
     } else {
       if (sidebarProfileGroup) sidebarProfileGroup.classList.add('hidden');
       if (sidebarGuestGroup) sidebarGuestGroup.classList.remove('hidden');
@@ -123,56 +125,86 @@ function initWall() {
   }
 
   // Load logged-in user profile if auth token is present
+  // 번호 선택 대기 게시판(maxUsers > 0)은 비로그인도 접근 가능 — wall 정보 먼저 확인
   const token = localStorage.getItem('kfcman_auth_token');
-  if (token) {
-    fetch('/api/me', {
-      headers: { 'X-KFCMan-Auth': token }
-    })
-    .then(res => res.ok ? res.json() : null)
-    .then(data => {
-      if (data) {
-        currentUser = data;
 
-        // Check if user is VIP or admin
-        const userRole = data.role || 'user';
-        const isVipOrAbove = userRole === 'admin' || userRole === 'manager' || userRole === 'vip';
-        if (!isVipOrAbove) {
-          const isChat = window.location.pathname.includes('/chat');
-          window.location.href = isChat ? '/?blocked=chat' : '/?blocked=wall';
-          return;
-        }
-
-        if (currentWall) {
-          renderBoard(currentWall);
-        }
-        updateSidebarProfile(data.username, data.role);
-        
-        const isUserAdmin = (data.role === 'admin');
-        const navItemDocsSide = document.getElementById('nav-item-docs-side');
-        const navItemTetrisSide = document.getElementById('nav-item-tetris-side');
-        const navItemClassroomSide = document.getElementById('nav-item-classroom-side');
-        if (navItemDocsSide) navItemDocsSide.style.display = isUserAdmin ? 'flex' : 'none';
-        if (navItemTetrisSide) navItemTetrisSide.style.display = isUserAdmin ? 'flex' : 'none';
-        if (navItemClassroomSide) navItemClassroomSide.style.display = isUserAdmin ? 'flex' : 'none';
-
-        const navItemWallSide = document.getElementById('nav-item-wall-side');
-        const navItemChatSide = document.getElementById('nav-item-chat-side');
-        if (navItemWallSide) navItemWallSide.style.display = 'flex';
-        if (navItemChatSide) navItemChatSide.style.display = 'flex';
-      } else {
-        const isChat = window.location.pathname.includes('/chat');
-        window.location.href = isChat ? '/?blocked=chat' : '/?blocked=wall';
-      }
-    })
-    .catch(err => {
-      console.error('Failed to load user context:', err);
-      const isChat = window.location.pathname.includes('/chat');
-      window.location.href = isChat ? '/?blocked=chat' : '/?blocked=wall';
-    });
-  } else {
+  function doAuthRedirect() {
+    // wall이 번호 선택 게시판이면 비로그인 허용
+    if (currentWall && currentWall.maxUsers > 0) {
+      if (currentWall) renderBoard(currentWall);
+      return;
+    }
     const isChat = window.location.pathname.includes('/chat');
     window.location.href = isChat ? '/?blocked=chat' : '/?blocked=wall';
   }
+
+  function initUserAuth() {
+    if (token) {
+      fetch('/api/me', {
+        headers: { 'X-KFCMan-Auth': token }
+      })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) {
+          currentUser = data;
+
+          // Check if user is VIP or admin
+          const userRole = data.role || 'user';
+          const isVipOrAbove = userRole === 'admin' || userRole === 'manager' || userRole === 'vip';
+          if (!isVipOrAbove) {
+            doAuthRedirect();
+            return;
+          }
+
+          if (currentWall) {
+            renderBoard(currentWall);
+          }
+          updateSidebarProfile(data.username, data.role);
+
+          const isUserAdmin = (data.role === 'admin');
+          const navItemDocsSide = document.getElementById('nav-item-docs-side');
+          const navItemTetrisSide = document.getElementById('nav-item-tetris-side');
+          const navItemClassroomSide = document.getElementById('nav-item-classroom-side');
+          if (navItemDocsSide) navItemDocsSide.style.display = isUserAdmin ? 'flex' : 'none';
+          if (navItemTetrisSide) navItemTetrisSide.style.display = isUserAdmin ? 'flex' : 'none';
+          if (navItemClassroomSide) navItemClassroomSide.style.display = isUserAdmin ? 'flex' : 'none';
+
+          const navItemOracleSide = document.getElementById('nav-item-oracle-side');
+          if (navItemOracleSide) navItemOracleSide.style.display = isUserAdmin ? 'flex' : 'none';
+
+          const navItemWallSide = document.getElementById('nav-item-wall-side');
+          const navItemChatSide = document.getElementById('nav-item-chat-side');
+          if (navItemWallSide) navItemWallSide.style.display = 'flex';
+          if (navItemChatSide) navItemChatSide.style.display = 'flex';
+        } else {
+          doAuthRedirect();
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load user context:', err);
+        doAuthRedirect();
+      });
+    } else {
+      doAuthRedirect();
+    }
+  }
+
+  // wall 정보를 먼저 가져온 후 auth 체크 (번호 게시판 여부 확인)
+  fetch(`/api/wall/${boardId}`)
+    .then(res => res.ok ? res.json() : null)
+    .then(wallData => {
+      if (wallData) {
+        currentWall = wallData;
+        // 번호 선택 게시판이면 비로그인도 바로 renderBoard
+        if (wallData.maxUsers > 0 && !token) {
+          renderBoard(wallData);
+          connectToStream(boardId);
+          return;
+        }
+      }
+      initUserAuth();
+    })
+    .catch(() => initUserAuth());
 
   // DOM Elements
   const landingScreen = document.getElementById('landing-screen');
@@ -232,10 +264,70 @@ function initWall() {
   const lightboxImg = document.getElementById('lightbox-img');
   const btnCloseLightbox = document.getElementById('btn-close-lightbox');
 
-  // Load Dark Mode Preference
-  if (localStorage.getItem('darkMode') === 'enabled') {
-    document.documentElement.classList.add('dark');
+  const THEME_STORAGE_KEY = 'kfcman_theme';
+  const LEGACY_THEME_STORAGE_KEY = 'darkMode';
+
+  function getPreferredTheme() {
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
+
+    const legacyTheme = localStorage.getItem(LEGACY_THEME_STORAGE_KEY);
+    if (legacyTheme === 'enabled') return 'dark';
+    if (legacyTheme === 'disabled') return 'light';
+
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light';
   }
+
+  function updateGlobalThemeSwitcher() {
+    const isDark = document.documentElement.classList.contains('dark');
+    const globalLight = document.getElementById('btn-global-theme-light');
+    const globalDark = document.getElementById('btn-global-theme-dark');
+    if (!globalLight || !globalDark) return;
+    globalLight.classList.toggle('active', !isDark);
+    globalDark.classList.toggle('active', isDark);
+    globalLight.setAttribute('aria-pressed', String(!isDark));
+    globalDark.setAttribute('aria-pressed', String(isDark));
+  }
+
+  function setWallTheme(isDark, { persist = true } = {}) {
+    document.documentElement.classList.toggle('dark', isDark);
+    document.body.classList.toggle('light-theme', !isDark);
+    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+
+    if (persist) {
+      localStorage.setItem(THEME_STORAGE_KEY, isDark ? 'dark' : 'light');
+      // Keep older screens that still reference this key in sync during migration.
+      localStorage.setItem(LEGACY_THEME_STORAGE_KEY, isDark ? 'enabled' : 'disabled');
+    }
+
+    updateGlobalThemeSwitcher();
+    updateIcons();
+  }
+
+  window.setKfcmanTheme = function(theme) {
+    if (theme !== 'light' && theme !== 'dark') return;
+    setWallTheme(theme === 'dark');
+  };
+
+  window.toggleKfcmanTheme = function() {
+    setWallTheme(!document.documentElement.classList.contains('dark'));
+  };
+
+  const globalThemeLight = document.getElementById('btn-global-theme-light');
+  const globalThemeDark = document.getElementById('btn-global-theme-dark');
+  if (globalThemeLight) {
+    globalThemeLight.addEventListener('click', () => setWallTheme(false));
+  }
+  if (globalThemeDark) {
+    globalThemeDark.addEventListener('click', () => setWallTheme(true));
+  }
+  setWallTheme(getPreferredTheme() === 'dark', { persist: false });
+
+  document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
+    button.addEventListener('click', window.toggleKfcmanTheme);
+  });
 
   // Re-trigger Lucide icons on any state changes
   function updateIcons() {
@@ -276,7 +368,7 @@ function initWall() {
 
   function loadBoard(password) {
     const token = localStorage.getItem('kfcman_auth_token');
-    const headers = {};
+    const headers = { 'X-Client-Uuid': clientUuid };
     if (token) headers['X-KFCMan-Auth'] = token;
     if (password) headers['X-Wall-Password'] = password;
 
@@ -334,7 +426,7 @@ function initWall() {
       if (lockPasswordError) lockPasswordError.classList.add('hidden');
 
       const token = localStorage.getItem('kfcman_auth_token');
-      const hdrs = { 'X-Wall-Password': pw };
+      const hdrs = { 'X-Wall-Password': pw, 'X-Client-Uuid': clientUuid };
       if (token) hdrs['X-KFCMan-Auth'] = token;
 
       fetch('/api/wall/' + boardId, { headers: hdrs })
@@ -462,12 +554,12 @@ function initWall() {
       container.classList.add('hidden');
       createdSection.classList.add('hidden');
       visitedSection.classList.add('hidden');
-      landingScreen.className = "max-w-3xl mx-auto space-y-6 mt-12";
+      landingScreen.className = "w-full max-w-4xl mx-auto space-y-6 mt-8";
       return;
     }
 
     container.classList.remove('hidden');
-    landingScreen.className = "max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mt-12 space-y-0";
+    landingScreen.className = "w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mt-6 space-y-0";
 
     // 1. Render Created Walls
     if (createdWalls.length > 0) {
@@ -621,12 +713,27 @@ function initWall() {
       eventSource.close();
     }
 
-    eventSource = new EventSource(`/api/wall/${id}/stream`);
+    // EventSource는 헤더를 못 실으므로 본인 슬롯 식별용 clientUuid를 쿼리로 전달
+    eventSource = new EventSource(`/api/wall/${id}/stream?clientUuid=${encodeURIComponent(clientUuid)}`);
 
     eventSource.onmessage = (event) => {
       try {
         const wall = JSON.parse(event.data);
         renderBoard(wall);
+        // 모든 카드의 이미지 생성이 끝나면 로딩 토스트 제거
+        const cards = Object.values(wall.cards || {});
+        const stillGenerating = cards.some(c => c.imageGenerating);
+        if (!stillGenerating) {
+          const imgToast = document.getElementById('wall-toast-container');
+          if (imgToast) {
+            imgToast.querySelectorAll('div').forEach(t => {
+              if (t.textContent.includes('이미지를 생성하는 중')) {
+                t.style.opacity = '0'; t.style.transform = 'translateY(12px)';
+                setTimeout(() => t.remove(), 300);
+              }
+            });
+          }
+        }
       } catch (err) {
         console.error('Failed to parse wall update:', err);
       }
@@ -707,8 +814,8 @@ function initWall() {
         btnTogglePrivacyBadge.classList.remove('hidden');
         if (wall.isPrivate) {
           btnTogglePrivacyBadge.className = 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-xs font-black transition-all cursor-pointer hover:scale-105';
-          if (privacyBadgeIcon) privacyBadgeIcon.setAttribute('data-lucide', wall.password ? 'lock' : 'eye-off');
-          if (privacyBadgeText) privacyBadgeText.textContent = wall.password ? '비공개 (비밀번호)' : '비공개 (개설자 전용)';
+          if (privacyBadgeIcon) privacyBadgeIcon.setAttribute('data-lucide', wall.hasPassword ? 'lock' : 'eye-off');
+          if (privacyBadgeText) privacyBadgeText.textContent = wall.hasPassword ? '비공개 (비밀번호)' : '비공개 (개설자 전용)';
         } else {
           btnTogglePrivacyBadge.className = 'inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 text-xs font-black transition-all cursor-pointer hover:scale-105';
           if (privacyBadgeIcon) privacyBadgeIcon.setAttribute('data-lucide', 'globe');
@@ -1309,7 +1416,15 @@ function initWall() {
 
     // Optional Card Image / YouTube Player Embed
     let imgHTML = '';
-    if (card.image) {
+    if (card.imageGenerating) {
+      const shimmerHeight = isDefaultGrid ? 'h-14' : 'h-32';
+      imgHTML = `<div class="w-full ${shimmerHeight} rounded-xl mb-3 overflow-hidden relative" style="background:linear-gradient(90deg,rgba(0,0,0,0.06) 25%,rgba(0,0,0,0.12) 50%,rgba(0,0,0,0.06) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;">
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;font-weight:700;color:rgba(0,0,0,0.35);">
+          <svg style="width:14px;height:14px;animation:spin 1s linear infinite;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+          이미지 생성 중...
+        </div>
+      </div>`;
+    } else if (card.image) {
       const ytId = getYouTubeId(card.image);
       if (ytId) {
         imgHTML = `
@@ -1606,8 +1721,13 @@ function initWall() {
     if (!confirm('정말 이 카드를 삭제하시겠습니까?')) return;
 
     try {
+      const delToken = localStorage.getItem('kfcman_auth_token');
+      const delHeaders = { 'Content-Type': 'application/json' };
+      if (delToken) delHeaders['X-KFCMan-Auth'] = delToken;
       const res = await fetch(`/api/wall/${boardId}/cards/${cardId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: delHeaders,
+        body: JSON.stringify({ clientUuid })
       });
       if (!res.ok) throw new Error('카드 삭제 실패');
       // Immediate local refresh
@@ -3081,13 +3201,14 @@ function initWall() {
             if (!confirm(`'${activeRoom.title}' 주제 톡방을 정말 삭제하시겠습니까?\n이 방의 모든 대화 내용이 함께 삭제됩니다.`)) return;
 
             const token = localStorage.getItem('kfcman_auth_token');
-            const headers = {};
+            const headers = { 'Content-Type': 'application/json' };
             if (token) headers['X-KFCMan-Auth'] = token;
 
             try {
               const res = await fetch(`/api/wall/${wall.id}/cards/${activeRoom.id}`, {
                 method: 'DELETE',
-                headers
+                headers,
+                body: JSON.stringify({ clientUuid })
               });
               if (!res.ok) {
                 const data = await res.json();
@@ -3805,11 +3926,23 @@ function initWall() {
         }
 
         const data = await res.json();
-        alert(data.message || 'AI 주제 톡방이 생성되었습니다.');
         closeAiModal();
         aiPromptInput.value = '';
+        // 주제 생성 완료 알림
+        showWallToast(`${data.topics ? data.topics.length : ''}개 주제 생성 완료!`, 'success', 3000);
+        // 이미지 생성 중 알림 (지속)
+        const imgToast = showWallToast('각 방별 이미지를 생성하는 중입니다... 잠시 기다려 주세요 🎨', 'loading', 0);
+        // 이미지가 모두 완성되면 자동으로 사라지도록 카드 수만큼 대기 (주제 수 × 45초 + 여유)
+        const topicCount = data.topics ? data.topics.length : 3;
+        setTimeout(() => {
+          if (imgToast && imgToast.parentNode) {
+            imgToast.style.opacity = '0';
+            imgToast.style.transform = 'translateY(12px)';
+            setTimeout(() => imgToast.remove(), 300);
+          }
+        }, topicCount * 45000);
       } catch (err) {
-        alert(err.message);
+        showWallToast(err.message, 'error', 5000);
       } finally {
         btnAiGenerateSubmit.disabled = false;
         btnAiGenerateSubmit.innerHTML = originalBtnHtml;
