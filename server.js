@@ -278,6 +278,128 @@ app.use(express.static(path.join(__dirname, 'public'), {
 }));
 
 // --------------------------------------------------------------------------
+// 하위 주소 서비스 모음 (/api/sub-services) — 푸터 링크 자동 목록
+//  nginx 설정의 `location … /<이름>/`과 public/<이름>/index.html을 찾아 페이지 제목과 함께 반환.
+//  설정 파일이 바뀌었거나 10분이 지나면 다시 만들고, 200으로 열리지 않는 주소(401 등)는 뺀다.
+//  알려진 주소는 정해 둔 이름·묶음을 쓰고, 새 주소는 페이지 제목으로 '새로 추가된 서비스'에 넣는다.
+// --------------------------------------------------------------------------
+const NGINX_SITE_CONF = '/etc/nginx/sites-enabled/kfcman.link';
+const SUB_SERVICE_TTL_MS = 10 * 60 * 1000;
+const SUB_SERVICE_NEW_GROUP = '새로 추가된 서비스';
+// 비공개·개인·연구용·회원 기능·내부 경로는 목록에서 제외
+const SUB_SERVICE_EXCLUDE = new Set([
+  'attend', 'card', 'helpychat', 'helpy_chat', 'wall', 'privacy', 'api', 'banner',
+  'assets', 'css', 'js', 'images', 'uploads', 'scratch'
+]);
+const SUB_SERVICE_CATALOG = [
+  ['수업 도구', [['on', '실시간 설문·Q&A'], ['tetris', '테트리스 배틀로얄'], ['ocrtext', '바른 글씨 쑥쑥'], ['id', '디지털 윤리 탐험'], ['nuri', '탐험 관문'], ['docs.html', 'KFCMAN.CLOUD 문서 공유']]],
+  ['과학·로봇', [['scibot', 'SciBot 과학실험실'], ['scibit', 'SciBit 마이크로비트 실험실'], ['co-science', '지능형 과학교실 AI'], ['robot', '햄스터로봇S 사용법'], ['cpm', 'CPM 알고리즘 클래스'], ['tinkercosmic', 'TinkerCosmic 3D 태양계'], ['solar', '궤도실험실 오르비'], ['scienceland', '과학의 섬']]],
+  ['교사 지원', [['mindcheck', '숨고르기 마음챙김'], ['mind26', '사춘기 내비'], ['agency', '교육활동 AI Agent Builder'], ['eduzip', '교사 개발자 SW 등록 포털']]]
+];
+const subServiceCache = { builtAt: 0, confMtime: 0, groups: null, probes: {}, building: null };
+
+function discoverSubPaths() {
+  const found = new Set();
+  try {
+    const conf = fs.readFileSync(NGINX_SITE_CONF, 'utf8').replace(/#.*$/gm, '');
+    const re = /location\s+(?:\^~|=)?\s*\/([A-Za-z0-9_-]+)\/?\s*\{/g;
+    let m;
+    while ((m = re.exec(conf))) found.add(m[1]);
+  } catch (e) { console.error('nginx 설정 읽기 실패:', e.message); }
+  try {
+    const publicDir = path.join(__dirname, 'public');
+    for (const ent of fs.readdirSync(publicDir, { withFileTypes: true })) {
+      if (ent.isDirectory() && fs.existsSync(path.join(publicDir, ent.name, 'index.html'))) found.add(ent.name);
+    }
+    if (fs.existsSync(path.join(publicDir, 'docs.html'))) found.add('docs.html');
+  } catch (e) { console.error('public 폴더 읽기 실패:', e.message); }
+  return [...found].filter(name => !SUB_SERVICE_EXCLUDE.has(name));
+}
+
+function subServiceUrlPath(name) {
+  return name.includes('.') ? `/${name}` : `/${name}/`;
+}
+
+// 공개 주소로 실제 접속해 상태 코드와 <title>을 확인 (리다이렉트 1회까지 따라감)
+function probeSubService(name) {
+  const fetchOnce = (url, redirectsLeft) => new Promise((resolve) => {
+    const req = https.get(url, { timeout: 5000, headers: { 'User-Agent': 'kfcman-link-sitemap' } }, (res) => {
+      if ([301, 302, 307, 308].includes(res.statusCode) && res.headers.location && redirectsLeft > 0) {
+        res.resume();
+        return resolve(fetchOnce(new URL(res.headers.location, url).toString(), redirectsLeft - 1));
+      }
+      let body = '';
+      res.setEncoding('utf8');
+      res.on('data', (chunk) => { if (body.length < 200000) body += chunk; });
+      res.on('end', () => {
+        const m = body.match(/<title[^>]*>([^<]*)<\/title>/i);
+        resolve({ status: res.statusCode, title: m ? m[1].trim() : '' });
+      });
+    });
+    req.on('timeout', () => req.destroy(new Error('timeout')));
+    req.on('error', () => resolve({ status: 0, title: '' }));
+  });
+  return fetchOnce(`https://kfcman.link${subServiceUrlPath(name)}`, 1);
+}
+
+function labelFromTitle(title, name) {
+  const first = (title || '').split(/\s+[-|·—:]\s+/)[0].trim();
+  return (first || name).slice(0, 30);
+}
+
+async function buildSubServices() {
+  const names = discoverSubPaths();
+  const now = Date.now();
+  await Promise.all(names.map(async (name) => {
+    const cached = subServiceCache.probes[name];
+    if (!cached || now - cached.at > SUB_SERVICE_TTL_MS) {
+      subServiceCache.probes[name] = { ...(await probeSubService(name)), at: now };
+    }
+  }));
+  const isOpen = (name) => names.includes(name) && subServiceCache.probes[name] && subServiceCache.probes[name].status === 200;
+  const known = new Set();
+  const groups = SUB_SERVICE_CATALOG.map(([title, items]) => ({
+    title,
+    items: items.filter(([name]) => { known.add(name); return isOpen(name); })
+      .map(([name, label]) => ({ name, label, href: subServiceUrlPath(name) }))
+  }));
+  const fresh = names.filter(name => !known.has(name) && isOpen(name)).sort()
+    .map(name => ({ name, label: labelFromTitle(subServiceCache.probes[name].title, name), href: subServiceUrlPath(name) }));
+  if (fresh.length) groups.push({ title: SUB_SERVICE_NEW_GROUP, items: fresh });
+  subServiceCache.groups = groups.filter(g => g.items.length);
+  subServiceCache.builtAt = Date.now();
+  return subServiceCache.groups;
+}
+
+function refreshSubServices() {
+  if (!subServiceCache.building) {
+    subServiceCache.building = buildSubServices()
+      .catch((e) => { console.error('서비스 모음 생성 실패:', e.message); return subServiceCache.groups; })
+      .finally(() => { subServiceCache.building = null; });
+  }
+  return subServiceCache.building;
+}
+
+app.get('/api/sub-services', async (req, res) => {
+  // nginx 설정 또는 public 폴더 구성이 바뀌면 즉시 다시 만든다
+  let confMtime = 0;
+  try { confMtime += fs.statSync(NGINX_SITE_CONF).mtimeMs; } catch (_) {}
+  try { confMtime += fs.statSync(path.join(__dirname, 'public')).mtimeMs; } catch (_) {}
+  const stale = Date.now() - subServiceCache.builtAt > SUB_SERVICE_TTL_MS || confMtime !== subServiceCache.confMtime;
+  if (confMtime !== subServiceCache.confMtime) {
+    subServiceCache.confMtime = confMtime;
+    subServiceCache.probes = {};
+  }
+  // 이미 만든 목록이 있으면 바로 응답하고 뒤에서 갱신, 처음이면 만들 때까지 기다림
+  if (stale) {
+    const pending = refreshSubServices();
+    if (!subServiceCache.groups) await pending;
+  }
+  res.set('Cache-Control', 'public, max-age=300');
+  return res.json({ groups: subServiceCache.groups || [], builtAt: subServiceCache.builtAt });
+});
+
+// --------------------------------------------------------------------------
 // 학교 행사 안내 전광판 (/banner) — 입력값 서버 저장
 //  GET  /api/banner/data : 열람(제한 없음). 비밀번호 해시는 응답에서 제외.
 //  PUT  /api/banner/data : 저장. 서버에 비밀번호가 설정돼 있으면 { auth } 해시 일치 필요.

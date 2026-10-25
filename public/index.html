@@ -7654,7 +7654,7 @@
         <h2>kfcman.link 서비스 모음</h2>
         <p>주소 하나로 바로 들어가는 수업 도구들</p>
       </div>
-      <div class="nv-sitemap-grid">
+      <div class="nv-sitemap-grid" id="nv-sitemap-grid">
         <section>
           <h3>수업 도구</h3>
           <ul>
@@ -7983,6 +7983,26 @@
       sidebar.querySelectorAll('nav > button').forEach(function (btn) { btn.addEventListener('click', close); });
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
       mq.addEventListener('change', function () { if (!mq.matches) sidebar.classList.add('hidden'); sync(); });
+    })();
+
+    // 푸터 서비스 모음: 서버가 찾은 하위 주소 목록으로 갱신 (실패하면 기본 목록 유지)
+    (function () {
+      var grid = document.getElementById('nv-sitemap-grid');
+      if (!grid || !window.fetch) return;
+      var esc = function (text) {
+        return String(text).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+      };
+      fetch('/api/sub-services')
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .then(function (data) {
+          if (!data || !data.groups || !data.groups.length) return;
+          grid.innerHTML = data.groups.map(function (group) {
+            return '<section><h3>' + esc(group.title) + '</h3><ul>' + group.items.map(function (item) {
+              return '<li><a href="' + esc(item.href) + '"><span>' + esc(item.label) + '</span><small>kfcman.link/' + esc(item.name) + '</small></a></li>';
+            }).join('') + '</ul></section>';
+          }).join('');
+        })
+        .catch(function () {});
     })();
 
     // 히어로 검색창: 붙여 넣은 주소로 단축 창 열기
