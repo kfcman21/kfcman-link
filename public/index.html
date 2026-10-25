@@ -3688,7 +3688,6 @@
 
     /* 회원 탭 섹션 공통 */
     #member-content > section { border-top: 0 !important; padding-top: 32px !important; }
-    #member-content .ds-bento-tools { margin-top: 32px !important; }
 
     /* 모달·토스트도 플랫으로 */
     .modal-overlay > div { border-radius: 16px !important; box-shadow: none !important; border: 1px solid var(--ds-hairline) !important; }
@@ -3718,7 +3717,7 @@
       .ds-bento, .future-principles.ds-bento { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
       .ds-tile-tall { grid-row: span 1; }
       .ds-tile-wide { grid-column: span 1; }
-      .ds-bento-tools .ds-tile-lg { grid-row: span 1; }
+      .ds-bento-home .ds-tile-lg { grid-row: span 1; }
       .ds-mini-chart { height: 110px; }
     }
     @media (max-width: 1023px) {
@@ -3735,13 +3734,201 @@
       .ds-hero .future-actions .ds-btn, #guest-content .future-actions button.ds-btn { width: 100% !important; max-width: none !important; }
       .ds-bento, .future-principles.ds-bento { grid-template-columns: minmax(0, 1fr) !important; }
       .ds-tile-lg { grid-column: span 1; grid-row: span 1; }
-      .ds-bento-tools { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-      .ds-bento-tools .ds-tile-lg { grid-column: 1 / -1; }
-      .ds-bento-tools .ds-tile { padding: 16px !important; }
-      .ds-bento-tools .ds-tile p { font-size: 13px !important; }
       .ds-bento + .ds-section-head { margin-top: 40px; }
       .ds-cards { grid-template-columns: minmax(0, 1fr); }
       .ds-card { min-height: 0; }
+    }
+    /* ── 헤더: 로고 · 검색 · 새로 만들기 ── */
+    .ds-header-logo {
+      display: none;
+      margin-right: 12px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--ds-ink) !important;
+      white-space: nowrap;
+    }
+    .ds-header-logo span {
+      background: var(--ds-grad-text);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+    }
+    body > .flex.min-h-screen > .flex-grow > header #top-breadcrumb-bar { flex: 1 1 auto; }
+    .ds-header-actions { display: flex; align-items: center; gap: 12px; margin-left: 16px; }
+    .ds-header-search {
+      width: clamp(200px, 26vw, 360px);
+      height: 40px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 14px;
+      border: 1px solid transparent;
+      border-radius: 9999px;
+      background: var(--ds-surface);
+      color: var(--ds-muted);
+      transition: border-color 120ms var(--ds-ease-standard);
+    }
+    .ds-header-search:focus-within { border-color: var(--ds-sky); }
+    .ds-header-search svg { width: 16px; height: 16px; flex: none; }
+    .ds-header-search input {
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      border: 0 !important;
+      outline: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      font-size: 15px !important;
+      color: var(--ds-body) !important;
+    }
+    .ds-header-search input::placeholder { color: var(--ds-faint); }
+    body:has(#member-content.hidden) .ds-header-search { display: none; }
+    .ds-header-cta, header button.ds-header-cta {
+      height: 40px !important;
+      padding: 0 16px !important;
+      display: inline-flex !important;
+      align-items: center;
+      gap: 6px;
+      border: 0 !important;
+      border-radius: 8px !important;
+      background: var(--ds-sky) !important;
+      color: #ffffff !important;
+      font-size: 15px !important;
+      font-weight: 500 !important;
+      white-space: nowrap;
+      box-shadow: none !important;
+      cursor: pointer;
+    }
+    .ds-header-cta:hover { opacity: 0.88; }
+    .ds-header-cta svg { width: 18px; height: 18px; }
+    .ds-header-cta span { color: #ffffff !important; }
+    @media (max-width: 1023px) {
+      .ds-header-logo { display: inline-block; }
+      #top-breadcrumb-bar { display: none !important; }
+      .ds-header-actions { margin-left: auto; margin-right: 8px; }
+    }
+    @media (max-width: 639px) {
+      .ds-header-search { display: none; }
+      .ds-header-cta, header button.ds-header-cta { padding: 0 12px !important; font-size: 14px !important; }
+    }
+
+    /* ── 회원 홈: 히어로 · 벤토 · 최근 프로젝트 ── */
+    #shortener-section > .ds-hero,
+    #shortener-section > .ds-section-head,
+    #shortener-section > .ds-bento,
+    #shortener-section > .ds-search-row {
+      background: transparent !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important;
+    }
+    #member-content > section.shortener-section { padding-top: 0 !important; }
+    #member-content #shortener-section > .ds-hero {
+      position: relative;
+      margin: 0 -40px 48px !important;
+      padding: 72px 24px 64px !important;
+      text-align: center;
+      border-bottom: 1px solid var(--ds-hairline) !important;
+    }
+    .ds-member-hero .future-hero-inner { max-width: 880px; margin: 0 auto; }
+    #member-content .ds-member-hero h1 {
+      margin: 20px auto 16px !important;
+      font-size: clamp(32px, 4.6vw, 52px) !important;
+      font-weight: 600 !important;
+      line-height: 1.28 !important;
+      letter-spacing: -0.02em !important;
+      color: var(--ds-ink) !important;
+      word-break: keep-all;
+    }
+    .ds-member-hero .future-copy {
+      max-width: 600px;
+      margin: 0 auto;
+      color: var(--ds-slate) !important;
+      font-size: 18px !important;
+      line-height: 1.6;
+      word-break: keep-all;
+    }
+    #member-content .ds-member-hero .future-actions {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: wrap !important;
+      justify-content: center !important;
+      align-items: center !important;
+      gap: 12px !important;
+      width: auto !important;
+      max-width: none !important;
+      margin: 32px 0 0 !important;
+      padding: 0 !important;
+    }
+    #member-content .ds-member-hero .ds-btn { height: 54px !important; padding: 12px 22px !important; font-size: 18px !important; border-radius: 8px !important; }
+    #member-content .ds-section-head h2 {
+      font-size: clamp(24px, 2.6vw, 30px) !important;
+      font-weight: 600 !important;
+      line-height: 1.4 !important;
+      color: var(--ds-ink) !important;
+    }
+    #shortener-section > .ds-section-head { margin-bottom: 24px !important; }
+    #shortener-section > .ds-bento { margin-bottom: 64px !important; }
+
+    .ds-tile-stat small { margin-left: 4px; font-size: 16px; font-weight: 500; color: var(--ds-muted); }
+    .ds-tile-stat .ds-grad-text { font-size: clamp(40px, 5vw, 64px); font-weight: 700; }
+    .ds-tile p b { color: var(--ds-ink); font-weight: 600; }
+    .ds-tile-link, #member-content .ds-tile-link {
+      margin-top: 16px;
+      padding: 0 !important;
+      border: 0 !important;
+      background: none !important;
+      color: var(--ds-sky) !important;
+      font-size: 15px !important;
+      font-weight: 600 !important;
+      cursor: pointer;
+    }
+    .ds-tile-url { margin-top: auto; padding-top: 16px; font-size: clamp(22px, 2.4vw, 30px); font-weight: 700; letter-spacing: -0.02em; word-break: break-all; }
+    .ds-tool-list { list-style: none; margin: 12px 0 0; padding: 0; width: 100%; }
+    .ds-tool-list li + li { border-top: 1px solid var(--ds-hairline); }
+    .ds-tool-list button {
+      width: 100%;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 4px !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: none !important;
+      color: var(--ds-ink) !important;
+      font-size: 16px !important;
+      font-weight: 500 !important;
+      text-align: left;
+      cursor: pointer;
+      transition: color 120ms var(--ds-ease-standard);
+    }
+    .ds-tool-list button:hover { color: var(--ds-sky) !important; }
+    .ds-tool-list svg { width: 20px; height: 20px; color: var(--ds-sky); flex: none; }
+
+    /* 최근 프로젝트 영역 */
+    #shortener-section > div:last-child { border-top: 0 !important; padding-top: 0 !important; }
+    #canva-recent-grid > .col-span-full {
+      border-radius: 16px;
+      background: var(--ds-surface);
+      color: var(--ds-muted) !important;
+      font-size: 15px !important;
+      font-weight: 500 !important;
+    }
+
+    @media (max-width: 1023px) {
+      #member-content #shortener-section > .ds-hero { margin: 0 -24px 40px !important; padding: 56px 24px 48px !important; }
+    }
+    @media (max-width: 639px) {
+      #member-content #shortener-section > .ds-hero { margin: 0 -16px 32px !important; padding: 40px 16px 36px !important; }
+      .ds-member-hero .future-copy { font-size: 16px !important; }
+      #member-content .ds-member-hero .future-actions { flex-direction: column !important; align-items: stretch !important; }
+      #member-content .ds-member-hero .ds-btn { width: 100% !important; max-width: none !important; }
+      #shortener-section > .ds-bento { margin-bottom: 40px !important; }
     }
     @media (prefers-reduced-motion: reduce) {
       .ds-tile, .ds-card, .ds-grad-text, #left-sidebar { animation: none !important; }
@@ -3997,7 +4184,8 @@
 
       <!-- Obsidian Note Tab Header (38px 무경계 초슬림 바) -->
       <header class="h-[38px] flex items-center justify-between px-3 md:px-6 bg-white dark:bg-[#18181b] sticky top-0 z-40 transition-colors w-full select-none">
-        <!-- 좌측: 옵시디안 활성 노트 탭 -->
+        <!-- 좌측: 로고(사이드바가 접히는 화면) + 현재 위치 -->
+        <a href="/" class="ds-header-logo" aria-label="kfcman.link 홈">kfcman<span>.link</span></a>
         <div class="flex items-center h-full gap-1 min-w-0" id="top-breadcrumb-bar">
           <span class="hidden" id="breadcrumb-parent">교실</span>
           <div class="inline-flex items-center gap-2 px-1 h-[38px] text-xs font-bold text-slate-800 dark:text-zinc-100 transition-colors">
@@ -4007,7 +4195,17 @@
           </div>
         </div>
 
-        <!-- 우측 모바일 전용 토글 버튼 -->
+        <!-- 우측: 검색 · 새로 만들기 · (모바일) 메뉴 -->
+        <div class="ds-header-actions">
+          <label class="ds-header-search">
+            <i data-lucide="search"></i>
+            <input type="search" id="ds-header-search-input" placeholder="링크, 메모 검색" aria-label="내 단축 주소 검색">
+          </label>
+          <button type="button" class="ds-header-cta" id="ds-header-cta">
+            <i data-lucide="plus"></i>
+            <span>새로 만들기</span>
+          </button>
+        </div>
         <div class="lg:hidden flex items-center">
           <button id="btn-mobile-sidebar-toggle" type="button" class="p-1.5 rounded text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors" title="메뉴 열기">
             <i data-lucide="menu" class="w-4 h-4"></i>
@@ -4194,33 +4392,66 @@
       <!-- URL Shortener Section (Redesigned as Canva Dashboard Home) -->
       <section class="shortener-section scroll-mt-24" id="shortener-section">
         
-        <!-- [옵시디안 플랫 스타일] 1. 단축 링크 생성 메인 워크스페이스 -->
-        <div class="w-full bg-transparent border-0 rounded-none p-0 mb-6 text-left">
-          
-          <!-- 카드 헤더 -->
-          <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-zinc-800/80">
-            <div class="space-y-1">
-              <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
-                <i data-lucide="zap" class="w-3 h-3 text-indigo-600"></i>
-                <span>실시간 고속 단축 서비스</span>
-              </div>
-              <h2 class="text-xl md:text-2xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight">
-                긴 주소는 짧게, 교육용 스마트 링크로 연결하세요
-              </h2>
-              <p class="text-xs text-slate-500 dark:text-zinc-400 font-medium">
-                수업 자료, 구글 폼 설문, 캔바 링크를 기억하기 쉬운 맞춤 단축 주소와 고화질 벡터 QR코드로 즉시 압축합니다.
-              </p>
+        <!-- 회원 홈 히어로 (홈 탭에서만 표시) -->
+        <div class="ds-hero ds-member-hero" id="ds-member-hero">
+          <div class="future-hero-inner">
+            <span class="ds-eyebrow">오늘도 수업 준비, 가볍게</span>
+            <h1>학교의 모든 연결을,<br><span class="ds-grad-text">더 가볍고 빠르게.</span></h1>
+            <p class="future-copy">수업 자료, 구글 폼 설문, 캔바 링크를 기억하기 쉬운 단축 주소와 QR코드로 바꾸고 학생 반응을 바로 확인하세요.</p>
+            <div class="future-actions">
+              <button onclick="openShortenerModal()" type="button" class="ds-btn ds-btn-primary">
+                <i data-lucide="link-2" class="w-5 h-5"></i>
+                <span>새 단축 링크 만들기</span>
+              </button>
+              <button onclick="switchMainTab('classroom')" type="button" class="ds-btn ds-btn-outline">
+                <span>으쓱 학급 보드</span>
+              </button>
             </div>
-
-            <!-- 빠른 단축 링크 생성 버튼 -->
-            <button onclick="openShortenerModal()" type="button" class="btn h-9 px-4 rounded-md bg-[#7c6cf0] hover:bg-[#6b59e6] text-white font-bold text-xs transition-colors flex items-center gap-2 cursor-pointer active:scale-95 shadow-2xs">
-              <i data-lucide="plus-circle" class="w-4 h-4"></i>
-              <span>새 단축 링크 만들기</span>
-            </button>
           </div>
+          <i class="ds-hero-bar" aria-hidden="true"></i>
+        </div>
+
+        <!-- 벤토 그리드: 바로 읽는 반응 + 수업 도구 -->
+        <div class="ds-section-head ds-home-only"><h2>바로 읽는 반응</h2></div>
+        <div id="canva-highlights" class="ds-bento ds-bento-home" aria-label="내 링크 현황과 수업 도구">
+          <div class="ds-tile ds-tile-outline ds-tile-lg">
+            <span class="ds-tile-label">누적 방문 클릭</span>
+            <div class="ds-tile-stat"><span class="ds-grad-text" id="ds-stat-clicks">0</span><small>회</small></div>
+            <p>단축 링크 <b id="ds-stat-links">0</b>개 · 링크당 평균 <b id="ds-stat-avg">0.0</b>회</p>
+            <button type="button" class="ds-tile-link" onclick="switchMainTab('projects')">내 링크 모두 보기 →</button>
+            <i class="ds-tile-bar" aria-hidden="true"></i>
+          </div>
+          <button type="button" onclick="switchMainTab('classroom')" class="ds-tile">
+            <span class="future-principle-icon"><i data-lucide="award"></i></span>
+            <h3>교실</h3>
+            <p>으쓱점수와 학급 보드</p>
+          </button>
+          <div class="ds-tile ds-tile-tall">
+            <span class="ds-tile-label">수업 도구</span>
+            <ul class="ds-tool-list">
+              <li><button type="button" onclick="switchMainTab('mindcheck')"><i data-lucide="heart"></i><span>마음챙김</span></button></li>
+              <li><button type="button" onclick="switchMainTab('scibot')"><i data-lucide="flask-conical"></i><span>과학실험실</span></button></li>
+              <li><button type="button" onclick="switchMainTab('scibit')"><i data-lucide="activity"></i><span>MBL 가이드</span></button></li>
+              <li><button type="button" onclick="switchMainTab('settings')"><i data-lucide="settings"></i><span>설정 및 관리</span></button></li>
+            </ul>
+          </div>
+          <button type="button" onclick="switchMainTab('projects')" class="ds-tile">
+            <span class="future-principle-icon"><i data-lucide="folder"></i></span>
+            <h3>프로젝트</h3>
+            <p>만든 링크 모아 보기</p>
+          </button>
+          <button type="button" onclick="openShortenerModal()" class="ds-tile ds-tile-wide">
+            <span class="ds-tile-label">짧고 명확한 연결</span>
+            <h3>긴 주소를 붙여 넣으면 단축 주소와 QR코드가 바로</h3>
+            <span class="ds-tile-url ds-grad-text">kfcman.link/나만의주소</span>
+          </button>
+        </div>
+
+        <!-- [옵시디안 플랫 스타일] 1. 단축 링크 생성 메인 워크스페이스 -->
+        <div class="w-full bg-transparent border-0 rounded-none p-0 mb-6 text-left ds-search-row">
 
           <!-- 검색 & 필터 바 (미니멀 밑줄 인풋 스타일) -->
-          <div class="mt-4 flex flex-col sm:flex-row items-center gap-3">
+          <div class="flex flex-col sm:flex-row items-center gap-3">
             <div class="relative w-full flex-grow">
               <i data-lucide="search" class="absolute left-1 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-zinc-500"></i>
               <input type="text" id="canva-search-input" placeholder="내 단축 주소, 원본 URL, 메모 검색..." class="w-full pl-7 pr-4 py-2 bg-transparent border-0 border-b border-slate-200 dark:border-zinc-800 rounded-none text-xs font-medium text-slate-800 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 outline-none focus:border-[#7c6cf0] dark:focus:border-[#9d8df8] transition-colors">
@@ -4236,41 +4467,10 @@
           </div>
         </div>
 
-        <!-- 벤토 그리드: 수업 도구 바로가기 -->
-        <div id="canva-highlights" class="ds-bento ds-bento-tools mb-8" aria-label="수업 도구 바로가기">
-          <button type="button" onclick="openShortenerModal()" class="ds-tile ds-tile-outline ds-tile-lg">
-            <span class="ds-tile-label">짧고 명확한 연결</span>
-            <h3>새 단축 링크 만들기</h3>
-            <p>긴 주소를 붙여 넣으면 단축 주소와 QR코드가 바로 만들어집니다.</p>
-            <span class="ds-tile-stat ds-grad-text">kfcman.link/<span>나만의주소</span></span>
-            <i class="ds-tile-bar" aria-hidden="true"></i>
-          </button>
-          <button type="button" onclick="switchMainTab('classroom')" class="ds-tile">
-            <span class="future-principle-icon"><i data-lucide="award"></i></span>
-            <h3>교실</h3>
-            <p>으쓱점수와 학급 보드</p>
-          </button>
-          <button type="button" onclick="switchMainTab('projects')" class="ds-tile">
-            <span class="future-principle-icon"><i data-lucide="folder"></i></span>
-            <h3>프로젝트</h3>
-            <p>만든 링크 모아 보기</p>
-          </button>
-          <button type="button" onclick="switchMainTab('mindcheck')" class="ds-tile">
-            <span class="future-principle-icon"><i data-lucide="heart"></i></span>
-            <h3>마음챙김</h3>
-            <p>교사 마음 건강 쉼터</p>
-          </button>
-          <button type="button" onclick="switchMainTab('scibot')" class="ds-tile">
-            <span class="future-principle-icon"><i data-lucide="flask-conical"></i></span>
-            <h3>과학실험실</h3>
-            <p>센서 측정과 MBL 가이드</p>
-          </button>
-        </div>
-
         <!-- 4. Canva Recent Items (상단 1px 구분선으로 분리) -->
         <div class="text-left mb-6 pt-5 border-t border-slate-200/80 dark:border-zinc-800/80">
           <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
-            <h3 class="text-sm font-bold text-slate-900 dark:text-zinc-100 tracking-tight">최근</h3>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-zinc-100 tracking-tight">최근 프로젝트</h3>
             
             <!-- Filter Toolbar -->
             <div class="flex items-center gap-2 text-xs font-medium">
@@ -7390,6 +7590,51 @@
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
       mq.addEventListener('change', function () { if (!mq.matches) sidebar.classList.add('hidden'); sync(); });
     })();
+
+    // 헤더 검색·새로 만들기, 회원 홈 히어로/통계 연동 (app.js의 DOMContentLoaded 초기화 이후 실행)
+    document.addEventListener('DOMContentLoaded', function () {
+      var headerSearch = document.getElementById('ds-header-search-input');
+      var pageSearch = document.getElementById('canva-search-input');
+      if (headerSearch && pageSearch) {
+        headerSearch.addEventListener('input', function () {
+          if (typeof switchMainTab === 'function' && document.getElementById('shortener-section').classList.contains('hidden')) switchMainTab('shortener');
+          pageSearch.value = headerSearch.value;
+          pageSearch.dispatchEvent(new Event('input'));
+        });
+        pageSearch.addEventListener('input', function () { if (headerSearch.value !== pageSearch.value) headerSearch.value = pageSearch.value; });
+      }
+
+      var cta = document.getElementById('ds-header-cta');
+      if (cta) cta.addEventListener('click', function () {
+        var isGuest = document.getElementById('member-content').classList.contains('hidden');
+        if (isGuest) openAuthModal('register'); else openShortenerModal();
+      });
+
+      // 홈 탭에서만 히어로·섹션 제목 표시
+      var hero = document.getElementById('ds-member-hero');
+      var homeOnly = document.querySelectorAll('.ds-home-only');
+      var originalSwitch = window.switchMainTab;
+      if (typeof originalSwitch === 'function') {
+        window.switchMainTab = function (tabId) {
+          var result = originalSwitch.apply(this, arguments);
+          var onHome = !document.getElementById('shortener-section').classList.contains('hidden') &&
+            !document.getElementById('canva-highlights').classList.contains('hidden');
+          if (hero) hero.classList.toggle('hidden', !onHome);
+          homeOnly.forEach(function (el) { el.classList.toggle('hidden', !onHome); });
+          return result;
+        };
+      }
+
+      // 대시보드 통계 값을 벤토 타일에 그대로 반영
+      [['stat-total-clicks', 'ds-stat-clicks'], ['stat-total-links', 'ds-stat-links'], ['stat-avg-clicks', 'ds-stat-avg']].forEach(function (pair) {
+        var src = document.getElementById(pair[0]);
+        var dst = document.getElementById(pair[1]);
+        if (!src || !dst) return;
+        var copy = function () { dst.textContent = Number(src.textContent.replace(/,/g, '')).toLocaleString('ko-KR', pair[0] === 'stat-avg-clicks' ? { minimumFractionDigits: 1, maximumFractionDigits: 1 } : {}); };
+        copy();
+        new MutationObserver(copy).observe(src, { childList: true, characterData: true, subtree: true });
+      });
+    });
   </script>
 </body>
 </html>
