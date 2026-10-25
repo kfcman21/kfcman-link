@@ -4194,6 +4194,42 @@
     #canva-recent-grid .canva-card .text-indigo-600 { color: var(--nv-green-text) !important; }
     .active-mobile-nav { color: var(--nv-green-text) !important; }
 
+    /* ── 푸터: 하위 주소 서비스 모음 ── */
+    body > .flex.min-h-screen footer { text-align: left !important; font-weight: 400 !important; padding-top: 40px !important; }
+    .nv-sitemap { max-width: 80rem; margin: 0 auto 32px; padding: 0 24px 32px; border-bottom: 1px solid var(--ds-hairline); }
+    .nv-sitemap-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 20px; }
+    .nv-sitemap-head h2 { margin: 0; font-size: 18px; font-weight: 700; color: var(--ds-ink); }
+    .nv-sitemap-head p { margin: 0; font-size: 13px; color: var(--ds-muted); }
+    .nv-sitemap-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 32px; }
+    .nv-sitemap h3 { margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--nv-green-text); }
+    .nv-sitemap ul { list-style: none; margin: 0; padding: 0; }
+    .nv-sitemap li + li { border-top: 1px solid var(--ds-hairline); }
+    .nv-sitemap a {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 44px;
+      padding: 10px 0;
+      text-decoration: none;
+    }
+    .nv-sitemap a span { font-size: 14px; font-weight: 500; color: var(--ds-ink); }
+    .nv-sitemap a small { flex: none; font-size: 12px; color: var(--ds-muted); font-family: inherit; }
+    .nv-sitemap a:hover span { color: var(--nv-green-text); text-decoration: underline; }
+    .nv-sitemap a:hover small { color: var(--nv-green-text); }
+    body > .flex.min-h-screen footer .text-\[10px\], body > .flex.min-h-screen footer .text-\[11px\] { font-size: 12px !important; }
+    .nv-sitemap, .nv-sitemap h2, .nv-sitemap h3, .nv-sitemap p { text-align: left !important; }
+    body > .flex.min-h-screen footer .text-clay-purple,
+    #link-service-intro, #link-privacy-policy, #link-terms { color: var(--ds-slate) !important; -webkit-text-fill-color: var(--ds-slate) !important; background: none !important; }
+    body > .flex.min-h-screen footer .bg-emerald-100 { background: var(--nv-green-tint) !important; color: var(--nv-green-text) !important; border-color: transparent !important; }
+    @media (max-width: 1023px) {
+      .nv-sitemap-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 639px) {
+      .nv-sitemap { padding: 0 16px 24px; }
+      .nv-sitemap-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+    }
+
     /* ── 태블릿·모바일 교실 탭: 버튼 글자 세로 쪼개짐 방지, 표는 가로 스크롤 ── */
     @media (max-width: 1023px) {
       #eusseuk-section button { white-space: nowrap; }
@@ -7612,6 +7648,48 @@
 
   <!-- Footer -->
   <footer class="bg-white dark:bg-clay-night border-t-4 border-white py-8 text-center transition-colors text-xs font-bold text-slate-500 pb-28 lg:pb-8">
+    <!-- kfcman.link 하위 주소 서비스 모음 -->
+    <nav class="nv-sitemap" aria-label="kfcman.link 서비스 모음">
+      <div class="nv-sitemap-head">
+        <h2>kfcman.link 서비스 모음</h2>
+        <p>주소 하나로 바로 들어가는 수업 도구들</p>
+      </div>
+      <div class="nv-sitemap-grid">
+        <section>
+          <h3>수업 도구</h3>
+          <ul>
+            <li><a href="/on/"><span>실시간 설문·Q&amp;A</span><small>kfcman.link/on</small></a></li>
+            <li><a href="/tetris/"><span>테트리스 배틀로얄</span><small>kfcman.link/tetris</small></a></li>
+            <li><a href="/ocrtext/"><span>바른 글씨 쑥쑥</span><small>kfcman.link/ocrtext</small></a></li>
+            <li><a href="/id/"><span>디지털 윤리 탐험</span><small>kfcman.link/id</small></a></li>
+            <li><a href="/nuri/"><span>탐험 관문</span><small>kfcman.link/nuri</small></a></li>
+          </ul>
+        </section>
+        <section>
+          <h3>과학·로봇</h3>
+          <ul>
+            <li><a href="/scibot/"><span>SciBot 과학실험실</span><small>kfcman.link/scibot</small></a></li>
+            <li><a href="/scibit/"><span>SciBit 마이크로비트 실험실</span><small>kfcman.link/scibit</small></a></li>
+            <li><a href="/co-science/"><span>지능형 과학교실 AI</span><small>kfcman.link/co-science</small></a></li>
+            <li><a href="/robot/"><span>햄스터로봇S 사용법</span><small>kfcman.link/robot</small></a></li>
+            <li><a href="/cpm/"><span>CPM 알고리즘 클래스</span><small>kfcman.link/cpm</small></a></li>
+            <li><a href="/tinkercosmic/"><span>TinkerCosmic 3D 태양계</span><small>kfcman.link/tinkercosmic</small></a></li>
+            <li><a href="/solar/"><span>궤도실험실 오르비</span><small>kfcman.link/solar</small></a></li>
+            <li><a href="/scienceland/"><span>과학의 섬</span><small>kfcman.link/scienceland</small></a></li>
+          </ul>
+        </section>
+        <section>
+          <h3>교사 지원</h3>
+          <ul>
+            <li><a href="/mindcheck/"><span>숨고르기 마음챙김</span><small>kfcman.link/mindcheck</small></a></li>
+            <li><a href="/mind26/"><span>사춘기 내비</span><small>kfcman.link/mind26</small></a></li>
+            <li><a href="/agency/"><span>교육활동 AI Agent Builder</span><small>kfcman.link/agency</small></a></li>
+            <li><a href="/eduzip/"><span>교사 개발자 SW 등록 포털</span><small>kfcman.link/eduzip</small></a></li>
+          </ul>
+        </section>
+      </div>
+    </nav>
+
     <div class="max-w-7xl mx-auto px-4 md:px-6 w-full flex flex-col md:flex-row justify-between items-center gap-4">
       <div class="text-left text-slate-400 dark:text-slate-500 space-y-1">
         <div class="flex items-center gap-2">
