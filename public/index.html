@@ -3930,6 +3930,280 @@
       #member-content .ds-member-hero .ds-btn { width: 100% !important; max-width: none !important; }
       #shortener-section > .ds-bento { margin-bottom: 40px !important; }
     }
+    /* =====================================================================
+       NAVER-INSPIRED STYLE (DESIGN.md v2) — 최종 오버라이드
+       흰 캔버스 + #f5f6f7 회색 면 + #e3e5e8 테두리, 그린 #03C75A 단일 강조,
+       굵은 제목(700), 그라데이션 없음, 그림자 없음, 초록 테두리 검색창
+       ===================================================================== */
+    :root {
+      --nv-green: #03c75a;
+      --nv-green-hover: #02b350;
+      --nv-green-text: #008a3e;
+      --nv-green-tint: #eafaf1;
+      --nv-blue: #0068c3;
+
+      --ds-sky: var(--nv-green);
+      --ds-pink: var(--nv-green-text);
+      --ds-purple: var(--nv-green-text);
+      --ds-cyan: var(--nv-green);
+      --ds-violet: var(--nv-blue);
+      --ds-ink: #222222;
+      --ds-body: #303038;
+      --ds-slate: #505055;
+      --ds-muted: #767678;
+      --ds-faint: #a8a8ad;
+      --ds-canvas: #ffffff;
+      --ds-card: #ffffff;
+      --ds-surface: #f5f6f7;
+      --ds-hairline: #e3e5e8;
+      --ds-header-bg: rgba(255, 255, 255, 0.96);
+      --ds-grad-bar: linear-gradient(var(--nv-green), var(--nv-green));
+      --ds-grad-text: linear-gradient(var(--nv-green-text), var(--nv-green-text));
+    }
+    .dark {
+      --nv-green-text: #03c75a;
+      --nv-green-tint: rgba(3, 199, 90, 0.14);
+      --nv-blue: #6fb3ff;
+      --ds-ink: #f2f2f4;
+      --ds-body: #dcdce0;
+      --ds-slate: #b4b4bb;
+      --ds-muted: #8e8e95;
+      --ds-faint: #5c5c63;
+      --ds-canvas: #18181c;
+      --ds-card: #222227;
+      --ds-surface: #2a2a30;
+      --ds-hairline: #3a3a41;
+      --ds-header-bg: rgba(24, 24, 28, 0.96);
+    }
+
+    :focus-visible { outline: 2px solid var(--nv-green) !important; outline-offset: 2px; }
+    ::selection { background: var(--nv-green-tint); }
+
+    /* ── 그라데이션 → 단색 그린 ── */
+    .ds-grad-text, #guest-content .ds-hero h1 .ds-grad-text, #member-content .ds-grad-text,
+    #stat-total-links, #stat-total-clicks, #stat-avg-clicks,
+    #sidebar-logo .sidebar-text span:last-child, .ds-header-logo span {
+      background: none !important;
+      color: var(--nv-green-text) !important;
+      -webkit-text-fill-color: var(--nv-green-text) !important;
+      animation: none !important;
+    }
+    .ds-hero-bar { display: none !important; }
+
+    /* ── 헤더 ── */
+    .ds-header-logo { font-size: 20px; font-weight: 800; color: var(--nv-green-text) !important; }
+    .ds-header-logo span { color: var(--ds-ink) !important; -webkit-text-fill-color: var(--ds-ink) !important; }
+    .ds-header-search { background: var(--ds-card); border: 1px solid var(--ds-hairline); }
+    .ds-header-search:focus-within { border-color: var(--nv-green); box-shadow: inset 0 0 0 1px var(--nv-green); }
+    .ds-header-search svg { color: var(--nv-green); }
+    .ds-header-cta, header button.ds-header-cta, #btn-sidebar-create {
+      background: var(--nv-green) !important;
+      font-weight: 700 !important;
+    }
+    .ds-header-cta span, #btn-sidebar-create span { font-weight: 700 !important; }
+    .ds-header-cta:hover, #btn-sidebar-create:hover { background: var(--nv-green-hover) !important; opacity: 1; }
+    #top-breadcrumb-bar > div { font-weight: 700 !important; }
+
+    /* ── 사이드바 ── */
+    #left-sidebar nav > button span { font-size: 15px !important; }
+    #left-sidebar nav > button.active { background: var(--nv-green-tint) !important; color: var(--nv-green-text) !important; }
+    #left-sidebar nav > button.active span { font-weight: 700 !important; }
+    #left-sidebar nav > button.active svg { color: var(--nv-green) !important; }
+    #sidebar-logo .sidebar-text span:first-child { font-weight: 800 !important; }
+
+    /* ── 히어로: 워드마크 + 초록 테두리 검색창 + 바로가기 ── */
+    .future-hero.ds-hero, .dark .future-hero.ds-hero,
+    #member-content #shortener-section > .ds-hero {
+      background: var(--ds-canvas) !important;
+      border-bottom: 1px solid var(--ds-hairline) !important;
+    }
+    .nv-hero-brand {
+      margin: 0 0 12px;
+      font-size: clamp(32px, 4.2vw, 44px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      color: var(--nv-green-text);
+    }
+    .nv-hero-brand span { color: var(--ds-ink); }
+    #guest-content .nv-hero-brand, #member-content .nv-hero-brand { color: var(--nv-green-text) !important; -webkit-text-fill-color: var(--nv-green-text) !important; }
+    #guest-content .nv-hero-brand span, #member-content .nv-hero-brand span { color: var(--ds-ink) !important; -webkit-text-fill-color: var(--ds-ink) !important; }
+    #guest-content .ds-hero .future-copy { text-align: center !important; max-width: 600px !important; margin: 20px auto 0 !important; }
+    #guest-content .ds-hero h1, #member-content .ds-member-hero h1 {
+      margin: 0 auto 28px !important;
+      font-size: clamp(20px, 2.4vw, 26px) !important;
+      font-weight: 700 !important;
+      line-height: 1.4 !important;
+      letter-spacing: -0.01em !important;
+      color: var(--ds-ink) !important;
+      -webkit-text-fill-color: var(--ds-ink) !important;
+    }
+    .ds-hero h1 em { font-style: normal; color: var(--nv-green-text); -webkit-text-fill-color: var(--nv-green-text); }
+    .nv-search {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      max-width: 640px;
+      height: 60px;
+      margin: 0 auto;
+      padding: 0 6px 0 20px;
+      border: 2px solid var(--nv-green);
+      border-radius: 9999px;
+      background: var(--ds-card);
+    }
+    .nv-search:focus-within { box-shadow: 0 0 0 4px var(--nv-green-tint); }
+    .nv-search-icon { width: 22px; height: 22px; flex: none; color: var(--nv-green); }
+    .nv-search input {
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      border: 0 !important;
+      outline: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      font-size: 17px !important;
+      color: var(--ds-body) !important;
+    }
+    .nv-search input::placeholder { color: var(--ds-faint); }
+    .nv-search .nv-search-btn, #guest-content .nv-search button.nv-search-btn {
+      flex: none;
+      height: 46px !important;
+      padding: 0 22px !important;
+      border: 0 !important;
+      border-radius: 9999px !important;
+      background: var(--nv-green) !important;
+      color: #ffffff !important;
+      font-size: 16px !important;
+      font-weight: 700 !important;
+      box-shadow: none !important;
+      cursor: pointer;
+    }
+    .nv-search .nv-search-btn::after { display: none !important; }
+    .nv-search .nv-search-btn:hover { background: var(--nv-green-hover) !important; }
+    .nv-search .nv-search-btn span { color: #ffffff !important; }
+    .ds-hero .future-copy { margin-top: 20px !important; font-size: 15px !important; color: var(--ds-muted) !important; }
+    .nv-text-link, #guest-content button.nv-text-link {
+      display: inline !important;
+      height: auto !important;
+      margin-left: 6px;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: none !important;
+      color: var(--nv-green-text) !important;
+      font-size: inherit !important;
+      font-weight: 700 !important;
+      box-shadow: none !important;
+      cursor: pointer;
+    }
+    .nv-text-link:hover { text-decoration: underline; }
+    .nv-quick {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px 20px;
+      max-width: 640px;
+      margin: 28px auto 0;
+    }
+    .nv-quick button, #member-content .nv-quick button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      min-width: 64px;
+      white-space: nowrap;
+      padding: 0 !important;
+      border: 0 !important;
+      background: none !important;
+      color: var(--ds-slate) !important;
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      cursor: pointer;
+    }
+    .nv-quick-icon {
+      width: 52px;
+      height: 52px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 16px;
+      border: 1px solid var(--ds-hairline);
+      background: var(--ds-surface);
+      transition: border-color 120ms var(--ds-ease-standard);
+    }
+    .nv-quick-icon svg { width: 24px; height: 24px; color: var(--nv-green); }
+    .nv-quick button:hover .nv-quick-icon { border-color: var(--nv-green); }
+    .nv-quick button:hover { color: var(--ds-ink) !important; }
+
+    /* ── 칩 · 버튼 ── */
+    .ds-chip svg { color: var(--nv-green); }
+    .ds-btn-primary, #btn-hero-start.ds-btn-primary,
+    #member-content [class*="bg-[#7c6cf0]"], #member-content .bg-clay-purple, #member-content .bg-indigo-600 {
+      background: var(--nv-green) !important;
+      border-color: var(--nv-green) !important;
+      font-weight: 700 !important;
+    }
+
+    /* ── 섹션 제목 · 타일 · 카드: 굵은 제목, 12px 라운드 ── */
+    #guest-content .ds-section-head h2, #member-content .ds-section-head h2 {
+      font-size: clamp(20px, 2.2vw, 24px) !important;
+      font-weight: 700 !important;
+      letter-spacing: -0.02em;
+    }
+    .ds-tile, .future-principle.ds-tile, #member-content .ds-tile,
+    .ds-card, #canva-recent-grid .canva-card,
+    #member-content .clay-card, #member-content [class*="shadow-clay"],
+    #links-table-wrapper, #list-empty-state, #dashboard-summary-panel > div {
+      border-radius: 12px !important;
+    }
+    .ds-tile h2, .ds-tile h3, #guest-content .future-principle.ds-tile h2, #member-content .ds-tile h3 {
+      font-size: 18px !important;
+      font-weight: 700 !important;
+    }
+    #guest-content .ds-card h3 { font-size: 17px !important; font-weight: 700 !important; }
+    .ds-tile-label { font-size: 13px !important; color: var(--ds-muted) !important; }
+    .ds-tile-stat .ds-grad-text { font-weight: 800; }
+    .ds-tile-link, #member-content .ds-tile-link { color: var(--nv-green-text) !important; font-weight: 700 !important; }
+    .ds-tile .future-principle-icon svg, .ds-tile .future-principle-icon { color: var(--nv-green) !important; }
+    .ds-tool-list svg { color: var(--nv-green); }
+    .ds-tool-list button:hover { color: var(--nv-green-text) !important; }
+    .ds-card-type { background: var(--nv-green-tint); color: var(--nv-green-text); font-weight: 700; }
+    button.ds-tile:hover, .ds-tile-outline:hover, .ds-card:hover, #canva-recent-grid .canva-card:hover { border-color: var(--nv-green) !important; }
+    .ds-mini-chart i.is-today { background: var(--nv-green); }
+    .ds-tile .url-transform-showcase .bg-emerald-50\/80 { border-color: var(--nv-green) !important; }
+
+    /* ── 회원 영역 정리: 흩어진 강조색 → 그린, 작은 글자 하한, 과한 굵기 ── */
+    #member-content [class*="text-[#7c6cf0]"], #member-content .text-indigo-600, #member-content .text-indigo-700,
+    #member-content .text-purple-500, #member-content .text-purple-600, #member-content .text-purple-700,
+    #member-content .text-violet-500, #member-content .text-violet-600, #member-content .text-clay-purple {
+      color: var(--nv-green-text) !important;
+    }
+    #member-content .bg-purple-50, #member-content .bg-violet-50, #member-content .bg-indigo-50,
+    #member-content .bg-purple-100, #member-content .bg-violet-100, #member-content .bg-indigo-100 {
+      background-color: var(--nv-green-tint) !important;
+      border-color: transparent !important;
+    }
+    #member-content .text-\[9px\], #member-content .text-\[10px\], #member-content .text-\[11px\] { font-size: 12px !important; }
+    #member-content .font-black, #member-content .font-extrabold { font-weight: 700 !important; }
+    #member-content *:not(:focus-visible), #left-sidebar *, body > .flex.min-h-screen > .flex-grow > header * { box-shadow: none !important; }
+    #member-content .nv-search:focus-within { box-shadow: 0 0 0 4px var(--nv-green-tint) !important; }
+    #settings-section .bg-amber-500, #settings-section .bg-orange-500 { background-color: var(--nv-green) !important; color: #ffffff !important; }
+    #canva-recent-grid .canva-card .text-indigo-600 { color: var(--nv-green-text) !important; }
+    .active-mobile-nav { color: var(--nv-green-text) !important; }
+
+    @media (max-width: 639px) {
+      .nv-search { height: 54px; padding-left: 16px; }
+      .nv-search input { font-size: 16px !important; }
+      .nv-search .nv-search-btn, #guest-content .nv-search button.nv-search-btn { height: 42px !important; padding: 0 16px !important; font-size: 15px !important; }
+      .nv-quick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 8px; }
+      .nv-quick button, #member-content .nv-quick button { min-width: 0; width: 100%; }
+    }
+    @media (max-width: 1023px) {
+      .nv-hero-brand { display: none; }
+    }
     @media (prefers-reduced-motion: reduce) {
       .ds-tile, .ds-card, .ds-grad-text, #left-sidebar { animation: none !important; }
     }
@@ -4233,25 +4507,21 @@
       <!-- Hero Section -->
       <section class="future-hero ds-hero" aria-labelledby="future-hero-title">
         <div class="future-hero-inner">
-          <span class="ds-eyebrow fs-reveal fs-reveal-1">교실에서 바로 켜서 쓰는 수업 도구</span>
+          <p class="nv-hero-brand fs-reveal fs-reveal-1">kfcman<span>.link</span></p>
+          <h1 id="future-hero-title" class="fs-reveal fs-reveal-2">학교의 모든 연결을, <em>더 가볍고 빠르게.</em></h1>
 
-          <h1 id="future-hero-title" class="fs-reveal fs-reveal-2">
-            학교의 모든 연결을,<br><span class="ds-grad-text">더 가볍고 빠르게.</span>
-          </h1>
+          <form class="nv-search fs-reveal fs-reveal-3" onsubmit="event.preventDefault(); openAuthModal('register');">
+            <i data-lucide="link-2" class="nv-search-icon"></i>
+            <input type="url" placeholder="긴 주소를 붙여 넣고 시작해 보세요" aria-label="단축할 주소">
+            <button type="submit" id="btn-hero-start" class="nv-search-btn">
+              <span>시작하기</span>
+            </button>
+          </form>
 
           <p class="future-copy fs-reveal fs-reveal-3">
-            수업 자료, 과제, 설문, 영상 링크까지. 길고 복잡한 주소를 기억하기 쉬운 단축 주소와 QR코드로 바꾸고, 학생 반응은 실시간으로 확인하세요.
+            수업 자료, 과제, 설문 링크를 기억하기 쉬운 단축 주소와 QR코드로 바꾸고, 학생 반응은 실시간으로 확인하세요.
+            <button onclick="openAuthModal('login')" type="button" id="btn-hero-login" class="nv-text-link">로그인</button>
           </p>
-
-          <div class="future-actions fs-reveal fs-reveal-3">
-            <button onclick="openAuthModal('register')" type="button" id="btn-hero-start" class="ds-btn ds-btn-primary">
-              <i data-lucide="link-2" class="w-5 h-5"></i>
-              <span>단축 URL 생성하기</span>
-            </button>
-            <button onclick="openAuthModal('login')" type="button" id="btn-hero-login" class="ds-btn ds-btn-outline">
-              <span>로그인</span>
-            </button>
-          </div>
 
           <div class="future-signals fs-reveal fs-reveal-4" aria-label="주요 특징">
             <span class="ds-chip"><i data-lucide="shield-check"></i> 안심 보안 검증</span>
@@ -4395,18 +4665,21 @@
         <!-- 회원 홈 히어로 (홈 탭에서만 표시) -->
         <div class="ds-hero ds-member-hero" id="ds-member-hero">
           <div class="future-hero-inner">
-            <span class="ds-eyebrow">오늘도 수업 준비, 가볍게</span>
-            <h1>학교의 모든 연결을,<br><span class="ds-grad-text">더 가볍고 빠르게.</span></h1>
-            <p class="future-copy">수업 자료, 구글 폼 설문, 캔바 링크를 기억하기 쉬운 단축 주소와 QR코드로 바꾸고 학생 반응을 바로 확인하세요.</p>
-            <div class="future-actions">
-              <button onclick="openShortenerModal()" type="button" class="ds-btn ds-btn-primary">
-                <i data-lucide="link-2" class="w-5 h-5"></i>
-                <span>새 단축 링크 만들기</span>
-              </button>
-              <button onclick="switchMainTab('classroom')" type="button" class="ds-btn ds-btn-outline">
-                <span>으쓱 학급 보드</span>
-              </button>
-            </div>
+            <p class="nv-hero-brand">kfcman<span>.link</span></p>
+            <h1>학교의 모든 연결을, <em>더 가볍고 빠르게.</em></h1>
+            <form class="nv-search" onsubmit="dsQuickShorten(event)">
+              <i data-lucide="link-2" class="nv-search-icon"></i>
+              <input type="url" id="ds-quick-url" placeholder="긴 주소를 붙여 넣으세요" aria-label="단축할 주소">
+              <button type="submit" class="nv-search-btn"><span>단축하기</span></button>
+            </form>
+            <nav class="nv-quick" aria-label="수업 도구 바로가기">
+              <button type="button" onclick="switchMainTab('classroom')"><span class="nv-quick-icon"><i data-lucide="award"></i></span><span>교실</span></button>
+              <button type="button" onclick="switchMainTab('projects')"><span class="nv-quick-icon"><i data-lucide="folder"></i></span><span>프로젝트</span></button>
+              <button type="button" onclick="switchMainTab('mindcheck')"><span class="nv-quick-icon"><i data-lucide="heart"></i></span><span>마음챙김</span></button>
+              <button type="button" onclick="switchMainTab('scibot')"><span class="nv-quick-icon"><i data-lucide="flask-conical"></i></span><span>과학실험실</span></button>
+              <button type="button" onclick="switchMainTab('scibit')"><span class="nv-quick-icon"><i data-lucide="activity"></i></span><span>MBL 가이드</span></button>
+              <button type="button" onclick="switchMainTab('settings')"><span class="nv-quick-icon"><i data-lucide="settings"></i></span><span>설정</span></button>
+            </nav>
           </div>
           <i class="ds-hero-bar" aria-hidden="true"></i>
         </div>
@@ -7590,6 +7863,18 @@
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
       mq.addEventListener('change', function () { if (!mq.matches) sidebar.classList.add('hidden'); sync(); });
     })();
+
+    // 히어로 검색창: 붙여 넣은 주소로 단축 창 열기
+    window.dsQuickShorten = function (e) {
+      e.preventDefault();
+      var value = document.getElementById('ds-quick-url').value.trim();
+      openShortenerModal();
+      var urlInput = document.getElementById('url-input');
+      if (urlInput) {
+        if (value) urlInput.value = value;
+        urlInput.focus();
+      }
+    };
 
     // 헤더 검색·새로 만들기, 회원 홈 히어로/통계 연동 (app.js의 DOMContentLoaded 초기화 이후 실행)
     document.addEventListener('DOMContentLoaded', function () {
