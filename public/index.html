@@ -4194,6 +4194,47 @@
     #canva-recent-grid .canva-card .text-indigo-600 { color: var(--nv-green-text) !important; }
     .active-mobile-nav { color: var(--nv-green-text) !important; }
 
+    /* ── 태블릿·모바일 교실 탭: 버튼 글자 세로 쪼개짐 방지, 표는 가로 스크롤 ── */
+    @media (max-width: 1023px) {
+      #eusseuk-section button { white-space: nowrap; }
+      #eusseuk-section .flex.items-center.gap-1 { flex-wrap: wrap; row-gap: 4px; }
+      #gradebook-section table { min-width: 640px; }
+      #gradebook-section th, #gradebook-section td { white-space: nowrap; }
+    }
+
+    /* ── 모바일 하단 탭 바 ── */
+    body > div.lg\:hidden.fixed.bottom-0 {
+      padding: 6px 4px calc(6px + env(safe-area-inset-bottom)) !important;
+      gap: 0 !important;
+    }
+    #mobile-nav-guest-group, #mobile-nav-member-group { flex: 1 1 auto; justify-content: space-around !important; gap: 0; }
+    #mobile-nav-guest-group > a, #mobile-nav-member-group > a {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 48px;
+      gap: 3px;
+      justify-content: center;
+      color: var(--ds-muted) !important;
+    }
+    #mobile-nav-guest-group > a.hidden, #mobile-nav-member-group > a.hidden { display: none !important; }
+    #mobile-nav-guest-group > a > svg, #mobile-nav-member-group > a > svg {
+      width: 24px !important;
+      height: 24px !important;
+      filter: grayscale(1) opacity(0.65) !important;
+      transform: none !important;
+    }
+    #mobile-nav-guest-group > a::after, #mobile-nav-member-group > a::after {
+      content: attr(data-label);
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    #mobile-nav-member-group > a.nv-tab-active, #mobile-nav-guest-group > a.active { color: var(--nv-green-text) !important; }
+    #mobile-nav-member-group > a.nv-tab-active::after, #mobile-nav-guest-group > a.active::after { font-weight: 700; }
+    #mobile-nav-member-group > a.nv-tab-active > svg, #mobile-nav-guest-group > a.active > svg { filter: none !important; }
+    #btn-logout-mobile { flex: none; width: 40px; justify-content: center; }
+
     @media (max-width: 639px) {
       .nv-search { height: 54px; padding-left: 16px; }
       .nv-search input { font-size: 16px !important; }
@@ -7906,9 +7947,46 @@
             !document.getElementById('canva-highlights').classList.contains('hidden');
           if (hero) hero.classList.toggle('hidden', !onHome);
           homeOnly.forEach(function (el) { el.classList.toggle('hidden', !onHome); });
+          markBottomNav(tabId);
           return result;
         };
       }
+
+      // 모바일 하단 탭: 이름 붙이기, 탭 전환 연결, 현재 탭 표시
+      var bottomTabs = [
+        ['mobile-nav-shortener-member', 'shortener', '홈'],
+        ['mobile-nav-classroom', 'classroom', '교실'],
+        ['mobile-nav-mindcheck', 'mindcheck', '마음챙김'],
+        ['mobile-nav-scibot', 'scibot', '과학실험실'],
+        ['mobile-nav-scibit', 'scibit', 'MBL'],
+        ['mobile-nav-settings', 'settings', '설정'],
+        ['mobile-nav-wall', null, '게시판'],
+        ['mobile-nav-polls-member', null, '설문'],
+        ['mobile-nav-shortener', null, '홈'],
+        ['mobile-nav-dashboard', null, '통계'],
+        ['mobile-nav-polls', null, '설문']
+      ];
+      function markBottomNav(tabId) {
+        bottomTabs.forEach(function (item) {
+          var el = document.getElementById(item[0]);
+          if (el && item[1]) el.classList.toggle('nv-tab-active', item[1] === (tabId === 'projects' ? 'shortener' : tabId));
+        });
+      }
+      bottomTabs.forEach(function (item) {
+        var el = document.getElementById(item[0]);
+        if (!el) return;
+        el.setAttribute('data-label', item[2]);
+        el.setAttribute('aria-label', item[2]);
+        // 설정은 app.js가 이미 탭 전환을 연결해 둠
+        if (item[1] && item[0] !== 'mobile-nav-settings') {
+          el.addEventListener('click', function (e) {
+            e.preventDefault();
+            window.switchMainTab(item[1]);
+            window.scrollTo(0, 0);
+          });
+        }
+      });
+      markBottomNav('shortener');
 
       // 대시보드 통계 값을 벤토 타일에 그대로 반영
       [['stat-total-clicks', 'ds-stat-clicks'], ['stat-total-links', 'ds-stat-links'], ['stat-avg-clicks', 'ds-stat-avg']].forEach(function (pair) {
