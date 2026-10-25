@@ -3150,6 +3150,602 @@
       display: none !important;
     }
 
+
+    /* =====================================================================
+       KFCMAN.LINK DESIGN SYSTEM (DESIGN.md) — 최종 레이어
+       스티키 헤더 · 히어로 · 사이드바 · 카드 · 벤토 그리드 반응형 레이아웃
+       흰 캔버스 + #f5f8fb 톤 + #dee0e4 헤어라인, 그림자 없음, 스카이블루 앵커,
+       3단 그라데이션(#3eaeff → #ff5a8c → #dc6eff)은 강조 텍스트/얇은 바 전용
+       ===================================================================== */
+    :root {
+      --ds-sky: #3eaeff;
+      --ds-pink: #ff5a8c;
+      --ds-purple: #dc6eff;
+      --ds-cyan: #00c8fa;
+      --ds-violet: #4970f5;
+      --ds-ink: #232f4d;
+      --ds-body: #000000;
+      --ds-slate: #4f5971;
+      --ds-muted: #9197a6;
+      --ds-faint: #bdc1ca;
+      --ds-canvas: #ffffff;
+      --ds-card: #ffffff;
+      --ds-surface: #f5f8fb;
+      --ds-hairline: #dee0e4;
+      --ds-header-bg: rgba(255, 255, 255, 0.92);
+      --ds-grad-bar: linear-gradient(to right, #3eaeff, #ff5a8c, #dc6eff);
+      --ds-grad-text: linear-gradient(270deg, #dc6eff 0%, #ff5a8c 45%, #3eaeff 100%);
+      --ds-header-h: 56px;
+      --ds-ease-enter: cubic-bezier(0.2, 0.6, 0.25, 1);
+      --ds-ease-standard: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+      /* 이전 레이어 토큰을 새 팔레트로 재조정 */
+      --dash-bg: var(--ds-canvas);
+      --dash-card: var(--ds-card);
+      --dash-card-solid: var(--ds-card);
+      --dash-accent: var(--ds-sky);
+      --dash-accent-2: var(--ds-pink);
+      --dash-accent-3: var(--ds-purple);
+      --dash-text: var(--ds-ink);
+      --dash-text-soft: var(--ds-sky);
+      --dash-text-muted: var(--ds-slate);
+      --dash-glow: none;
+      --dash-glow-hover: none;
+      --dash-glass-blur: none;
+      --kk-yellow: var(--ds-sky);
+      --kk-canvas: var(--ds-canvas);
+      --kk-card: var(--ds-card);
+      --kk-surface: var(--ds-surface);
+      --kk-fg: var(--ds-body);
+      --kk-ink: var(--ds-ink);
+      --kk-muted: var(--ds-muted);
+      --kk-border: var(--ds-hairline);
+    }
+    .dark {
+      --ds-ink: #eef1f7;
+      --ds-body: #e3e7ef;
+      --ds-slate: #aab2c5;
+      --ds-muted: #7f889d;
+      --ds-faint: #59627a;
+      --ds-canvas: #0f1422;
+      --ds-card: #141a29;
+      --ds-surface: #182033;
+      --ds-hairline: #283147;
+      --ds-header-bg: rgba(15, 20, 34, 0.9);
+      --dash-bg: var(--ds-canvas);
+      --dash-card: var(--ds-card);
+      --dash-card-solid: var(--ds-card);
+      --dash-text: var(--ds-ink);
+      --dash-text-muted: var(--ds-slate);
+      --kk-canvas: var(--ds-canvas);
+      --kk-card: var(--ds-card);
+      --kk-surface: var(--ds-surface);
+      --kk-fg: var(--ds-body);
+      --kk-ink: var(--ds-ink);
+      --kk-border: var(--ds-hairline);
+    }
+
+    /* ── 캔버스 & 타이포 ── */
+    body, .dark body,
+    body > .flex.min-h-screen,
+    body > .flex.min-h-screen > .flex-grow,
+    #left-sidebar {
+      background: var(--ds-canvas) !important;
+    }
+    body {
+      color: var(--ds-body) !important;
+      font-family: 'Pretendard', 'Pretendard Fallback', -apple-system, system-ui, sans-serif !important;
+    }
+    #main-content { background: transparent !important; }
+    /* overflow-x:hidden은 스크롤 컨테이너를 만들어 sticky 헤더를 무력화 → clip */
+    body > .flex.min-h-screen > .flex-grow { overflow-x: clip !important; padding-top: 0 !important; }
+
+    /* ── 1. 스티키 헤더 ── */
+    body > .flex.min-h-screen > .flex-grow > header {
+      height: var(--ds-header-h) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 60 !important;
+      background: var(--ds-header-bg) !important;
+      backdrop-filter: saturate(180%) blur(12px) !important;
+      -webkit-backdrop-filter: saturate(180%) blur(12px) !important;
+      border-bottom: 1px solid var(--ds-hairline) !important;
+      box-shadow: none !important;
+      padding-left: 24px !important;
+      padding-right: 24px !important;
+    }
+    #top-breadcrumb-bar > div { height: var(--ds-header-h) !important; font-size: 15px !important; font-weight: 600 !important; color: var(--ds-ink) !important; }
+    #top-breadcrumb-bar [data-lucide], #top-breadcrumb-bar svg { color: var(--ds-sky) !important; width: 18px !important; height: 18px !important; }
+    #breadcrumb-badge { color: var(--ds-muted) !important; font-size: 13px !important; }
+    #btn-mobile-sidebar-toggle {
+      width: 40px; height: 40px;
+      display: inline-flex !important; align-items: center; justify-content: center;
+      border: 1px solid var(--ds-hairline) !important;
+      border-radius: 8px !important;
+      color: var(--ds-slate) !important;
+      background: var(--ds-card) !important;
+    }
+    #btn-mobile-sidebar-toggle svg { width: 20px !important; height: 20px !important; }
+
+    /* ── 2. 좌측 사이드바 ── */
+    #left-sidebar {
+      border-right: 1px solid var(--ds-hairline) !important;
+      box-shadow: none !important;
+    }
+    @media (min-width: 1024px) {
+      #left-sidebar {
+        position: sticky !important;
+        top: 0 !important;
+        height: 100vh !important;
+        align-self: flex-start;
+      }
+    }
+    #left-sidebar svg { filter: none !important; }
+    #left-sidebar nav > button {
+      height: 44px !important;
+      border-radius: 8px !important;
+      color: var(--ds-slate) !important;
+      background: transparent !important;
+      transition: background 120ms var(--ds-ease-standard), color 120ms var(--ds-ease-standard) !important;
+    }
+    #left-sidebar nav > button span { font-size: 15px !important; font-weight: 500 !important; color: inherit !important; }
+    #left-sidebar nav > button:hover { background: var(--ds-surface) !important; color: var(--ds-ink) !important; }
+    #left-sidebar nav > button.active { background: var(--ds-surface) !important; color: var(--ds-sky) !important; }
+    #left-sidebar nav > button.active span { font-weight: 600 !important; }
+    #left-sidebar nav > button svg { transform: none !important; }
+    #btn-sidebar-create {
+      height: 44px !important;
+      border-radius: 8px !important;
+      background: var(--ds-sky) !important;
+      color: #ffffff !important;
+      font-size: 15px !important;
+      box-shadow: none !important;
+    }
+    #btn-sidebar-create span { font-size: 15px !important; font-weight: 600 !important; color: #ffffff !important; }
+    #btn-sidebar-create:hover { opacity: 0.88; }
+    #sidebar-logo > div:first-child { background: var(--ds-surface) !important; border-color: var(--ds-hairline) !important; }
+    #sidebar-logo .sidebar-text span:first-child { color: var(--ds-ink) !important; font-size: 15px !important; }
+    #sidebar-logo .sidebar-text span:last-child {
+      background: var(--ds-grad-text) !important;
+      -webkit-background-clip: text !important;
+      background-clip: text !important;
+      color: transparent !important;
+      -webkit-text-fill-color: transparent !important;
+      font-size: 11px !important;
+    }
+    #btn-sidebar-toggle { border: 1px solid var(--ds-hairline) !important; background: var(--ds-card) !important; box-shadow: none !important; }
+    #create-popover { border: 1px solid var(--ds-hairline) !important; border-radius: 16px !important; box-shadow: none !important; background: var(--ds-card) !important; }
+
+    /* 태블릿·모바일: 사이드바를 오프캔버스 서랍으로 */
+    .ds-scrim { display: none; }
+    @media (max-width: 1023px) {
+      #left-sidebar:not(.hidden) {
+        display: flex !important;
+        position: fixed !important;
+        top: var(--ds-header-h) !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        height: auto !important;
+        width: min(280px, 84vw) !important;
+        z-index: 70 !important;
+        overflow-y: auto;
+        animation: ds-drawer-in 220ms var(--ds-ease-enter) both;
+      }
+      .ds-scrim.is-open {
+        display: block;
+        position: fixed;
+        inset: var(--ds-header-h) 0 0 0;
+        z-index: 65;
+        background: rgba(35, 47, 77, 0.32);
+      }
+      #btn-sidebar-toggle { display: none !important; }
+    }
+    @keyframes ds-drawer-in { from { transform: translateX(-100%); } to { transform: none; } }
+
+    /* ── 3. 히어로 ── */
+    #main-content { padding: 0 !important; }
+    #guest-content, #member-content { padding: 0 40px 64px !important; }
+    .future-hero.ds-hero, .dark .future-hero.ds-hero {
+      position: relative !important;
+      background: var(--ds-canvas) !important;
+      border: 0 !important;
+      border-bottom: 1px solid var(--ds-hairline) !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      margin: 0 -40px 48px !important;
+      padding: 80px 24px 72px !important;
+      min-height: 0 !important;
+      text-align: center !important;
+    }
+    .ds-hero::before, .ds-hero::after { display: none !important; }
+    .ds-hero .future-hero-inner { max-width: 880px !important; margin: 0 auto !important; padding: 0 !important; background: none !important; }
+    .ds-eyebrow {
+      display: inline-block;
+      padding: 6px 14px;
+      border: 1px solid var(--ds-hairline);
+      border-radius: 9999px;
+      color: var(--ds-slate);
+      font-size: 14px;
+      font-weight: 500;
+    }
+    #guest-content .ds-hero h1 {
+      margin: 20px auto 16px !important;
+      font-size: clamp(34px, 5.4vw, 60px) !important;
+      font-weight: 600 !important;
+      line-height: 1.28 !important;
+      letter-spacing: -0.02em !important;
+      color: var(--ds-ink) !important;
+      -webkit-text-fill-color: var(--ds-ink) !important;
+      word-break: keep-all !important;
+      background: none !important;
+    }
+    .ds-grad-text,
+    #guest-content .ds-hero h1 .ds-grad-text,
+    #member-content .ds-grad-text {
+      background: var(--ds-grad-text) !important;
+      background-size: 200% 100% !important;
+      -webkit-background-clip: text !important;
+      background-clip: text !important;
+      color: transparent !important;
+      -webkit-text-fill-color: transparent !important;
+      animation: ds-sweep 320ms var(--ds-ease-enter) both;
+    }
+    .ds-grad-text span { color: inherit !important; -webkit-text-fill-color: inherit !important; }
+    @keyframes ds-sweep { from { background-position: 100% 0; opacity: 0; } to { background-position: 0 0; opacity: 1; } }
+    .ds-hero .future-copy {
+      max-width: 600px !important;
+      margin: 0 auto !important;
+      color: var(--ds-slate) !important;
+      font-size: 18px !important;
+      line-height: 1.6 !important;
+      word-break: keep-all !important;
+    }
+    .ds-hero .future-actions {
+      display: flex !important;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 32px !important;
+    }
+    .ds-btn, #guest-content .future-actions button.ds-btn {
+      height: 54px !important;
+      padding: 12px 22px !important;
+      border-radius: 8px !important;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 18px !important;
+      font-weight: 500 !important;
+      line-height: 1.2 !important;
+      box-shadow: none !important;
+      cursor: pointer;
+      transition: opacity 120ms var(--ds-ease-standard), border-color 120ms var(--ds-ease-standard) !important;
+    }
+    .ds-btn span { color: inherit !important; font-size: inherit !important; font-weight: inherit !important; }
+    .ds-btn-primary, #btn-hero-start.ds-btn-primary { background: var(--ds-sky) !important; color: #ffffff !important; border: 1px solid var(--ds-sky) !important; }
+    .ds-btn-primary:hover { opacity: 0.88; }
+    .ds-btn-outline, #btn-hero-login.ds-btn-outline { background: transparent !important; color: var(--ds-ink) !important; border: 1px solid var(--ds-hairline) !important; }
+    .ds-btn-outline:hover { border-color: var(--ds-slate) !important; }
+    .ds-hero .future-signals { display: flex !important; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 28px !important; }
+    .ds-chip, .future-signals .ds-chip {
+      display: inline-flex !important;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px !important;
+      border-radius: 9999px !important;
+      background: var(--ds-card) !important;
+      border: 1px solid var(--ds-hairline) !important;
+      color: var(--ds-slate) !important;
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      box-shadow: none !important;
+    }
+    .ds-chip::before { display: none !important; }
+    .ds-chip svg { width: 14px; height: 14px; color: var(--ds-sky); }
+    .ds-hero-bar {
+      position: absolute;
+      left: 50%;
+      bottom: -2px;
+      width: 120px;
+      height: 3px;
+      transform: translateX(-50%);
+      border-radius: 9999px;
+      background: var(--ds-grad-bar);
+    }
+
+    /* ── 섹션 헤드 ── */
+    .ds-section-head { margin: 0 0 24px; text-align: left; }
+    .ds-bento + .ds-section-head { margin-top: 64px; }
+    #guest-content .ds-section-head h2 {
+      font-size: clamp(26px, 3vw, 32px) !important;
+      font-weight: 600 !important;
+      line-height: 1.4 !important;
+      letter-spacing: -0.01em;
+      color: var(--ds-ink) !important;
+    }
+
+    /* ── 4. 벤토 그리드 ── */
+    .ds-bento, .future-principles.ds-bento {
+      display: grid !important;
+      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+      grid-auto-rows: minmax(168px, auto);
+      gap: 16px !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      background: transparent !important;
+      max-width: none !important;
+    }
+    .ds-tile, .future-principle.ds-tile, #member-content .ds-tile {
+      position: relative !important;
+      display: flex !important;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+      min-height: 0 !important;
+      padding: 24px !important;
+      border-radius: 16px !important;
+      background: var(--ds-surface) !important;
+      border: 1px solid transparent !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      color: var(--ds-ink) !important;
+      text-align: left !important;
+      overflow: hidden;
+      animation: ds-rise 220ms var(--ds-ease-enter) both;
+      transition: border-color 120ms var(--ds-ease-standard) !important;
+    }
+    .ds-tile::before, .ds-tile::after { display: none !important; }
+    button.ds-tile { cursor: pointer; font: inherit; }
+    button.ds-tile:hover, .ds-tile-outline:hover { border-color: var(--ds-sky) !important; }
+    .ds-tile-outline, .future-principle.ds-tile-outline, #member-content .ds-tile-outline { background: var(--ds-card) !important; border-color: var(--ds-hairline) !important; }
+    .ds-tile-lg { grid-column: span 2; grid-row: span 2; }
+    .ds-tile-tall { grid-row: span 2; }
+    .ds-tile-wide { grid-column: 1 / -1; }
+    .ds-tile-label { color: var(--ds-slate) !important; font-size: 14px !important; font-weight: 500 !important; }
+    .ds-tile h2, .ds-tile h3,
+    #guest-content .future-principle.ds-tile h2,
+    #member-content .ds-tile h3 {
+      margin: 8px 0 0 !important;
+      font-size: 20px !important;
+      font-weight: 600 !important;
+      line-height: 1.4 !important;
+      color: var(--ds-ink) !important;
+      word-break: keep-all;
+    }
+    .ds-tile p, .future-principle.ds-tile p, #member-content .ds-tile p {
+      margin: 8px 0 0 !important;
+      color: var(--ds-slate) !important;
+      font-size: 15px !important;
+      line-height: 1.55 !important;
+      word-break: keep-all;
+    }
+    .ds-tile .future-principle-icon, .future-principle.ds-tile .future-principle-icon,
+    .future-principle.ds-tile:nth-child(n) .future-principle-icon {
+      position: static !important;
+      width: 44px !important;
+      height: 44px !important;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px !important;
+      background: var(--ds-card) !important;
+      border: 1px solid var(--ds-hairline) !important;
+      color: var(--ds-sky) !important;
+      margin-bottom: 8px;
+    }
+    .ds-tile .future-principle-icon svg { width: 22px !important; height: 22px !important; color: var(--ds-sky) !important; }
+    .ds-tile-stat {
+      margin-top: auto !important;
+      padding-top: 24px;
+      font-size: clamp(26px, 3vw, 36px) !important;
+      font-weight: 700 !important;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      word-break: break-all;
+    }
+    .ds-tile-bar {
+      position: absolute;
+      left: 24px;
+      right: 24px;
+      bottom: 0;
+      height: 3px;
+      border-radius: 9999px 9999px 0 0;
+      background: var(--ds-grad-bar);
+    }
+    .ds-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 16px; }
+    .ds-mini-chart {
+      margin-top: auto;
+      padding-top: 24px;
+      width: 100%;
+      height: 150px;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .ds-mini-chart i { flex: 1; border-radius: 8px 8px 4px 4px; background: var(--ds-hairline); }
+    .ds-mini-chart i.is-today { background: var(--ds-sky); }
+
+    /* 벤토 안의 비포/애프터 쇼케이스 — 플랫 */
+    .ds-tile .url-transform-showcase {
+      width: 100%;
+      margin-top: 24px !important;
+      padding: 16px !important;
+      border-radius: 12px !important;
+      background: var(--ds-surface) !important;
+      border: 1px solid var(--ds-hairline) !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important;
+    }
+    .ds-tile .url-transform-showcase [class*="shadow"] { box-shadow: none !important; }
+    .ds-tile .url-transform-showcase .bg-emerald-50\/80 { background: var(--ds-card) !important; border-color: var(--ds-sky) !important; }
+    .ds-tile .url-transform-showcase .text-clay-purple { color: var(--ds-sky) !important; }
+    .ds-tile .url-transform-showcase .text-emerald-600 { color: var(--ds-pink) !important; text-decoration-color: var(--ds-pink) !important; }
+
+    /* ── 5. 카드 레이아웃 ── */
+    .ds-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .ds-card {
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      min-height: 220px;
+      border-radius: 16px;
+      background: var(--ds-card);
+      border: 1px solid var(--ds-hairline);
+      text-align: left;
+      animation: ds-rise 220ms var(--ds-ease-enter) both;
+      transition: border-color 120ms var(--ds-ease-standard);
+    }
+    .ds-card:hover { border-color: var(--ds-sky); }
+    .ds-card-type {
+      align-self: flex-start;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background: var(--ds-surface);
+      color: var(--ds-slate);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    #guest-content .ds-card h3 { margin: 16px 0 0 !important; font-size: 18px !important; font-weight: 500 !important; line-height: 1.4 !important; color: var(--ds-ink) !important; }
+    .ds-card-url { margin-top: 4px; color: var(--ds-violet); font-size: 14px; font-weight: 500; word-break: break-all; }
+    .dark .ds-card-url { color: #8ea6ff; }
+    .ds-card p { margin: 8px 0 0; color: var(--ds-slate); font-size: 15px; line-height: 1.55; word-break: keep-all; }
+
+    /* 회원 영역: 최근 항목 카드 (app.js 렌더링) */
+    #canva-recent-grid .canva-card {
+      border-radius: 16px !important;
+      background: var(--ds-card) !important;
+      border: 1px solid var(--ds-hairline) !important;
+      box-shadow: none !important;
+      padding: 16px !important;
+      transition: border-color 120ms var(--ds-ease-standard) !important;
+    }
+    #canva-recent-grid .canva-card:hover { border-color: var(--ds-sky) !important; transform: none !important; }
+    #canva-recent-grid .canva-card .bg-indigo-50 { background: var(--ds-surface) !important; color: var(--ds-slate) !important; border-color: transparent !important; }
+    #canva-recent-grid .canva-card [class*="shadow"] { box-shadow: none !important; }
+
+    /* 회원 영역 일반 카드/패널: 16px 라운드 + 헤어라인 + 그림자 없음 */
+    #member-content .clay-card,
+    #member-content [class*="shadow-clay"],
+    #links-table-wrapper,
+    #list-empty-state {
+      border-radius: 16px !important;
+      border: 1px solid var(--ds-hairline) !important;
+      background: var(--ds-card) !important;
+      box-shadow: none !important;
+    }
+    #dashboard-summary-panel > div { background: var(--ds-surface) !important; border: 1px solid transparent !important; border-radius: 16px !important; box-shadow: none !important; }
+    #dashboard-summary-panel > div > div:first-child { background: var(--ds-card) !important; border: 1px solid var(--ds-hairline) !important; color: var(--ds-sky) !important; box-shadow: none !important; border-radius: 12px !important; }
+    #stat-total-links, #stat-total-clicks, #stat-avg-clicks {
+      background: var(--ds-grad-text);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+    }
+    #member-content h2 { color: var(--ds-ink) !important; }
+    #member-content .shortener-section > div:first-child h2 { font-size: clamp(24px, 2.6vw, 30px) !important; font-weight: 600 !important; line-height: 1.4 !important; }
+
+    /* 보라 액센트(#7c6cf0, indigo 계열) → 스카이블루 앵커 */
+    #member-content [class*="bg-[#7c6cf0]"],
+    #member-content .bg-clay-purple,
+    #member-content .bg-indigo-600 {
+      background: var(--ds-sky) !important;
+      color: #ffffff !important;
+      box-shadow: none !important;
+    }
+    #member-content .shortener-section .btn { height: 44px !important; padding: 0 18px !important; border-radius: 8px !important; font-size: 15px !important; font-weight: 500 !important; }
+    #member-content [class*="text-[#7c6cf0]"], #member-content .text-indigo-600 { color: var(--ds-sky) !important; }
+    #member-content .shortener-section .bg-indigo-50 { background: var(--ds-surface) !important; color: var(--ds-slate) !important; }
+    #canva-search-input {
+      height: 44px !important;
+      padding-left: 40px !important;
+      border: 1px solid transparent !important;
+      border-radius: 9999px !important;
+      background: var(--ds-surface) !important;
+      font-size: 15px !important;
+      box-shadow: none !important;
+    }
+    #canva-search-input:focus { border-color: var(--ds-sky) !important; }
+    .shortener-section .relative > svg.lucide-search,
+    .shortener-section .relative > i[data-lucide="search"] { left: 14px !important; }
+
+    #member-content .shortener-section button { white-space: nowrap; }
+    #member-content .shortener-section > div:last-child > div:first-child h3 {
+      font-size: 20px !important;
+      font-weight: 600 !important;
+      color: var(--ds-ink) !important;
+    }
+
+    /* 회원 탭 섹션 공통 */
+    #member-content > section { border-top: 0 !important; padding-top: 32px !important; }
+    #member-content .ds-bento-tools { margin-top: 32px !important; }
+
+    /* 모달·토스트도 플랫으로 */
+    .modal-overlay > div { border-radius: 16px !important; box-shadow: none !important; border: 1px solid var(--ds-hairline) !important; }
+    .toast { box-shadow: none !important; border: 1px solid var(--ds-hairline) !important; border-radius: 12px !important; }
+
+    /* 푸터 & 모바일 하단 내비 */
+    body > .flex.min-h-screen footer {
+      background: var(--ds-surface) !important;
+      border-top: 1px solid var(--ds-hairline) !important;
+      color: var(--ds-muted) !important;
+    }
+    body > div.lg\:hidden.fixed.bottom-0 {
+      background: var(--ds-header-bg) !important;
+      border-top: 1px solid var(--ds-hairline) !important;
+      box-shadow: none !important;
+    }
+    .active-mobile-nav { color: var(--ds-sky) !important; }
+
+    @keyframes ds-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    .ds-bento > :nth-child(2), .ds-cards > :nth-child(2) { animation-delay: 40ms; }
+    .ds-bento > :nth-child(3), .ds-cards > :nth-child(3) { animation-delay: 80ms; }
+    .ds-bento > :nth-child(4), .ds-cards > :nth-child(4) { animation-delay: 120ms; }
+    .ds-bento > :nth-child(n+5) { animation-delay: 160ms; }
+
+    /* ── 반응형 ── */
+    @media (max-width: 1280px) {
+      .ds-bento, .future-principles.ds-bento { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+      .ds-tile-tall { grid-row: span 1; }
+      .ds-tile-wide { grid-column: span 1; }
+      .ds-bento-tools .ds-tile-lg { grid-row: span 1; }
+      .ds-mini-chart { height: 110px; }
+    }
+    @media (max-width: 1023px) {
+      #guest-content, #member-content { padding: 0 24px 48px !important; }
+      .future-hero.ds-hero { margin: 0 -24px 40px !important; padding: 64px 24px 56px !important; }
+    }
+    @media (max-width: 639px) {
+      :root { --ds-header-h: 52px; }
+      body > .flex.min-h-screen > .flex-grow > header { padding-left: 16px !important; padding-right: 16px !important; }
+      #guest-content, #member-content { padding: 0 16px 40px !important; }
+      .future-hero.ds-hero { margin: 0 -16px 32px !important; padding: 48px 16px 40px !important; }
+      .ds-hero .future-copy { font-size: 16px !important; text-align: center !important; }
+      .ds-hero .future-actions { flex-direction: column; align-items: stretch; width: 100% !important; max-width: none !important; }
+      .ds-hero .future-actions .ds-btn, #guest-content .future-actions button.ds-btn { width: 100% !important; max-width: none !important; }
+      .ds-bento, .future-principles.ds-bento { grid-template-columns: minmax(0, 1fr) !important; }
+      .ds-tile-lg { grid-column: span 1; grid-row: span 1; }
+      .ds-bento-tools { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+      .ds-bento-tools .ds-tile-lg { grid-column: 1 / -1; }
+      .ds-bento-tools .ds-tile { padding: 16px !important; }
+      .ds-bento-tools .ds-tile p { font-size: 13px !important; }
+      .ds-bento + .ds-section-head { margin-top: 40px; }
+      .ds-cards { grid-template-columns: minmax(0, 1fr); }
+      .ds-card { min-height: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ds-tile, .ds-card, .ds-grad-text, #left-sidebar { animation: none !important; }
+    }
   </style>
 </head>
 
@@ -3406,8 +4002,8 @@
           <span class="hidden" id="breadcrumb-parent">교실</span>
           <div class="inline-flex items-center gap-2 px-1 h-[38px] text-xs font-bold text-slate-800 dark:text-zinc-100 transition-colors">
             <i data-lucide="file-text" class="w-3.5 h-3.5 text-[#7c6cf0]"></i>
-            <span class="tracking-tight truncate max-w-[220px] md:max-w-none" id="breadcrumb-current">학생 명렬표</span>
-            <span class="text-[11px] text-slate-400 dark:text-zinc-400 font-mono font-normal ml-0.5" id="breadcrumb-badge">19명</span>
+            <span class="tracking-tight truncate max-w-[220px] md:max-w-none" id="breadcrumb-current">홈</span>
+            <span class="text-[11px] text-slate-400 dark:text-zinc-400 font-mono font-normal ml-0.5" id="breadcrumb-badge"></span>
           </div>
         </div>
 
@@ -3418,6 +4014,7 @@
           </button>
         </div>
       </header>
+      <div class="ds-scrim" id="ds-sidebar-scrim" aria-hidden="true"></div>
 
   <!-- Toast Notification Container -->
   <div id="toast-container" class="toast-container"></div>
@@ -3436,46 +4033,47 @@
     <!-- 1. Guest Landing Welcome Screen (단축 주소 & QR코드 전문 특화) -->
     <div id="guest-content" class="transition-all duration-300">
       <!-- Hero Section -->
-      <section class="future-hero" aria-labelledby="future-hero-title">
+      <section class="future-hero ds-hero" aria-labelledby="future-hero-title">
         <div class="future-hero-inner">
-          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-400/15 text-amber-500 dark:bg-amber-400/20 dark:text-amber-300 border border-amber-400/30 mb-3 fs-reveal fs-reveal-1 shadow-sm">
-            <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-            <span>안심 교육용 단축 링크 플랫폼</span>
-          </div>
+          <span class="ds-eyebrow fs-reveal fs-reveal-1">교실에서 바로 켜서 쓰는 수업 도구</span>
 
-          <h1 id="future-hero-title" class="fs-reveal fs-reveal-2" style="word-break: keep-all; line-height: 1.2;">
-            학교의 모든 연결,<br><span>더 가볍고 안전하게.</span>
+          <h1 id="future-hero-title" class="fs-reveal fs-reveal-2">
+            학교의 모든 연결을,<br><span class="ds-grad-text">더 가볍고 빠르게.</span>
           </h1>
 
-          <p class="future-copy fs-reveal fs-reveal-3" style="word-break: keep-all; max-width: 600px; margin: 0 auto;">
-            수업 자료, 과제, 설문, 영상 링크까지. 길고 복잡한 인터넷 주소를 기억하기 쉬운 나만의 맞춤 단축 주소와 스마트 QR코드로 깔끔하게 연결합니다.
+          <p class="future-copy fs-reveal fs-reveal-3">
+            수업 자료, 과제, 설문, 영상 링크까지. 길고 복잡한 주소를 기억하기 쉬운 단축 주소와 QR코드로 바꾸고, 학생 반응은 실시간으로 확인하세요.
           </p>
 
-          <div class="future-actions fs-reveal fs-reveal-3 flex flex-wrap justify-center gap-3 mt-6">
-            <button onclick="openAuthModal('register')" type="button" id="btn-hero-start" class="px-6 py-3 rounded-xl font-black text-sm text-white bg-clay-purple hover:bg-indigo-600 transition-all shadow-md hover:shadow-lg flex items-center gap-2 cursor-pointer">
-              <i data-lucide="link-2" class="w-4 h-4"></i>
-              <span>단축주소 시작하기</span>
+          <div class="future-actions fs-reveal fs-reveal-3">
+            <button onclick="openAuthModal('register')" type="button" id="btn-hero-start" class="ds-btn ds-btn-primary">
+              <i data-lucide="link-2" class="w-5 h-5"></i>
+              <span>단축 URL 생성하기</span>
             </button>
-            <button onclick="openAuthModal('login')" type="button" id="btn-hero-login" class="px-6 py-3 rounded-xl font-black text-sm text-slate-700 dark:text-slate-200 bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-all cursor-pointer">
+            <button onclick="openAuthModal('login')" type="button" id="btn-hero-login" class="ds-btn ds-btn-outline">
               <span>로그인</span>
             </button>
           </div>
 
-          <!-- Feature Signals -->
-          <div class="future-signals fs-reveal fs-reveal-4 flex flex-wrap justify-center gap-2 mt-6" aria-label="주요 특징">
-            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300">
-              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-500"></i> 안심 보안 검증
-            </span>
-            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300">
-              <i data-lucide="qr-code" class="w-3.5 h-3.5 text-clay-purple"></i> 스마트 QR코드
-            </span>
-            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300">
-              <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-sky-500"></i> 실시간 접속 통계
-            </span>
+          <div class="future-signals fs-reveal fs-reveal-4" aria-label="주요 특징">
+            <span class="ds-chip"><i data-lucide="shield-check"></i> 안심 보안 검증</span>
+            <span class="ds-chip"><i data-lucide="qr-code"></i> 스마트 QR코드</span>
+            <span class="ds-chip"><i data-lucide="bar-chart-3"></i> 실시간 접속 통계</span>
           </div>
+        </div>
+        <i class="ds-hero-bar" aria-hidden="true"></i>
+      </section>
 
+      <!-- 벤토 그리드: 핵심 가치 & 수업 도구 -->
+      <div class="ds-section-head">
+        <h2>한 계정으로 쓰는 수업 도구</h2>
+      </div>
+      <section class="future-principles ds-bento" aria-label="단축 주소 핵심 가치">
+        <article class="future-principle ds-tile ds-tile-outline ds-tile-lg fs-reveal fs-reveal-1">
+          <span class="ds-tile-label">짧고 명확한 연결</span>
+          <h2>긴 주소도 한 줄로, 기억하기 쉽게</h2>
           <!-- [신규] 직관적인 단축 링크 비포 & 애프터(Before & After) 비주얼 쇼케이스 카드 -->
-          <div class="url-transform-showcase mt-10 p-5 md:p-6 rounded-3xl bg-white/90 dark:bg-[#0e1626]/90 backdrop-blur-md border-2 border-slate-200/80 dark:border-white/10 shadow-2xl max-w-xl mx-auto text-left transition-all fs-reveal fs-reveal-4">
+          <div class="url-transform-showcase">
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-white/10">
               <div class="flex items-center gap-2">
                 <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
@@ -3524,30 +4122,69 @@
               </div>
             </div>
           </div>
-        </div>
+        </article>
+        <article class="future-principle ds-tile fs-reveal fs-reveal-2">
+          <span class="future-principle-icon"><i data-lucide="qr-code"></i></span>
+          <h2>스마트 QR코드 생성</h2>
+          <p>학습지, 가정통신문, 전자칠판에 바로 띄울 수 있는 고화질 QR코드를 한 번에 만듭니다.</p>
+        </article>
+        <article class="future-principle ds-tile ds-tile-tall fs-reveal fs-reveal-3">
+          <span class="future-principle-icon"><i data-lucide="bar-chart-3"></i></span>
+          <h2>바로 읽는 반응</h2>
+          <p>시간대별 접속 횟수를 한눈에 보고, 수업 자료가 학생에게 얼마나 닿았는지 확인합니다.</p>
+          <div class="ds-mini-chart" aria-hidden="true">
+            <i style="height:38%"></i><i style="height:62%"></i><i style="height:48%"></i><i style="height:80%"></i><i class="is-today" style="height:96%"></i>
+          </div>
+        </article>
+        <article class="future-principle ds-tile fs-reveal fs-reveal-3">
+          <span class="future-principle-icon"><i data-lucide="shield-check"></i></span>
+          <h2>안심 보안 리다이렉트</h2>
+          <p>HTTPS 암호화와 유해·피싱 사이트 필터링으로 학생과 교사 모두 안심하고 접속합니다.</p>
+        </article>
+        <article class="future-principle ds-tile ds-tile-wide fs-reveal fs-reveal-4">
+          <span class="ds-tile-label">함께 만드는 수업</span>
+          <h2>링크 너머의 수업 도구까지</h2>
+          <p>실시간 설문, 협업 게시판, 학급 으쓱점수까지 한 계정에서 바로 꺼내 씁니다.</p>
+          <div class="ds-chip-row">
+            <span class="ds-chip">으쓱 학급 보드</span>
+            <span class="ds-chip">실시간 칸반</span>
+            <span class="ds-chip">마음챙김</span>
+            <span class="ds-chip">과학실험실</span>
+            <span class="ds-chip">MBL 가이드</span>
+          </div>
+        </article>
       </section>
 
-      <!-- 3대 핵심 가치 카드 (단축 주소 전문화) -->
-      <section class="future-principles mt-8" aria-label="단축 주소 핵심 가치">
-        <article class="future-principle fs-reveal fs-reveal-1">
-          <span class="future-principle-icon"><i data-lucide="shield-check" class="text-emerald-500"></i></span>
-          <span class="future-principle-index">01</span>
-          <h2 style="word-break: keep-all;">안심 보안 리다이렉트</h2>
-          <p style="word-break: keep-all;">엄격한 HTTPS 암호화 및 유해·피싱 사이트 24시간 필터링으로 학생과 교사 모두 안심하고 접속합니다.</p>
+      <!-- 카드 레이아웃: 활용 사례 -->
+      <div class="ds-section-head">
+        <h2>이렇게 쓰고 있어요</h2>
+      </div>
+      <div class="ds-cards" aria-label="활용 사례">
+        <article class="ds-card">
+          <span class="ds-card-type">수업 자료</span>
+          <h3>발표 슬라이드 공유</h3>
+          <span class="ds-card-url">kfcman.link/과학실험</span>
+          <p>긴 문서 주소 대신 한글 단축 주소를 칠판에 적어 두면 학생이 바로 접속합니다.</p>
         </article>
-        <article class="future-principle fs-reveal fs-reveal-2">
-          <span class="future-principle-icon"><i data-lucide="qr-code" class="text-clay-purple"></i></span>
-          <span class="future-principle-index">02</span>
-          <h2 style="word-break: keep-all;">스마트 QR코드 생성</h2>
-          <p style="word-break: keep-all;">인쇄 학습지, 가정통신문, 전자칠판에 바로 띄울 수 있는 고화질 벡터 QR코드를 원클릭으로 제공합니다.</p>
+        <article class="ds-card">
+          <span class="ds-card-type">설문</span>
+          <h3>구글 폼 설문 배포</h3>
+          <span class="ds-card-url">kfcman.link/독서조사</span>
+          <p>QR코드를 전자칠판에 띄우고, 응답이 들어오는 흐름을 클릭 수로 확인합니다.</p>
         </article>
-        <article class="future-principle fs-reveal fs-reveal-3">
-          <span class="future-principle-icon"><i data-lucide="bar-chart-3" class="text-sky-500"></i></span>
-          <span class="future-principle-index">03</span>
-          <h2 style="word-break: keep-all;">실시간 클릭 & 반응 분석</h2>
-          <p style="word-break: keep-all;">시간대별 접속 횟수와 유입 경로를 한눈에 파악하여 수업 자료의 활용도와 학생 도달률을 확인합니다.</p>
+        <article class="ds-card">
+          <span class="ds-card-type">가정 연계</span>
+          <h3>가정통신문 회신</h3>
+          <span class="ds-card-url">kfcman.link/체험학습</span>
+          <p>인쇄물에 QR코드를 넣어 보호자가 휴대폰으로 바로 동의서를 제출합니다.</p>
         </article>
-      </section>
+        <article class="ds-card">
+          <span class="ds-card-type">학급 운영</span>
+          <h3>모둠 활동 칸반</h3>
+          <span class="ds-card-url">kfcman.link/모둠보드</span>
+          <p>모둠별 아이디어 카드를 실시간 게시판에 모으고 함께 정리합니다.</p>
+        </article>
+      </div>
     </div>
 
       <!-- [회원 영역 컨테이너] 불필요한 중복 배너 제거로 본문 상단 공간 극대화 -->
@@ -3597,6 +4234,37 @@
               </button>
             </div>
           </div>
+        </div>
+
+        <!-- 벤토 그리드: 수업 도구 바로가기 -->
+        <div id="canva-highlights" class="ds-bento ds-bento-tools mb-8" aria-label="수업 도구 바로가기">
+          <button type="button" onclick="openShortenerModal()" class="ds-tile ds-tile-outline ds-tile-lg">
+            <span class="ds-tile-label">짧고 명확한 연결</span>
+            <h3>새 단축 링크 만들기</h3>
+            <p>긴 주소를 붙여 넣으면 단축 주소와 QR코드가 바로 만들어집니다.</p>
+            <span class="ds-tile-stat ds-grad-text">kfcman.link/<span>나만의주소</span></span>
+            <i class="ds-tile-bar" aria-hidden="true"></i>
+          </button>
+          <button type="button" onclick="switchMainTab('classroom')" class="ds-tile">
+            <span class="future-principle-icon"><i data-lucide="award"></i></span>
+            <h3>교실</h3>
+            <p>으쓱점수와 학급 보드</p>
+          </button>
+          <button type="button" onclick="switchMainTab('projects')" class="ds-tile">
+            <span class="future-principle-icon"><i data-lucide="folder"></i></span>
+            <h3>프로젝트</h3>
+            <p>만든 링크 모아 보기</p>
+          </button>
+          <button type="button" onclick="switchMainTab('mindcheck')" class="ds-tile">
+            <span class="future-principle-icon"><i data-lucide="heart"></i></span>
+            <h3>마음챙김</h3>
+            <p>교사 마음 건강 쉼터</p>
+          </button>
+          <button type="button" onclick="switchMainTab('scibot')" class="ds-tile">
+            <span class="future-principle-icon"><i data-lucide="flask-conical"></i></span>
+            <h3>과학실험실</h3>
+            <p>센서 측정과 MBL 가이드</p>
+          </button>
         </div>
 
         <!-- 4. Canva Recent Items (상단 1px 구분선으로 분리) -->
@@ -6706,6 +7374,23 @@
 
   <!-- Application Frontend Logic JS -->
   <script src="/js/app.js?v=202609220901"></script>
+  <script>
+    // 태블릿·모바일 사이드바 서랍: 가림막 표시, 바깥 탭·메뉴 선택·ESC로 닫기
+    (function () {
+      var sidebar = document.getElementById('left-sidebar');
+      var scrim = document.getElementById('ds-sidebar-scrim');
+      if (!sidebar || !scrim) return;
+      var mq = window.matchMedia('(max-width: 1023px)');
+      function isOpen() { return mq.matches && !sidebar.classList.contains('hidden'); }
+      function sync() { scrim.classList.toggle('is-open', isOpen()); }
+      function close() { if (isOpen()) sidebar.classList.add('hidden'); }
+      new MutationObserver(sync).observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+      scrim.addEventListener('click', close);
+      sidebar.querySelectorAll('nav > button').forEach(function (btn) { btn.addEventListener('click', close); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+      mq.addEventListener('change', function () { if (!mq.matches) sidebar.classList.add('hidden'); sync(); });
+    })();
+  </script>
 </body>
 </html>
 
