@@ -395,8 +395,390 @@ app.get('/api/sub-services', async (req, res) => {
     const pending = refreshSubServices();
     if (!subServiceCache.groups) await pending;
   }
-  res.set('Cache-Control', 'public, max-age=300');
-  return res.json({ groups: subServiceCache.groups || [], builtAt: subServiceCache.builtAt });
+  res.set('Cache-Control', 'public, max-age=60');
+  return res.json({ groups: applySubServiceSettings(subServiceCache.groups || []), builtAt: subServiceCache.builtAt });
+});
+
+// --------------------------------------------------------------------------
+// 서비스 모음 관리 (관리자 · 오라클 서버 관제 화면)
+//  이름·묶음 수정, 숨기기, 외부 링크 추가는 data/sub-services.json에 저장한다.
+//  삭제는 사이트를 바로 내리고 파일·nginx 경로를 휴지통으로 옮긴다 → 복원 또는 영구 삭제.
+//  다른 pm2 앱으로 연결된 서비스는 nginx 연결만 끊고, 앱 자체는 건드리지 않는다.
+// --------------------------------------------------------------------------
+const { execFile } = require('child_process');
+const SUB_SERVICE_SETTINGS_PATH = path.join(__dirname, 'data', 'sub-services.json');
+const SITE_TRASH_DIR = path.join(__dirname, 'data', 'site-trash');
+const NGINX_BACKUP_DIR = path.join(__dirname, 'data', 'nginx-backups');
+const WWW_TRASH_DIR = '/var/www/.kfcman-trash';
+// sites-enabled/kfcman.link는 링크가 아닌 별도 파일이라 두 곳을 함께 고친다
+const NGINX_SITE_CONF_COPIES = ['/etc/nginx/sites-available/kfcman.link', NGINX_SITE_CONF];
+const SUB_SERVICE_NAME_RE = /^[A-Za-z0-9_-]+(\.html)?$/;
+const SUB_SERVICE_PROTECTED = new Set(['api', 'assets', 'css', 'js', 'images', 'uploads', 'socket.io', 'scratch', 'data', 'banner']);
+const SUB_SERVICE_LINK_GROUP = '바로가기';
+
+function readSubServiceSettings() {
+  try {
+    const o = JSON.parse(fs.readFileSync(SUB_SERVICE_SETTINGS_PATH, 'utf8'));
+    return { overrides: o.overrides || {}, links: o.links || [], trash: o.trash || [] };
+  } catch (_) {
+    return { overrides: {}, links: [], trash: [] };
+  }
+}
+
+function writeSubServiceSettings(settings) {
+  fs.mkdirSync(path.dirname(SUB_SERVICE_SETTINGS_PATH), { recursive: true });
+  const tmp = SUB_SERVICE_SETTINGS_PATH + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(settings, null, 2), 'utf8');
+  fs.renameSync(tmp, SUB_SERVICE_SETTINGS_PATH);
+}
+
+// 자동 목록에 관리자 설정을 덧입힌다 (숨김 제외, 이름·묶음 변경, 추가 링크)
+function applySubServiceSettings(groups) {
+  const { overrides, links } = readSubServiceSettings();
+  const byGroup = new Map(groups.map(g => [g.title, []]));
+  const put = (title, item) => {
+    if (!byGroup.has(title)) byGroup.set(title, []);
+    byGroup.get(title).push(item);
+  };
+  groups.forEach(g => g.items.forEach((item) => {
+    const o = overrides[item.name] || {};
+    if (o.hidden) return;
+    put(o.group || g.title, { ...item, label: o.label || item.label });
+  }));
+  links.forEach((link) => {
+    if (!link.hidden) put(link.group || SUB_SERVICE_LINK_GROUP, { name: link.id, label: link.label, href: link.url, external: true });
+  });
+  return [...byGroup].filter(([, items]) => items.length).map(([title, items]) => ({ title, items }));
+}
+
+function resetSubServiceCache() {
+  subServiceCache.builtAt = 0;
+  subServiceCache.probes = {};
+}
+
+// nginx 설정의 location 블록을 위치와 함께 찾는다 (정규식 location 제외, 주석·따옴표 안 중괄호 무시)
+function parseNginxLocations(conf) {
+  const blocks = [];
+  const re = /^[ \t]*location\s+(=|\^~|~\*?)?\s*(\S+)\s*\{/gm;
+  let m;
+  while ((m = re.exec(conf))) {
+    if (m[1] && m[1].startsWith('~')) continue;
+    let depth = 0;
+    let end = -1;
+    for (let i = m.index + m[0].length - 1; i < conf.length; i++) {
+      const c = conf[i];
+      if (c === '#') {
+        const lineEnd = conf.indexOf('\n', i);
+        i = lineEnd === -1 ? conf.length : lineEnd;
+      } else if (c === '"' || c === "'") {
+        const close = conf.indexOf(c, i + 1);
+        if (close !== -1) i = close;
+      } else if (c === '{') {
+        depth++;
+      } else if (c === '}' && --depth === 0) {
+        end = i + 1;
+        break;
+      }
+    }
+    if (end === -1) break;
+    if (conf[end] === '\n') end++;
+    blocks.push({ start: m.index, end, path: m[2], text: conf.slice(m.index, end) });
+    re.lastIndex = end;
+  }
+  return blocks;
+}
+
+function serviceNginxBlocks(conf, name) {
+  const base = '/' + name;
+  return parseNginxLocations(conf).filter(b => b.path === base || b.path.startsWith(base + '/'));
+}
+
+// /var/www/kfcman-* 아래 폴더만 휴지통 대상으로 인정
+function aliasDirOf(blockText) {
+  const m = blockText.match(/^\s*alias\s+([^;\s]+)\s*;/m);
+  if (!m) return null;
+  const dir = m[1].replace(/\/+$/, '');
+  return /^\/var\/www\/kfcman-[A-Za-z0-9_-]+(\/[A-Za-z0-9_.-]+)*$/.test(dir) ? dir : null;
+}
+
+function proxyPortOf(blockText) {
+  const m = blockText.match(/proxy_pass\s+https?:\/\/127\.0\.0\.1:(\d+)/);
+  return m ? Number(m[1]) : null;
+}
+
+function publicSitePath(name) {
+  return path.join(__dirname, 'public', name);
+}
+
+function hasPublicSite(name) {
+  const p = publicSitePath(name);
+  return name.endsWith('.html') ? fs.existsSync(p) : fs.existsSync(path.join(p, 'index.html'));
+}
+
+function readNginxConf() {
+  try { return fs.readFileSync(NGINX_SITE_CONF, 'utf8'); } catch (_) { return ''; }
+}
+
+function sudo(cmd, args) {
+  return new Promise((resolve, reject) => {
+    execFile('sudo', ['-n', cmd, ...args], { timeout: 20000 }, (err, stdout, stderr) => {
+      if (err) reject(new Error(String(stderr || err.message).trim().split('\n').slice(-3).join(' ')));
+      else resolve(stdout);
+    });
+  });
+}
+
+// 새 설정을 두 파일에 쓰고 nginx -t 통과 시에만 다시 읽힘. 실패하면 원래 설정으로 되돌린다.
+async function applyNginxConf(nextConf, label) {
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  fs.mkdirSync(NGINX_BACKUP_DIR, { recursive: true });
+  const backup = path.join(NGINX_BACKUP_DIR, `kfcman.link.${stamp}.${label}.conf`);
+  fs.writeFileSync(backup, readNginxConf(), 'utf8');
+  const tmp = path.join(os.tmpdir(), `kfcman-nginx-${stamp}.conf`);
+  fs.writeFileSync(tmp, nextConf, 'utf8');
+  try {
+    for (const target of NGINX_SITE_CONF_COPIES) await sudo('cp', [tmp, target]);
+    await sudo('nginx', ['-t']);
+  } catch (e) {
+    for (const target of NGINX_SITE_CONF_COPIES) await sudo('cp', [backup, target]).catch(() => {});
+    throw new Error('nginx 설정 검사에 실패해 원래대로 되돌렸어요: ' + e.message);
+  } finally {
+    fs.rmSync(tmp, { force: true });
+  }
+  await sudo('systemctl', ['reload', 'nginx']);
+}
+
+async function movePath(from, to, useSudo) {
+  if (useSudo) {
+    await sudo('mkdir', ['-p', path.posix.dirname(to)]);
+    await sudo('mv', [from, to]);
+  } else {
+    fs.mkdirSync(path.dirname(to), { recursive: true });
+    fs.renameSync(from, to);
+  }
+}
+
+let subServiceLock = Promise.resolve();
+function withSubServiceLock(fn) {
+  const run = subServiceLock.then(fn, fn);
+  subServiceLock = run.catch(() => {});
+  return run;
+}
+
+function subServiceCatalogMap() {
+  const map = {};
+  SUB_SERVICE_CATALOG.forEach(([group, items]) => items.forEach(([name, label]) => { map[name] = { group, label }; }));
+  return map;
+}
+
+// 관리 화면용 전체 목록: 상태 코드, 연결 방식, 관리자 설정, 추가 링크, 휴지통
+async function buildSubServiceAdminView() {
+  const names = discoverSubPaths();
+  await Promise.all(names.map(async (name) => {
+    if (!subServiceCache.probes[name]) subServiceCache.probes[name] = { ...(await probeSubService(name)), at: Date.now() };
+  }));
+  const settings = readSubServiceSettings();
+  const catalog = subServiceCatalogMap();
+  const conf = readNginxConf();
+  const items = names.sort().map((name) => {
+    const probe = subServiceCache.probes[name] || {};
+    const base = catalog[name] || { group: SUB_SERVICE_NEW_GROUP, label: labelFromTitle(probe.title, name) };
+    const o = settings.overrides[name] || {};
+    const blocks = serviceNginxBlocks(conf, name);
+    return {
+      name,
+      href: subServiceUrlPath(name),
+      label: o.label || base.label,
+      group: o.group || base.group,
+      defaultLabel: base.label,
+      defaultGroup: base.group,
+      hidden: !!o.hidden,
+      status: probe.status || 0,
+      title: probe.title || '',
+      publicFolder: hasPublicSite(name),
+      nginxRoutes: blocks.map(b => b.path),
+      folders: blocks.map(b => aliasDirOf(b.text)).filter(Boolean),
+      appPorts: [...new Set(blocks.map(b => proxyPortOf(b.text)).filter(Boolean))],
+      deletable: !SUB_SERVICE_PROTECTED.has(name)
+    };
+  });
+  const groups = [...new Set([...SUB_SERVICE_CATALOG.map(([title]) => title), SUB_SERVICE_NEW_GROUP,
+    ...items.map(i => i.group), ...settings.links.map(l => l.group || SUB_SERVICE_LINK_GROUP)])];
+  return { items, links: settings.links, trash: settings.trash, groups };
+}
+
+async function trashSubService(name, actor) {
+  if (!SUB_SERVICE_NAME_RE.test(name) || SUB_SERVICE_PROTECTED.has(name)) throw Object.assign(new Error('삭제할 수 없는 주소예요.'), { status: 400 });
+  const conf = readNginxConf();
+  const blocks = serviceNginxBlocks(conf, name);
+  const publicSite = hasPublicSite(name);
+  if (!blocks.length && !publicSite) throw Object.assign(new Error('서버에서 이 서비스를 찾지 못했어요.'), { status: 404 });
+
+  const id = `${name.replace(/\./g, '_')}-${Date.now()}`;
+  const entry = { id, name, deletedAt: new Date().toISOString(), deletedBy: actor, nginxBlocks: [], files: [], appPorts: [] };
+  let nextConf = conf;
+  if (blocks.length) {
+    [...blocks].sort((a, b) => b.start - a.start).forEach((b) => { nextConf = nextConf.slice(0, b.start) + nextConf.slice(b.end); });
+    entry.nginxBlocks = blocks.map(b => b.text);
+    entry.appPorts = [...new Set(blocks.map(b => proxyPortOf(b.text)).filter(Boolean))];
+    // 남은 설정이 아직 쓰는 폴더는 옮기지 않는다
+    const dirs = [...new Set(blocks.map(b => aliasDirOf(b.text)).filter(Boolean))]
+      .filter(dir => !nextConf.includes(dir) && fs.existsSync(dir) && fs.statSync(dir).isDirectory());
+    dirs.forEach((dir) => entry.files.push({ from: dir, to: path.posix.join(WWW_TRASH_DIR, id, dir.replace(/^\/var\/www\//, '').replace(/\//g, '__')), sudo: true }));
+    await applyNginxConf(nextConf, `delete-${name}`);
+  }
+  if (publicSite) entry.files.push({ from: publicSitePath(name), to: path.join(SITE_TRASH_DIR, id, name), sudo: false });
+
+  const moved = [];
+  try {
+    for (const f of entry.files) {
+      await movePath(f.from, f.to, f.sudo);
+      moved.push(f);
+    }
+  } catch (e) {
+    for (const f of moved.reverse()) await movePath(f.to, f.from, f.sudo).catch(() => {});
+    if (blocks.length) await applyNginxConf(conf, `undo-${name}`).catch(() => {});
+    throw new Error('파일을 휴지통으로 옮기지 못해 원래대로 되돌렸어요: ' + e.message);
+  }
+
+  const settings = readSubServiceSettings();
+  settings.trash.unshift(entry);
+  writeSubServiceSettings(settings);
+  resetSubServiceCache();
+  return entry;
+}
+
+async function restoreSubService(id) {
+  const settings = readSubServiceSettings();
+  const entry = settings.trash.find(t => t.id === id);
+  if (!entry) throw Object.assign(new Error('휴지통에 없는 항목이에요.'), { status: 404 });
+  const conf = readNginxConf();
+  if (entry.nginxBlocks.length && serviceNginxBlocks(conf, entry.name).length) {
+    throw Object.assign(new Error(`/${entry.name} 경로가 이미 다시 만들어져 있어 복원할 수 없어요.`), { status: 409 });
+  }
+  const taken = entry.files.find(f => fs.existsSync(f.from));
+  if (taken) throw Object.assign(new Error(`${taken.from} 자리에 같은 이름의 폴더가 이미 있어요.`), { status: 409 });
+
+  const moved = [];
+  try {
+    for (const f of entry.files) {
+      await movePath(f.to, f.from, f.sudo);
+      moved.push(f);
+    }
+    if (entry.nginxBlocks.length) {
+      // 접두어 location은 순서와 상관없이 가장 긴 경로가 이기므로 기본 'location /' 앞에 다시 넣는다
+      const anchor = conf.search(/^[ \t]*location\s+\/\s*\{/m);
+      if (anchor === -1) throw new Error("nginx 설정에서 기본 'location /' 위치를 찾지 못했어요.");
+      await applyNginxConf(conf.slice(0, anchor) + entry.nginxBlocks.join('') + '\n' + conf.slice(anchor), `restore-${entry.name}`);
+    }
+  } catch (e) {
+    for (const f of moved.reverse()) await movePath(f.from, f.to, f.sudo).catch(() => {});
+    throw e;
+  }
+  for (const f of entry.files) {
+    const trashRoot = f.sudo ? path.posix.join(WWW_TRASH_DIR, entry.id) : path.join(SITE_TRASH_DIR, entry.id);
+    if (f.sudo) await sudo('rmdir', [trashRoot]).catch(() => {});
+    else fs.rmSync(trashRoot, { recursive: true, force: true });
+  }
+  settings.trash = settings.trash.filter(t => t.id !== id);
+  writeSubServiceSettings(settings);
+  resetSubServiceCache();
+  return entry;
+}
+
+async function purgeSubServiceTrash(id) {
+  const settings = readSubServiceSettings();
+  const entry = settings.trash.find(t => t.id === id);
+  if (!entry) throw Object.assign(new Error('휴지통에 없는 항목이에요.'), { status: 404 });
+  if (!/^[A-Za-z0-9_-]+$/.test(entry.id)) throw new Error('휴지통 항목 이름이 올바르지 않아요.');
+  if (entry.files.some(f => f.sudo)) await sudo('rm', ['-rf', '--', path.posix.join(WWW_TRASH_DIR, entry.id)]);
+  fs.rmSync(path.join(SITE_TRASH_DIR, entry.id), { recursive: true, force: true });
+  settings.trash = settings.trash.filter(t => t.id !== id);
+  writeSubServiceSettings(settings);
+  return entry;
+}
+
+function requireSuperAdmin(req, res, next) {
+  if (req.role !== 'admin') return res.status(403).json({ error: '최고 관리자만 사이트를 삭제하거나 복원할 수 있어요.' });
+  next();
+}
+
+function sendSubServiceError(res, e) {
+  console.error('서비스 관리 오류:', e.message);
+  return res.status(e.status || 500).json({ error: e.message });
+}
+
+app.get('/api/admin/sub-services', authenticate, requireAdmin, async (req, res) => {
+  try {
+    res.json(await buildSubServiceAdminView());
+  } catch (e) { sendSubServiceError(res, e); }
+});
+
+// 이름·묶음 변경, 숨기기/보이기
+app.put('/api/admin/sub-services/:name', authenticate, requireAdmin, (req, res) => {
+  const name = req.params.name;
+  if (!SUB_SERVICE_NAME_RE.test(name)) return res.status(400).json({ error: '주소 이름이 올바르지 않아요.' });
+  const label = typeof req.body.label === 'string' ? req.body.label.trim().slice(0, 40) : undefined;
+  const group = typeof req.body.group === 'string' ? req.body.group.trim().slice(0, 30) : undefined;
+  withSubServiceLock(async () => {
+    const settings = readSubServiceSettings();
+    const o = { ...(settings.overrides[name] || {}) };
+    if (label !== undefined) { if (label) o.label = label; else delete o.label; }
+    if (group !== undefined) { if (group) o.group = group; else delete o.group; }
+    if (typeof req.body.hidden === 'boolean') { if (req.body.hidden) o.hidden = true; else delete o.hidden; }
+    if (Object.keys(o).length) settings.overrides[name] = o; else delete settings.overrides[name];
+    writeSubServiceSettings(settings);
+    return o;
+  }).then(o => res.json({ ok: true, override: o })).catch(e => sendSubServiceError(res, e));
+});
+
+// 외부 링크 추가·삭제
+app.post('/api/admin/sub-services/links', authenticate, requireAdmin, (req, res) => {
+  const label = String(req.body.label || '').trim().slice(0, 40);
+  const group = String(req.body.group || '').trim().slice(0, 30) || SUB_SERVICE_LINK_GROUP;
+  let url;
+  try { url = new URL(String(req.body.url || '').trim()); } catch (_) { url = null; }
+  if (!label || !url || !['http:', 'https:'].includes(url.protocol)) {
+    return res.status(400).json({ error: '이름과 http(s)로 시작하는 주소를 입력해 주세요.' });
+  }
+  withSubServiceLock(async () => {
+    const settings = readSubServiceSettings();
+    const link = { id: 'link-' + crypto.randomBytes(4).toString('hex'), label, url: url.toString(), group, createdAt: new Date().toISOString() };
+    settings.links.push(link);
+    writeSubServiceSettings(settings);
+    return link;
+  }).then(link => res.json({ ok: true, link })).catch(e => sendSubServiceError(res, e));
+});
+
+app.delete('/api/admin/sub-services/links/:id', authenticate, requireAdmin, (req, res) => {
+  withSubServiceLock(async () => {
+    const settings = readSubServiceSettings();
+    const before = settings.links.length;
+    settings.links = settings.links.filter(l => l.id !== req.params.id);
+    if (settings.links.length === before) throw Object.assign(new Error('없는 링크예요.'), { status: 404 });
+    writeSubServiceSettings(settings);
+  }).then(() => res.json({ ok: true })).catch(e => sendSubServiceError(res, e));
+});
+
+// 실제 사이트 삭제(휴지통으로) · 복원 · 영구 삭제 — 확인용으로 서비스 이름을 그대로 받아야 실행
+app.delete('/api/admin/sub-services/:name', authenticate, requireAdmin, requireSuperAdmin, (req, res) => {
+  const name = req.params.name;
+  if (req.body.confirm !== name) return res.status(400).json({ error: '확인을 위해 서비스 이름을 똑같이 입력해 주세요.' });
+  withSubServiceLock(() => trashSubService(name, req.username || ''))
+    .then(entry => res.json({ ok: true, entry })).catch(e => sendSubServiceError(res, e));
+});
+
+app.post('/api/admin/sub-services/trash/:id/restore', authenticate, requireAdmin, requireSuperAdmin, (req, res) => {
+  withSubServiceLock(() => restoreSubService(req.params.id))
+    .then(entry => res.json({ ok: true, entry })).catch(e => sendSubServiceError(res, e));
+});
+
+app.delete('/api/admin/sub-services/trash/:id', authenticate, requireAdmin, requireSuperAdmin, (req, res) => {
+  withSubServiceLock(async () => {
+    const entry = readSubServiceSettings().trash.find(t => t.id === req.params.id);
+    if (entry && req.body.confirm !== entry.name) throw Object.assign(new Error('확인을 위해 서비스 이름을 똑같이 입력해 주세요.'), { status: 400 });
+    return purgeSubServiceTrash(req.params.id);
+  }).then(entry => res.json({ ok: true, entry })).catch(e => sendSubServiceError(res, e));
 });
 
 // --------------------------------------------------------------------------

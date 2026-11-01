@@ -420,7 +420,7 @@
         text-align: center !important;
       }
       /* Hero description */
-      #guest-content p {
+      #guest-content p:not(:where(.blogstyle-badge, .blogstyle-quote)) {
         font-size: 0.875rem !important;
         line-height: 1.6 !important;
         margin-top: 1rem !important;
@@ -483,7 +483,7 @@
         font-size: 2.75rem !important;
         line-height: 1.15 !important;
       }
-      #guest-content p {
+      #guest-content p:not(:where(.blogstyle-badge, .blogstyle-quote)) {
         font-size: 1rem !important;
       }
       #canva-banner h1 {
@@ -990,7 +990,7 @@
     main section:not(.future-hero):not(.future-principles),
     .clay-card,
     #create-poll-card,
-    #shortener-section > div,
+    #shortener-section > div:not(:where(.blogstyle-menu-wrap)),
     #dashboard-section > div,
     #settings-section > div,
     #classroom-section > div,
@@ -1026,7 +1026,7 @@
       line-height: 1.04 !important;
     }
 
-    #guest-content p,
+    #guest-content p:not(:where(.blogstyle-badge, .blogstyle-quote)),
     .text-slate-400,
     .text-slate-500,
     .text-slate-600 {
@@ -1422,7 +1422,7 @@
 
     main section:not(.future-hero):not(.future-principles),
     .clay-card,
-    #shortener-section > div:not(#canva-banner),
+    #shortener-section > div:not(#canva-banner, .blogstyle-menu-wrap),
     #dashboard-section > div,
     #settings-section > div,
     #classroom-section > div,
@@ -2165,7 +2165,7 @@
     main section:not(.future-hero):not(.future-principles),
     .clay-card,
     #create-poll-card,
-    #shortener-section > div:not(#canva-banner),
+    #shortener-section > div:not(#canva-banner, .blogstyle-menu-wrap),
     #dashboard-section > div,
     #settings-section > div,
     #classroom-section > div,
@@ -2248,7 +2248,7 @@
     /* Panels/cards → flat white with hairline border, no glass/shadow */
     main section:not(.future-hero):not(.future-principles),
     .clay-card, #create-poll-card,
-    #shortener-section > div, #dashboard-section > div, #settings-section > div,
+    #shortener-section > div:not(:where(.blogstyle-menu-wrap)), #dashboard-section > div, #settings-section > div,
     #classroom-section > div, #polls-section > div, #canva-banner,
     .modal-overlay > div, .future-principle {
       background: var(--kk-card) !important;
@@ -2268,12 +2268,11 @@
     }
 
     /* Hero → clean flat surface, bold black headline, yellow eyebrow */
-    .future-hero, .dark .future-hero, #guest-content .future-hero {
+    .future-hero, .dark .future-hero {
       background: var(--kk-canvas) !important;
       min-height: auto !important;
     }
-    .future-hero::before, .future-hero::after,
-    .dark .future-hero::before, .dark .future-hero::after { display: none !important; }
+    .future-hero::after, .dark .future-hero::after { display: none !important; }
     .future-hero-inner { padding: 4.5rem 2rem 3.5rem !important; }
     #guest-content .future-hero h1 { color: var(--kk-ink) !important; }
     .future-copy { color: var(--kk-fg) !important; }
@@ -2785,7 +2784,7 @@
     #thermometer-section,
     #shortener-section,
     .shortener-section,
-    #shortener-section > div:not(#canva-banner),
+    #shortener-section > div:not(#canva-banner, .blogstyle-menu-wrap),
     #settings-section > div,
     #settings-subtabs-bar,
     #settings-subview-admin,
@@ -3352,15 +3351,27 @@
       position: relative !important;
       background: var(--ds-canvas) !important;
       border: 0 !important;
-      border-bottom: 1px solid var(--ds-hairline) !important;
+      border-bottom: 0 !important;
       border-radius: 0 !important;
       box-shadow: none !important;
       margin: 0 -40px 48px !important;
-      padding: 80px 24px 72px !important;
-      min-height: 0 !important;
+      padding: 56px 16px 48px !important;
+      min-height: 440px !important;
       text-align: center !important;
     }
-    .ds-hero::before, .ds-hero::after { display: none !important; }
+    .ds-hero::after { display: none !important; }
+    /* 히어로 그림 위 덮개: 라이트에서는 비우고 다크에서만 어둡게 */
+    .ds-hero::before {
+      content: "" !important;
+      display: block !important;
+      position: absolute !important;
+      inset: 0 !important;
+      z-index: 0 !important;
+      background: none !important;
+      animation: none !important;
+      pointer-events: none;
+    }
+    .dark .ds-hero::before { background: rgba(0, 0, 0, 0.35) !important; }
     .ds-hero .future-hero-inner { max-width: 880px !important; margin: 0 auto !important; padding: 0 !important; background: none !important; }
     .ds-eyebrow {
       display: inline-block;
@@ -3722,13 +3733,13 @@
     }
     @media (max-width: 1023px) {
       #guest-content, #member-content { padding: 0 24px 48px !important; }
-      .future-hero.ds-hero { margin: 0 -24px 40px !important; padding: 64px 24px 56px !important; }
+      .future-hero.ds-hero { margin: 0 -24px 40px !important; }
     }
     @media (max-width: 639px) {
       :root { --ds-header-h: 52px; }
       body > .flex.min-h-screen > .flex-grow > header { padding-left: 16px !important; padding-right: 16px !important; }
       #guest-content, #member-content { padding: 0 16px 40px !important; }
-      .future-hero.ds-hero { margin: 0 -16px 32px !important; padding: 48px 16px 40px !important; }
+      .future-hero.ds-hero { margin: 0 -16px 32px !important; }
       .ds-hero .future-copy { font-size: 16px !important; text-align: center !important; }
       .ds-hero .future-actions { flex-direction: column; align-items: stretch; width: 100% !important; max-width: none !important; }
       .ds-hero .future-actions .ds-btn, #guest-content .future-actions button.ds-btn { width: 100% !important; max-width: none !important; }
@@ -3829,10 +3840,11 @@
     #member-content > section.shortener-section { padding-top: 0 !important; }
     #member-content #shortener-section > .ds-hero {
       position: relative;
-      margin: 0 -40px 48px !important;
-      padding: 72px 24px 64px !important;
+      margin: 0 -40px 24px !important;
+      padding: 56px 16px 48px !important;
+      min-height: 440px;
       text-align: center;
-      border-bottom: 1px solid var(--ds-hairline) !important;
+      border-bottom: 0 !important;
     }
     .ds-member-hero .future-hero-inner { max-width: 880px; margin: 0 auto; }
     #member-content .ds-member-hero h1 {
@@ -3921,25 +3933,25 @@
     }
 
     @media (max-width: 1023px) {
-      #member-content #shortener-section > .ds-hero { margin: 0 -24px 40px !important; padding: 56px 24px 48px !important; }
+      #member-content #shortener-section > .ds-hero { margin: 0 -24px 24px !important; }
     }
     @media (max-width: 639px) {
-      #member-content #shortener-section > .ds-hero { margin: 0 -16px 32px !important; padding: 40px 16px 36px !important; }
+      #member-content #shortener-section > .ds-hero { margin: 0 -16px 20px !important; }
       .ds-member-hero .future-copy { font-size: 16px !important; }
       #member-content .ds-member-hero .future-actions { flex-direction: column !important; align-items: stretch !important; }
       #member-content .ds-member-hero .ds-btn { width: 100% !important; max-width: none !important; }
       #shortener-section > .ds-bento { margin-bottom: 40px !important; }
     }
     /* =====================================================================
-       NAVER-INSPIRED STYLE (DESIGN.md v2) — 최종 오버라이드
-       흰 캔버스 + #f5f6f7 회색 면 + #e3e5e8 테두리, 그린 #03C75A 단일 강조,
+       NAVER-INSPIRED STYLE — 최종 오버라이드 (2026-11-01: 블로그 kfcman21 스타일, 네이비 #1f2d6b 강조)
+       흰 캔버스 + #f5f6f7 회색 면 + #e3e5e8 테두리, 네이비 단일 강조 (변수 이름은 --nv-green 유지),
        굵은 제목(700), 그라데이션 없음, 그림자 없음, 초록 테두리 검색창
        ===================================================================== */
     :root {
-      --nv-green: #03c75a;
-      --nv-green-hover: #02b350;
-      --nv-green-text: #008a3e;
-      --nv-green-tint: #eafaf1;
+      --nv-green: #1f2d6b;
+      --nv-green-hover: #2a3b85;
+      --nv-green-text: #1f2d6b;
+      --nv-green-tint: #eef1fb;
       --nv-blue: #0068c3;
 
       --ds-sky: var(--nv-green);
@@ -3961,8 +3973,8 @@
       --ds-grad-text: linear-gradient(var(--nv-green-text), var(--nv-green-text));
     }
     .dark {
-      --nv-green-text: #03c75a;
-      --nv-green-tint: rgba(3, 199, 90, 0.14);
+      --nv-green-text: #a9b8ff;
+      --nv-green-tint: rgba(120, 140, 230, 0.18);
       --nv-blue: #6fb3ff;
       --ds-ink: #f2f2f4;
       --ds-body: #dcdce0;
@@ -4012,33 +4024,65 @@
     #sidebar-logo .sidebar-text span:first-child { font-weight: 800 !important; }
 
     /* ── 히어로: 워드마크 + 초록 테두리 검색창 + 바로가기 ── */
+    /* 히어로: 수채화 책상 그림 위 가운데 정렬 (회원·비회원 공통) */
     .future-hero.ds-hero, .dark .future-hero.ds-hero,
     #member-content #shortener-section > .ds-hero {
-      background: var(--ds-canvas) !important;
-      border-bottom: 1px solid var(--ds-hairline) !important;
+      display: flex !important;
+      flex-direction: column;
+      justify-content: center;
+      overflow: hidden;
+      background: #fff url('/static/img/blogstyle/hero.jpg?v=20261101') center / cover no-repeat !important;
+      border-bottom: 0 !important;
     }
-    .nv-hero-brand {
-      margin: 0 0 12px;
-      font-size: clamp(32px, 4.2vw, 44px);
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      line-height: 1.1;
-      color: var(--nv-green-text);
-    }
-    .nv-hero-brand span { color: var(--ds-ink); }
-    #guest-content .nv-hero-brand, #member-content .nv-hero-brand { color: var(--nv-green-text) !important; -webkit-text-fill-color: var(--nv-green-text) !important; }
-    #guest-content .nv-hero-brand span, #member-content .nv-hero-brand span { color: var(--ds-ink) !important; -webkit-text-fill-color: var(--ds-ink) !important; }
+    .ds-hero > .future-hero-inner { width: 100%; }
+    /* 워드마크 대신 배지를 씀 */
+    .nv-hero-brand { display: none !important; }
     #guest-content .ds-hero .future-copy { text-align: center !important; max-width: 600px !important; margin: 20px auto 0 !important; }
     #guest-content .ds-hero h1, #member-content .ds-member-hero h1 {
-      margin: 0 auto 28px !important;
-      font-size: clamp(20px, 2.4vw, 26px) !important;
-      font-weight: 700 !important;
-      line-height: 1.4 !important;
-      letter-spacing: -0.01em !important;
-      color: var(--ds-ink) !important;
-      -webkit-text-fill-color: var(--ds-ink) !important;
+      margin: 0 auto 16px !important;
+      font-size: clamp(30px, 4.4vw, 48px) !important;
+      font-weight: 900 !important;
+      line-height: 1.2 !important;
+      letter-spacing: -1.5px !important;
+      color: #1f2d6b !important;
+      -webkit-text-fill-color: #1f2d6b !important;
     }
-    .ds-hero h1 em { font-style: normal; color: var(--nv-green-text); -webkit-text-fill-color: var(--nv-green-text); }
+    .dark #guest-content .ds-hero h1, .dark #member-content .ds-member-hero h1 { color: #fff !important; -webkit-text-fill-color: #fff !important; }
+    /* 강조 구절: 노란 형광펜 */
+    .ds-hero h1 em, .blogstyle-quote b {
+      padding: 0 4px;
+      font-style: normal;
+      font-weight: inherit;
+      color: inherit;
+      -webkit-text-fill-color: inherit;
+      background: linear-gradient(transparent 58%, #ffe58a 58%);
+    }
+    .dark .ds-hero h1 em, .dark .blogstyle-quote b { background: linear-gradient(transparent 58%, rgba(255, 229, 138, 0.38) 58%); }
+    .blogstyle-badge {
+      display: inline-block;
+      margin: 0 auto 18px;
+      padding: 9px 22px;
+      border-radius: 999px;
+      background: #1f2d6b;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 1.3;
+    }
+    .blogstyle-quote { margin: 0 auto 24px; color: #2b2f3a; font-size: 18px; line-height: 1.5; }
+    .blogstyle-quote .nv-quote-mark { color: #3b5bdb; font-size: 26px; font-weight: 900; line-height: 0; vertical-align: -0.12em; }
+    .dark .blogstyle-quote { color: #eef1ff; }
+    .dark .blogstyle-quote .nv-quote-mark { color: #9fb2ff; }
+    .blogstyle-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 20px auto 0; }
+    .blogstyle-tags span {
+      padding: 7px 14px;
+      border-radius: 999px;
+      background: #e7edff;
+      color: #3b5bdb;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
     .nv-search {
       position: relative;
       display: flex;
@@ -4051,8 +4095,9 @@
       padding: 0 6px 0 20px;
       border: 2px solid var(--nv-green);
       border-radius: 9999px;
-      background: var(--ds-card);
+      background: rgba(255, 255, 255, 0.96);
     }
+    .dark .nv-search { background: rgba(34, 34, 39, 0.94); border-color: #6f82d6; }
     .nv-search:focus-within { box-shadow: 0 0 0 4px var(--nv-green-tint); }
     .nv-search-icon { width: 22px; height: 22px; flex: none; color: var(--nv-green); }
     .nv-search input {
@@ -4100,43 +4145,52 @@
       cursor: pointer;
     }
     .nv-text-link:hover { text-decoration: underline; }
-    .nv-quick {
+    /* 바로가기 메뉴 띠: 히어로 바로 아래 네이비 띠 + 흰 카드 6개 (다크 모드에서도 그대로) */
+    .blogstyle-menu-wrap { margin: 0 0 24px; padding: 22px 24px 28px; border-radius: 16px; background: #1f2d6b; }
+    .blogstyle-menu-head {
       display: flex;
       flex-wrap: wrap;
-      justify-content: center;
-      gap: 8px 20px;
-      max-width: 640px;
-      margin: 28px auto 0;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px 16px;
+      max-width: 1100px;
+      margin: 0 auto 16px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .blogstyle-menu-head strong { color: #fff; font-weight: 800; }
+    .blogstyle-menu-head strong span { color: #c9d2f2; }
+    .blogstyle-menu-head a { color: #c9d2f2; font-weight: 800; text-decoration: none; }
+    .blogstyle-menu-head a:hover { color: #fff; text-decoration: underline; }
+    .nv-quick {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 14px;
+      max-width: 1100px;
+      margin: 0 auto;
     }
     .nv-quick button, #member-content .nv-quick button {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
-      min-width: 64px;
-      white-space: nowrap;
-      padding: 0 !important;
+      gap: 6px;
+      min-width: 0;
+      padding: 16px 8px 14px !important;
       border: 0 !important;
-      background: none !important;
-      color: var(--ds-slate) !important;
-      font-size: 13px !important;
-      font-weight: 500 !important;
+      border-radius: 14px !important;
+      background: #fff !important;
+      box-shadow: 0 8px 20px -12px rgba(0, 0, 0, 0.5);
       cursor: pointer;
+      transition: transform 220ms var(--nv-ease-out, ease), box-shadow 220ms var(--nv-ease-out, ease);
     }
-    .nv-quick-icon {
-      width: 52px;
-      height: 52px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 16px;
-      border: 1px solid var(--ds-hairline);
-      background: var(--ds-surface);
-      transition: border-color 120ms var(--ds-ease-standard);
+    .nv-quick button:hover { transform: translateY(-3px); box-shadow: 0 14px 26px -12px rgba(0, 0, 0, 0.55); }
+    .nv-quick button:active { transform: translateY(-1px) scale(0.98); }
+    .nv-quick img { width: 72px; height: 72px; object-fit: contain; mix-blend-mode: multiply; }
+    .blogstyle-menu-title { color: #1f2d6b; font-size: 16px; font-weight: 900; line-height: 1.25; }
+    .nv-quick small { color: #7a7f8c; font-size: 12px; font-weight: 600; line-height: 1.3; text-align: center; }
+    @media (max-width: 760px) {
+      .nv-quick { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
-    .nv-quick-icon svg { width: 24px; height: 24px; color: var(--nv-green); }
-    .nv-quick button:hover .nv-quick-icon { border-color: var(--nv-green); }
-    .nv-quick button:hover { color: var(--ds-ink) !important; }
 
     /* ── 칩 · 버튼 ── */
     .ds-chip svg { color: var(--nv-green); }
@@ -4149,6 +4203,7 @@
 
     /* ── 섹션 제목 · 타일 · 카드: 굵은 제목, 12px 라운드 ── */
     #guest-content .ds-section-head h2, #member-content .ds-section-head h2 {
+      color: var(--nv-green-text) !important;
       font-size: clamp(20px, 2.2vw, 24px) !important;
       font-weight: 700 !important;
       letter-spacing: -0.02em;
@@ -4276,14 +4331,464 @@
       .nv-search { height: 54px; padding-left: 16px; }
       .nv-search input { font-size: 16px !important; }
       .nv-search .nv-search-btn, #guest-content .nv-search button.nv-search-btn { height: 42px !important; padding: 0 16px !important; font-size: 15px !important; }
-      .nv-quick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 8px; }
-      .nv-quick button, #member-content .nv-quick button { min-width: 0; width: 100%; }
-    }
-    @media (max-width: 1023px) {
-      .nv-hero-brand { display: none; }
+      .blogstyle-badge { padding: 8px 16px; font-size: 14px; }
+      .blogstyle-quote { font-size: 16px; }
+      .blogstyle-menu-wrap { padding: 18px 12px 20px; border-radius: 14px; }
+      .blogstyle-menu-head { margin-bottom: 12px; padding: 0 4px; font-size: 13px; }
+      .nv-quick { gap: 10px; }
+      .nv-quick button, #member-content .nv-quick button { padding: 14px 6px 12px !important; }
+      .nv-quick img { width: 56px; height: 56px; }
+      .blogstyle-menu-title { font-size: 15px; }
     }
     @media (prefers-reduced-motion: reduce) {
       .ds-tile, .ds-card, .ds-grad-text, #left-sidebar { animation: none !important; }
+    }
+
+    /* =====================================================================
+       MOTION & COMPONENTS (2026-11-01)
+       탭 · 아코디언 · 스켈레톤 · 모달 · 토스트 · 서랍 +
+       호버 · 마이크로 인터랙션 · 스크롤 리빌 · 스태거 · 패럴랙스
+       ===================================================================== */
+    :root {
+      --nv-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --nv-lift-shadow: 0 14px 28px -18px rgba(15, 23, 42, 0.35);
+      --nv-rose: #e11d48;
+      --nv-shimmer: rgba(255, 255, 255, 0.65);
+    }
+    .dark {
+      --nv-lift-shadow: 0 14px 28px -16px rgba(0, 0, 0, 0.75);
+      --nv-shimmer: rgba(255, 255, 255, 0.06);
+    }
+
+    /* ── 스크롤 리빌 + 스태거 ── */
+    .nv-reveal:not(.is-in) { opacity: 0 !important; animation: none !important; }
+    .nv-reveal.is-in {
+      animation: nv-rise 640ms var(--nv-ease-out) backwards !important;
+      animation-delay: calc(var(--nv-i, 0) * 70ms) !important;
+    }
+    @keyframes nv-rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+    @keyframes nv-fade-in { from { opacity: 0; } }
+    @keyframes nv-pop-in { from { opacity: 0; transform: translateY(16px) scale(0.97); } }
+    @keyframes nv-slide-in { from { opacity: 0; transform: translateX(-12px); } }
+
+    /* ── 패럴랙스 히어로 ── */
+    #member-content #shortener-section > .ds-hero { overflow: hidden; }
+    .ds-hero > .future-hero-inner {
+      position: relative;
+      z-index: 1;
+      transform: translate3d(0, var(--nv-py, 0px), 0);
+      opacity: var(--nv-po, 1);
+      will-change: transform;
+    }
+
+    /* ── 헤더: 스크롤 진행 막대 ── */
+    .nv-scroll-progress {
+      position: absolute;
+      left: 0;
+      bottom: -1px;
+      width: 100%;
+      height: 2px;
+      background: var(--nv-green);
+      transform: scaleX(var(--nv-progress, 0));
+      transform-origin: 0 50%;
+      pointer-events: none;
+    }
+
+    /* ── 호버: 타일 · 카드 들어올림 ── */
+    #member-content .ds-tile, #guest-content .ds-tile, #guest-content .ds-card,
+    #member-content #canva-recent-grid .canva-card, .nv-guide-step {
+      transition: transform 220ms var(--nv-ease-out), box-shadow 220ms var(--nv-ease-out), border-color 120ms ease, background-color 120ms ease !important;
+    }
+    #member-content button.ds-tile:hover, #member-content .ds-tile-outline:hover,
+    #guest-content .ds-tile:hover, #guest-content .ds-card:hover,
+    #member-content #canva-recent-grid .canva-card:hover, .nv-guide-step:hover {
+      transform: translateY(-4px) !important;
+      box-shadow: var(--nv-lift-shadow) !important;
+    }
+    #member-content button.ds-tile:active, #member-content #canva-recent-grid .canva-card:active { transform: translateY(-1px) scale(0.99) !important; }
+    .ds-tile .future-principle-icon svg { transition: transform 260ms var(--nv-ease-out); }
+    .ds-tile:hover .future-principle-icon svg { transform: scale(1.12) rotate(-6deg); }
+    .ds-tool-list button svg { transition: transform 220ms var(--nv-ease-out); }
+    .ds-tool-list button:hover svg { transform: translateX(3px); }
+    .ds-tile-link { transition: letter-spacing 220ms var(--nv-ease-out), color 120ms ease; }
+    .ds-tile-link:hover { letter-spacing: 0.02em; }
+
+    /* ── 마이크로 인터랙션: 바로가기 · 버튼 · 사이드바 ── */
+    .nv-search-btn, .ds-header-cta, .nv-guide-cta { transition: transform 120ms ease, background-color 120ms ease !important; }
+    .nv-search-btn:active, .ds-header-cta:active, .nv-guide-cta:active { transform: scale(0.96) !important; }
+    .nv-search .nv-search-icon { transition: transform 260ms var(--nv-ease-out); }
+    .nv-search:focus-within .nv-search-icon { transform: rotate(-20deg) scale(1.1); }
+    #left-sidebar nav > button svg { transition: transform 220ms var(--nv-ease-out); }
+    #left-sidebar nav > button:hover svg { transform: translateX(2px) !important; }
+    .nv-ripple-host { overflow: hidden; }
+    .nv-ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.25;
+      transform: scale(0);
+      pointer-events: none;
+      animation: nv-ripple 560ms var(--nv-ease-out) forwards;
+    }
+    button.ds-tile .nv-ripple, .nv-tab .nv-ripple { opacity: 0.1; }
+    @keyframes nv-ripple { to { transform: scale(1); opacity: 0; } }
+
+    /* ── 탭 ── */
+    .nv-guide { margin-top: 64px; }
+    .nv-guide .ds-section-head { margin-bottom: 16px; }
+    .nv-tablist {
+      position: relative;
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--ds-hairline);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nv-tablist::-webkit-scrollbar { display: none; }
+    .nv-tab {
+      position: relative;
+      flex: none;
+      min-height: 44px;
+      padding: 0 16px;
+      border: 0;
+      border-radius: 8px 8px 0 0;
+      background: none;
+      color: var(--ds-slate);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 120ms ease, background-color 120ms ease;
+    }
+    .nv-tab:hover { color: var(--ds-ink); background: var(--ds-surface); }
+    .nv-tab[aria-selected="true"] { color: var(--nv-green-text); font-weight: 700; }
+    .nv-tab-ink {
+      position: absolute;
+      left: 0;
+      bottom: -1px;
+      width: 0;
+      height: 3px;
+      border-radius: 3px 3px 0 0;
+      background: var(--nv-green);
+      transition: transform 320ms var(--nv-ease-out), width 320ms var(--nv-ease-out);
+    }
+    .nv-tabpanel { padding-top: 24px; }
+    .nv-tabpanel[hidden] { display: none; }
+    .nv-tabpanel.is-entering { animation: nv-rise 360ms var(--nv-ease-out); }
+    .nv-steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: nv-step;
+    }
+    .nv-guide-step {
+      position: relative;
+      padding: 24px;
+      border: 1px solid var(--ds-hairline);
+      border-radius: 12px;
+      background: var(--ds-card);
+      counter-increment: nv-step;
+    }
+    .nv-guide-step::before {
+      content: counter(nv-step);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      margin-bottom: 12px;
+      border-radius: 50%;
+      background: var(--nv-green-tint);
+      color: var(--nv-green-text);
+      font-size: 16px;
+      font-weight: 700;
+      transition: background-color 120ms ease, color 120ms ease, transform 260ms var(--nv-ease-out);
+    }
+    .nv-guide-step:hover { border-color: var(--nv-green); }
+    .nv-guide-step:hover::before { background: var(--nv-green); color: #fff; transform: scale(1.08); }
+    .nv-guide-step h3 { margin: 0 0 6px; color: var(--ds-ink); font-size: 17px; font-weight: 700; line-height: 1.4; }
+    .nv-guide-step p { margin: 0; color: var(--ds-muted); font-size: 15px; line-height: 1.55; }
+    .nv-guide-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 44px;
+      margin-top: 16px;
+      padding: 0 20px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--nv-green) !important;
+      color: #fff !important;
+      font-size: 16px !important;
+      font-weight: 700 !important;
+      cursor: pointer;
+    }
+    .nv-guide-cta:hover { background: var(--nv-green-hover) !important; }
+    .nv-guide-cta svg { width: 18px; height: 18px; transition: transform 220ms var(--nv-ease-out); }
+    .nv-guide-cta:hover svg { transform: translateX(3px); }
+
+    /* ── 아코디언 ── */
+    .nv-faq { margin-top: 40px; }
+    .nv-acc { border-top: 1px solid var(--ds-hairline); }
+    .nv-acc-item { border-bottom: 1px solid var(--ds-hairline); }
+    .nv-acc-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      width: 100%;
+      min-height: 56px;
+      padding: 16px 4px;
+      border: 0;
+      background: none;
+      color: var(--ds-ink);
+      font-size: 16px;
+      font-weight: 700;
+      text-align: left;
+      cursor: pointer;
+      transition: color 120ms ease;
+    }
+    .nv-acc-trigger:hover { color: var(--nv-green-text); }
+    .nv-acc-icon {
+      position: relative;
+      flex: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--ds-surface);
+      transition: background-color 120ms ease, transform 320ms var(--nv-ease-out);
+    }
+    .nv-acc-icon::before, .nv-acc-icon::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 13px;
+      width: 12px;
+      height: 2px;
+      border-radius: 2px;
+      background: var(--ds-slate);
+      transition: transform 320ms var(--nv-ease-out), background-color 120ms ease;
+    }
+    .nv-acc-icon::after { transform: rotate(90deg); }
+    .nv-acc-trigger:hover .nv-acc-icon { background: var(--nv-green-tint); }
+    .is-open > .nv-acc-trigger .nv-acc-icon { background: var(--nv-green); transform: rotate(180deg); }
+    .is-open > .nv-acc-trigger .nv-acc-icon::before, .is-open > .nv-acc-trigger .nv-acc-icon::after { background: #fff; }
+    .is-open > .nv-acc-trigger .nv-acc-icon::after { transform: rotate(0deg); }
+    .nv-acc-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 320ms var(--nv-ease-out); }
+    .nv-acc-item.is-open > .nv-acc-panel { grid-template-rows: 1fr; }
+    .nv-acc-panel > div { overflow: hidden; }
+    .nv-acc-panel p {
+      margin: 0;
+      padding: 0 4px 20px;
+      color: var(--ds-body);
+      font-size: 15px;
+      line-height: 1.6;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity 220ms ease, transform 320ms var(--nv-ease-out);
+    }
+    .nv-acc-item.is-open .nv-acc-panel p { opacity: 1; transform: none; }
+
+    /* ── 스켈레톤 로딩 ── */
+    .nv-skel { position: relative; display: block; overflow: hidden; border-radius: 8px; background: var(--ds-surface); }
+    .nv-skel::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      transform: translateX(-100%);
+      background: linear-gradient(90deg, transparent, var(--nv-shimmer), transparent);
+      animation: nv-shimmer 1.4s ease-in-out infinite;
+    }
+    @keyframes nv-shimmer { to { transform: translateX(100%); } }
+    .nv-skel-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 150px;
+      padding: 14px;
+      border: 1px solid var(--ds-hairline);
+      border-radius: 12px;
+      background: var(--ds-card);
+    }
+    .nv-skel-thumb { height: 64px; }
+    .nv-skel-line { height: 12px; }
+    .nv-skel-w40 { width: 40%; } .nv-skel-w70 { width: 70%; } .nv-skel-w90 { width: 90%; }
+    .nv-tile-skel { display: none; }
+    .nv-loading .nv-tile-skel { display: block; }
+    .nv-loading .ds-tile-stat, .nv-loading > p { display: none !important; }
+    .nv-tile-skel.nv-skel-stat { width: 160px; height: 52px; margin: 12px 0; }
+    .nv-tile-skel.nv-skel-meta { width: min(240px, 80%); height: 14px; margin-bottom: 16px; }
+    .nv-load-error { padding: 32px 16px; border-radius: 12px; background: var(--ds-surface); color: var(--ds-muted); font-size: 15px; text-align: center; }
+
+    /* ── 모달 ── */
+    .modal-overlay:not(.hidden) { animation: nv-fade-in 200ms ease both !important; }
+    .modal-overlay:not(.hidden) > div { animation: nv-pop-in 300ms var(--nv-ease-out) backwards !important; }
+
+    /* ── 토스트 ── */
+    .toast-container { right: 24px; bottom: 24px; gap: 8px; }
+    @media (max-width: 1023px) {
+      .toast-container { left: 16px; right: 16px; bottom: calc(84px + env(safe-area-inset-bottom)); width: auto; max-width: none; }
+    }
+    body .toast, body .light-theme .toast, .dark body .toast {
+      position: relative;
+      overflow: hidden;
+      padding: 14px 16px 17px !important;
+      border: 1px solid var(--ds-hairline) !important;
+      border-radius: 12px !important;
+      background: var(--ds-card) !important;
+      color: var(--ds-ink) !important;
+      box-shadow: 0 16px 32px -20px rgba(15, 23, 42, 0.45) !important;
+      animation: nv-toast-in 380ms var(--nv-ease-out) both;
+    }
+    @keyframes nv-toast-in { from { opacity: 0; transform: translateY(16px) scale(0.96); } }
+    .toast::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 3px;
+      background: var(--nv-blue);
+      transform-origin: 0 50%;
+      animation: nv-toast-timer 4500ms linear forwards;
+    }
+    .toast-success::after { background: var(--nv-green); }
+    .toast-error::after { background: var(--nv-rose); }
+    @keyframes nv-toast-timer { to { transform: scaleX(0); } }
+    .toast .toast-icon svg { color: var(--nv-blue); animation: nv-pop-in 420ms var(--nv-ease-out) 120ms backwards; }
+    .toast-success .toast-icon svg { color: var(--nv-green); }
+    .toast-error .toast-icon svg { color: var(--nv-rose); }
+    .toast .toast-title { color: var(--ds-ink) !important; font-size: 15px !important; font-weight: 700 !important; }
+    .toast .toast-message { color: var(--ds-muted) !important; font-size: 13px !important; }
+    .toast .toast-close { color: var(--ds-muted); transition: transform 220ms var(--nv-ease-out), color 120ms ease; }
+    .toast .toast-close:hover { color: var(--ds-ink); transform: rotate(90deg); }
+
+    /* ── 서랍(사이드바) ── */
+    @media (max-width: 1023px) {
+      .ds-scrim.is-open { animation: nv-fade-in 220ms ease both; }
+      #left-sidebar:not(.hidden) nav > button { animation: nv-slide-in 320ms var(--nv-ease-out) backwards; }
+      #left-sidebar:not(.hidden) nav > button:nth-child(2) { animation-delay: 30ms; }
+      #left-sidebar:not(.hidden) nav > button:nth-child(3) { animation-delay: 60ms; }
+      #left-sidebar:not(.hidden) nav > button:nth-child(4) { animation-delay: 90ms; }
+      #left-sidebar:not(.hidden) nav > button:nth-child(5) { animation-delay: 120ms; }
+      #left-sidebar:not(.hidden) nav > button:nth-child(6) { animation-delay: 150ms; }
+      #left-sidebar:not(.hidden) nav > button:nth-child(n+7) { animation-delay: 180ms; }
+    }
+
+    @media (max-width: 1023px) {
+      .nv-steps { grid-template-columns: minmax(0, 1fr); }
+    }
+    @media (max-width: 639px) {
+      .nv-guide { margin-top: 40px; }
+      .nv-guide-step { padding: 20px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 1ms !important;
+        animation-delay: 0ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+      }
+      .nv-reveal:not(.is-in) { opacity: 1 !important; }
+      .ds-hero > .future-hero-inner { transform: none; opacity: 1; }
+    }
+    /* ── 학생 명렬표: 교실 TV에서도 읽히도록 글자 확대 (2026-11-01) ── */
+    #gradebook-section thead th { font-size: 15px !important; font-weight: 700 !important; padding: 12px 16px !important; }
+    #gradebook-section tbody td { padding: 14px 16px !important; vertical-align: middle; }
+    #gradebook-table-body { font-size: 17px !important; }
+    #gradebook-table-body td > div > span:first-child.font-mono,
+    #gradebook-table-body span.font-mono { width: 34px !important; height: 34px !important; font-size: 16px !important; border-radius: 8px !important; }
+    #gradebook-table-body .student-name-label { font-size: 19px !important; font-weight: 700 !important; }
+    #gradebook-table-body .student-score-label { font-size: 21px !important; font-weight: 800 !important; }
+    #gradebook-table-body .weekly-score-input { width: 84px !important; min-height: 40px; padding: 6px 10px !important; font-size: 17px !important; }
+    #gradebook-table-body .btn-action-add-weekly,
+    #gradebook-table-body .btn-action-add-score { min-height: 40px; padding: 6px 14px !important; font-size: 15px !important; }
+    #gradebook-table-body .btn-action-delete-student { min-width: 40px; min-height: 40px; }
+    #gradebook-table-body .student-achievements-label,
+    #gradebook-table-body .btn-action-pay-score { padding: 6px 12px !important; font-size: 15px !important; }
+    #gradebook-table-body .text-\[11px\] { font-size: 14px !important; }
+    #gradebook-table-body svg { width: 18px !important; height: 18px !important; }
+    @media (max-width: 639px) {
+      #gradebook-table-body .student-name-label { font-size: 17px !important; }
+      #gradebook-table-body .student-score-label { font-size: 19px !important; }
+    }
+
+
+    /* ── 관리자: 서비스 주소 관리 (오라클 서버 관제) ── */
+    .nv-svc { padding: 24px; border: 1px solid var(--ds-hairline); border-radius: 12px; background: var(--ds-card); color: var(--ds-body); }
+    .nv-svc-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .nv-svc-head h2 { margin: 0 0 4px; color: var(--ds-ink); font-size: 22px; font-weight: 700; }
+    .nv-svc-head p { margin: 0; max-width: 62ch; color: var(--ds-muted); font-size: 14px; line-height: 1.55; }
+    .nv-svc-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .nv-svc-btn {
+      display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px;
+      border: 1px solid var(--ds-hairline); border-radius: 8px; background: var(--ds-card);
+      color: var(--ds-ink); font-size: 14px; font-weight: 700; cursor: pointer;
+      transition: border-color 120ms ease, background-color 120ms ease, transform 120ms ease;
+    }
+    .nv-svc-btn:hover { border-color: var(--nv-green); }
+    .nv-svc-btn:active { transform: scale(0.97); }
+    .nv-svc-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .nv-svc-btn svg { width: 16px; height: 16px; }
+    .nv-svc-btn.is-primary { border-color: var(--nv-green); background: var(--nv-green); color: #fff; }
+    .nv-svc-btn.is-primary:hover { background: var(--nv-green-hover); }
+    .nv-svc-btn.is-danger { border-color: var(--nv-rose); color: var(--nv-rose); }
+    .nv-svc-btn.is-danger:hover { background: rgba(225, 29, 72, 0.08); }
+    .nv-svc-btn.is-danger-fill { border-color: var(--nv-rose); background: var(--nv-rose); color: #fff; }
+    .nv-svc-btn.is-small { min-height: 34px; padding: 0 10px; font-size: 13px; }
+    .nv-svc-summary { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 12px; font-size: 13px; color: var(--ds-muted); }
+    .nv-svc-summary b { color: var(--ds-ink); }
+    .nv-svc-table-wrap { overflow-x: auto; border: 1px solid var(--ds-hairline); border-radius: 12px; }
+    .nv-svc-table { width: 100%; min-width: 860px; border-collapse: collapse; }
+    .nv-svc-table th, .nv-svc-table td { padding: 12px 14px; border-bottom: 1px solid var(--ds-hairline); text-align: left; vertical-align: top; font-size: 14px; }
+    .nv-svc-table th { background: var(--ds-surface); color: var(--ds-muted); font-size: 13px; font-weight: 700; white-space: nowrap; }
+    .nv-svc-table tr:last-child td { border-bottom: 0; }
+    .nv-svc-table tbody tr { transition: background-color 120ms ease; }
+    .nv-svc-table tbody tr:hover { background: var(--ds-surface); }
+    .nv-svc-table .is-right { text-align: right; }
+    .nv-svc-name { display: grid; gap: 2px; }
+    .nv-svc-name b { color: var(--ds-ink); font-size: 15px; }
+    .nv-svc-name a { color: var(--nv-blue); font-size: 13px; text-decoration: none; }
+    .nv-svc-name a:hover { text-decoration: underline; }
+    .nv-svc-name small { color: var(--ds-muted); font-size: 12px; }
+    .nv-svc-badge { display: inline-flex; align-items: center; margin: 0 4px 4px 0; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .nv-svc-badge.ok { background: var(--nv-green-tint); color: var(--nv-green-text); }
+    .nv-svc-badge.bad { background: rgba(225, 29, 72, 0.1); color: var(--nv-rose); }
+    .nv-svc-badge.muted { background: var(--ds-surface); color: var(--ds-muted); border: 1px solid var(--ds-hairline); }
+    .nv-svc-kind { display: grid; gap: 4px; font-size: 13px; color: var(--ds-slate); }
+    .nv-svc-kind code { font-size: 12px; color: var(--ds-muted); word-break: break-all; }
+    .nv-svc-row-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+    .nv-svc-sub { margin: 28px 0 10px; color: var(--ds-ink); font-size: 17px; font-weight: 700; }
+    .nv-svc-list { display: grid; gap: 8px; }
+    .nv-svc-item { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--ds-hairline); border-radius: 12px; }
+    .nv-svc-item > div:first-child { display: grid; gap: 2px; min-width: 0; }
+    .nv-svc-item b { color: var(--ds-ink); font-size: 15px; }
+    .nv-svc-item small { color: var(--ds-muted); font-size: 13px; word-break: break-all; }
+    .nv-svc-empty { padding: 14px 16px; border-radius: 12px; background: var(--ds-surface); color: var(--ds-muted); font-size: 14px; }
+    .nv-svc-error { padding: 14px 16px; border-radius: 12px; background: rgba(225, 29, 72, 0.08); color: var(--ds-ink); font-size: 14px; }
+    .nv-svc-modal { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15, 23, 42, 0.45); animation: nv-fade-in 200ms ease both; }
+    .nv-svc-modal.hidden { display: none; }
+    .nv-svc-dialog { width: min(520px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; padding: 24px; border-radius: 12px; background: var(--ds-card); color: var(--ds-body); animation: nv-pop-in 300ms var(--nv-ease-out) backwards; }
+    .nv-svc-dialog h3 { margin: 0 0 12px; color: var(--ds-ink); font-size: 19px; font-weight: 700; }
+    .nv-svc-dialog p, .nv-svc-dialog li { font-size: 14px; line-height: 1.6; }
+    .nv-svc-dialog ul { margin: 0 0 12px; padding-left: 18px; display: grid; gap: 4px; }
+    .nv-svc-dialog code { font-size: 13px; word-break: break-all; }
+    .nv-svc-field { display: grid; gap: 6px; margin-bottom: 14px; }
+    .nv-svc-field span { color: var(--ds-ink); font-size: 14px; font-weight: 700; }
+    .nv-svc-field small { color: var(--ds-muted); font-size: 12px; }
+    .nv-svc-field input {
+      min-height: 44px; padding: 0 12px; border: 1px solid var(--ds-hairline); border-radius: 8px;
+      background: var(--ds-card); color: var(--ds-ink); font-size: 15px;
+    }
+    .nv-svc-field input:focus { outline: none; border-color: var(--nv-green); box-shadow: 0 0 0 3px var(--nv-green-tint); }
+    .nv-svc-warn { margin-bottom: 14px; padding: 12px 14px; border-radius: 8px; background: rgba(225, 29, 72, 0.08); color: var(--ds-ink); font-size: 14px; }
+    .nv-svc-modal-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+    .nv-svc-modal-msg { min-height: 20px; margin-top: 8px; color: var(--nv-rose); font-size: 13px; }
+    @media (max-width: 639px) {
+      .nv-svc { padding: 16px; }
+      .nv-svc-head h2 { font-size: 20px; }
     }
   </style>
 </head>
@@ -4586,7 +5091,9 @@
       <section class="future-hero ds-hero" aria-labelledby="future-hero-title">
         <div class="future-hero-inner">
           <p class="nv-hero-brand fs-reveal fs-reveal-1">kfcman<span>.link</span></p>
+          <p class="blogstyle-badge">초등교사 · 교사개발자 kfcman의 교실 도구함</p>
           <h1 id="future-hero-title" class="fs-reveal fs-reveal-2">학교의 모든 연결을, <em>더 가볍고 빠르게.</em></h1>
+          <p class="blogstyle-quote"><span class="nv-quote-mark" aria-hidden="true">“</span> 링크 하나로 <b>교실의 작은 변화</b>를 만듭니다 <span class="nv-quote-mark" aria-hidden="true">”</span></p>
 
           <form class="nv-search fs-reveal fs-reveal-3" onsubmit="event.preventDefault(); openAuthModal('register');">
             <i data-lucide="link-2" class="nv-search-icon"></i>
@@ -4601,10 +5108,8 @@
             <button onclick="openAuthModal('login')" type="button" id="btn-hero-login" class="nv-text-link">로그인</button>
           </p>
 
-          <div class="future-signals fs-reveal fs-reveal-4" aria-label="주요 특징">
-            <span class="ds-chip"><i data-lucide="shield-check"></i> 안심 보안 검증</span>
-            <span class="ds-chip"><i data-lucide="qr-code"></i> 스마트 QR코드</span>
-            <span class="ds-chip"><i data-lucide="bar-chart-3"></i> 실시간 접속 통계</span>
+          <div class="blogstyle-tags fs-reveal fs-reveal-4" aria-label="주요 기능">
+            <span>#단축주소</span><span>#QR코드</span><span>#학급운영</span><span>#과학실험</span><span>#마음챙김</span>
           </div>
         </div>
         <i class="ds-hero-bar" aria-hidden="true"></i>
@@ -4731,6 +5236,65 @@
           <p>모둠별 아이디어 카드를 실시간 게시판에 모으고 함께 정리합니다.</p>
         </article>
       </div>
+
+        <!-- 안내(탭) + 자주 묻는 질문(아코디언) -->
+        <div class="nv-guide">
+          <div class="ds-section-head"><h2>이렇게 시작해요</h2></div>
+          <div class="nv-tabs" data-nv-tabs>
+            <div class="nv-tablist" role="tablist" aria-label="시작 안내">
+              <button type="button" role="tab" class="nv-tab" aria-selected="true">단축 주소</button>
+              <button type="button" role="tab" class="nv-tab" aria-selected="false">QR코드</button>
+              <button type="button" role="tab" class="nv-tab" aria-selected="false">수업 도구</button>
+              <span class="nv-tab-ink" aria-hidden="true"></span>
+            </div>
+            <div role="tabpanel" class="nv-tabpanel" tabindex="0">
+              <ol class="nv-steps">
+                <li class="nv-guide-step"><h3>긴 주소 붙여 넣기</h3><p>구글 폼, 문서, 영상 주소를 위 입력창에 그대로 붙여 넣어요.</p></li>
+                <li class="nv-guide-step"><h3>이름 정하기</h3><p>단축 창의 ‘단축 주소’ 칸에 3-2반처럼 기억하기 쉬운 이름을 적어요.</p></li>
+                <li class="nv-guide-step"><h3>칠판에 적기</h3><p>kfcman.link/3-2반 한 줄이면 학생이 주소창에 바로 입력해요.</p></li>
+              </ol>
+              <button type="button" class="nv-guide-cta" onclick="openAuthModal('register')"><span>가입하고 시작하기</span><i data-lucide="arrow-right"></i></button>
+            </div>
+            <div role="tabpanel" class="nv-tabpanel" tabindex="0" hidden>
+              <ol class="nv-steps">
+                <li class="nv-guide-step"><h3>단축 주소 만들기</h3><p>단축 주소를 만들면 QR코드가 함께 만들어져요.</p></li>
+                <li class="nv-guide-step"><h3>이미지로 저장</h3><p>QR코드를 이미지로 저장해 학습지나 가정통신문에 넣어요.</p></li>
+                <li class="nv-guide-step"><h3>TV에 띄우기</h3><p>교실 화면에 띄우면 학생이 태블릿으로 찍어 바로 들어와요.</p></li>
+              </ol>
+              <button type="button" class="nv-guide-cta" onclick="openAuthModal('register')"><span>가입하고 시작하기</span><i data-lucide="arrow-right"></i></button>
+            </div>
+            <div role="tabpanel" class="nv-tabpanel" tabindex="0" hidden>
+              <ol class="nv-steps">
+                <li class="nv-guide-step"><h3>교실</h3><p>으쓱점수로 칭찬을 쌓고 학급 보드로 함께 확인해요.</p></li>
+                <li class="nv-guide-step"><h3>마음챙김</h3><p>수업 전 학생들의 마음 상태를 가볍게 살펴요.</p></li>
+                <li class="nv-guide-step"><h3>과학실험실 · MBL</h3><p>실험 수업에 쓸 도구와 MBL 측정 가이드를 바로 열어요.</p></li>
+              </ol>
+              <button type="button" class="nv-guide-cta" onclick="openAuthModal('register')"><span>가입하고 시작하기</span><i data-lucide="arrow-right"></i></button>
+            </div>
+          </div>
+
+          <div class="nv-faq">
+            <div class="ds-section-head"><h2>자주 묻는 질문</h2></div>
+            <div class="nv-acc">
+              <div class="nv-acc-item">
+                <button type="button" class="nv-acc-trigger"><span>단축 주소는 몇 개까지 만들 수 있나요?</span><span class="nv-acc-icon" aria-hidden="true"></span></button>
+                <div class="nv-acc-panel"><div><p>일반회원은 최대 50개까지 만들 수 있어요. 더 필요하면 관리자에게 ‘우수회원👑’ 등급업을 요청해 주세요.</p></div></div>
+              </div>
+              <div class="nv-acc-item">
+                <button type="button" class="nv-acc-trigger"><span>학생도 가입해야 하나요?</span><span class="nv-acc-icon" aria-hidden="true"></span></button>
+                <div class="nv-acc-panel"><div><p>아니요. 선생님이 공유한 단축 주소와 설문은 학생이 로그인 없이 바로 열 수 있어요.</p></div></div>
+              </div>
+              <div class="nv-acc-item">
+                <button type="button" class="nv-acc-trigger"><span>원하는 이름으로 주소를 만들 수 있나요?</span><span class="nv-acc-icon" aria-hidden="true"></span></button>
+                <div class="nv-acc-panel"><div><p>네. 단축 창의 ‘단축 주소’ 칸에 원하는 이름을 적으면 kfcman.link/원하는이름 으로 만들어져요. 이미 쓰이고 있는 이름은 고를 수 없어요.</p></div></div>
+              </div>
+              <div class="nv-acc-item">
+                <button type="button" class="nv-acc-trigger"><span>클릭 수는 어디서 확인하나요?</span><span class="nv-acc-icon" aria-hidden="true"></span></button>
+                <div class="nv-acc-panel"><div><p>회원 홈의 ‘바로 읽는 반응’에서 전체 클릭 수를, 최근 프로젝트 카드에서 링크별 클릭 수를 볼 수 있어요.</p></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
     </div>
 
       <!-- [회원 영역 컨테이너] 불필요한 중복 배너 제거로 본문 상단 공간 극대화 -->
@@ -4744,22 +5308,31 @@
         <div class="ds-hero ds-member-hero" id="ds-member-hero">
           <div class="future-hero-inner">
             <p class="nv-hero-brand">kfcman<span>.link</span></p>
+            <p class="blogstyle-badge">초등교사 · 교사개발자 kfcman의 교실 도구함</p>
             <h1>학교의 모든 연결을, <em>더 가볍고 빠르게.</em></h1>
+            <p class="blogstyle-quote"><span class="nv-quote-mark" aria-hidden="true">“</span> 링크 하나로 <b>교실의 작은 변화</b>를 만듭니다 <span class="nv-quote-mark" aria-hidden="true">”</span></p>
             <form class="nv-search" onsubmit="dsQuickShorten(event)">
               <i data-lucide="link-2" class="nv-search-icon"></i>
               <input type="url" id="ds-quick-url" placeholder="긴 주소를 붙여 넣으세요" aria-label="단축할 주소">
               <button type="submit" class="nv-search-btn"><span>단축하기</span></button>
             </form>
-            <nav class="nv-quick" aria-label="수업 도구 바로가기">
-              <button type="button" onclick="switchMainTab('classroom')"><span class="nv-quick-icon"><i data-lucide="award"></i></span><span>교실</span></button>
-              <button type="button" onclick="switchMainTab('projects')"><span class="nv-quick-icon"><i data-lucide="folder"></i></span><span>프로젝트</span></button>
-              <button type="button" onclick="switchMainTab('mindcheck')"><span class="nv-quick-icon"><i data-lucide="heart"></i></span><span>마음챙김</span></button>
-              <button type="button" onclick="switchMainTab('scibot')"><span class="nv-quick-icon"><i data-lucide="flask-conical"></i></span><span>과학실험실</span></button>
-              <button type="button" onclick="switchMainTab('scibit')"><span class="nv-quick-icon"><i data-lucide="activity"></i></span><span>MBL 가이드</span></button>
-              <button type="button" onclick="switchMainTab('settings')"><span class="nv-quick-icon"><i data-lucide="settings"></i></span><span>설정</span></button>
-            </nav>
+            <div class="blogstyle-tags" aria-label="주요 기능">
+              <span>#단축주소</span><span>#QR코드</span><span>#학급운영</span><span>#과학실험</span><span>#마음챙김</span>
+            </div>
           </div>
           <i class="ds-hero-bar" aria-hidden="true"></i>
+        </div>
+
+        <div class="blogstyle-menu-wrap">
+          <div class="blogstyle-menu-head"><strong>MENU <span>· 수업 도구 바로가기</span></strong><a href="https://blog.naver.com/kfcman21" target="_blank" rel="noopener">blog.naver.com/kfcman21 ›</a></div>
+          <nav class="nv-quick" aria-label="수업 도구 바로가기">
+            <button type="button" onclick="switchMainTab('classroom')"><img src="/static/img/blogstyle/icon_classroom.png?v=20261101" alt="" width="72" height="72"><span class="blogstyle-menu-title">교실</span><small>으쓱점수·학급 보드</small></button>
+            <button type="button" onclick="switchMainTab('projects')"><img src="/static/img/blogstyle/icon_project.png?v=20261101" alt="" width="72" height="72"><span class="blogstyle-menu-title">프로젝트</span><small>수업 프로젝트 모음</small></button>
+            <button type="button" onclick="switchMainTab('mindcheck')"><img src="/static/img/blogstyle/icon_mind.png?v=20261101" alt="" width="72" height="72"><span class="blogstyle-menu-title">마음챙김</span><small>마음 돌봄 활동</small></button>
+            <button type="button" onclick="switchMainTab('scibot')"><img src="/static/img/blogstyle/icon_science.png?v=20261101" alt="" width="72" height="72"><span class="blogstyle-menu-title">과학실험실</span><small>실험 시뮬레이션</small></button>
+            <button type="button" onclick="switchMainTab('scibit')"><img src="/static/img/blogstyle/icon_mbl.png?v=20261101" alt="" width="72" height="72"><span class="blogstyle-menu-title">MBL 가이드</span><small>센서 측정 가이드</small></button>
+            <button type="button" onclick="switchMainTab('settings')"><img src="/static/img/blogstyle/icon_settings.png?v=20261101" alt="" width="72" height="72"><span class="blogstyle-menu-title">설정</span><small>계정·학급 관리</small></button>
+          </nav>
         </div>
 
         <!-- 벤토 그리드: 바로 읽는 반응 + 수업 도구 -->
@@ -4850,6 +5423,65 @@
           <!-- Grid View Container (와이드 풀스크린 반응형 칼럼 확장) -->
           <div id="canva-recent-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 w-full">
             <!-- Grid Cards will be dynamically injected here -->
+          </div>
+        </div>
+
+        <!-- 안내(탭) + 자주 묻는 질문(아코디언) -->
+        <div class="nv-guide ds-home-only">
+          <div class="ds-section-head"><h2>이렇게 시작해요</h2></div>
+          <div class="nv-tabs" data-nv-tabs>
+            <div class="nv-tablist" role="tablist" aria-label="시작 안내">
+              <button type="button" role="tab" class="nv-tab" aria-selected="true">단축 주소</button>
+              <button type="button" role="tab" class="nv-tab" aria-selected="false">QR코드</button>
+              <button type="button" role="tab" class="nv-tab" aria-selected="false">수업 도구</button>
+              <span class="nv-tab-ink" aria-hidden="true"></span>
+            </div>
+            <div role="tabpanel" class="nv-tabpanel" tabindex="0">
+              <ol class="nv-steps">
+                <li class="nv-guide-step"><h3>긴 주소 붙여 넣기</h3><p>구글 폼, 문서, 영상 주소를 위 입력창에 그대로 붙여 넣어요.</p></li>
+                <li class="nv-guide-step"><h3>이름 정하기</h3><p>단축 창의 ‘단축 주소’ 칸에 3-2반처럼 기억하기 쉬운 이름을 적어요.</p></li>
+                <li class="nv-guide-step"><h3>칠판에 적기</h3><p>kfcman.link/3-2반 한 줄이면 학생이 주소창에 바로 입력해요.</p></li>
+              </ol>
+              <button type="button" class="nv-guide-cta" onclick="openShortenerModal()"><span>단축 창 열기</span><i data-lucide="arrow-right"></i></button>
+            </div>
+            <div role="tabpanel" class="nv-tabpanel" tabindex="0" hidden>
+              <ol class="nv-steps">
+                <li class="nv-guide-step"><h3>단축 주소 만들기</h3><p>단축 주소를 만들면 QR코드가 함께 만들어져요.</p></li>
+                <li class="nv-guide-step"><h3>이미지로 저장</h3><p>QR코드를 이미지로 저장해 학습지나 가정통신문에 넣어요.</p></li>
+                <li class="nv-guide-step"><h3>TV에 띄우기</h3><p>교실 화면에 띄우면 학생이 태블릿으로 찍어 바로 들어와요.</p></li>
+              </ol>
+              <button type="button" class="nv-guide-cta" onclick="openShortenerModal()"><span>QR코드 만들기</span><i data-lucide="arrow-right"></i></button>
+            </div>
+            <div role="tabpanel" class="nv-tabpanel" tabindex="0" hidden>
+              <ol class="nv-steps">
+                <li class="nv-guide-step"><h3>교실</h3><p>으쓱점수로 칭찬을 쌓고 학급 보드로 함께 확인해요.</p></li>
+                <li class="nv-guide-step"><h3>마음챙김</h3><p>수업 전 학생들의 마음 상태를 가볍게 살펴요.</p></li>
+                <li class="nv-guide-step"><h3>과학실험실 · MBL</h3><p>실험 수업에 쓸 도구와 MBL 측정 가이드를 바로 열어요.</p></li>
+              </ol>
+              <button type="button" class="nv-guide-cta" onclick="switchMainTab('classroom'); window.scrollTo(0, 0);"><span>교실 열기</span><i data-lucide="arrow-right"></i></button>
+            </div>
+          </div>
+
+          <div class="nv-faq">
+            <div class="ds-section-head"><h2>자주 묻는 질문</h2></div>
+            <div class="nv-acc">
+              <div class="nv-acc-item">
+                <button type="button" class="nv-acc-trigger"><span>단축 주소는 몇 개까지 만들 수 있나요?</span><span class="nv-acc-icon" aria-hidden="true"></span></button>
+                <div class="nv-acc-panel"><div><p>일반회원은 최대 50개까지 만들 수 있어요. 더 필요하면 관리자에게 ‘우수회원👑’ 등급업을 요청해 주세요.</p></div></div>
+              </div>
+              <div class="nv-acc-item">
+                <button type="button" class="nv-acc-trigger"><span>학생도 가입해야 하나요?</span><span class="nv-acc-icon" aria-hidden="true"></span></button>
+                <div class="nv-acc-panel"><div><p>아니요. 선생님이 공유한 단축 주소와 설문은 학생이 로그인 없이 바로 열 수 있어요.</p></div></div>
+              </div>
+              <div class="nv-acc-item">
+                <button type="button" class="nv-acc-trigger"><span>원하는 이름으로 주소를 만들 수 있나요?</span><span class="nv-acc-icon" aria-hidden="true"></span></button>
+                <div class="nv-acc-panel"><div><p>네. 단축 창의 ‘단축 주소’ 칸에 원하는 이름을 적으면 kfcman.link/원하는이름 으로 만들어져요. 이미 쓰이고 있는 이름은 고를 수 없어요.</p></div></div>
+              </div>
+              <div class="nv-acc-item">
+                <button type="button" class="nv-acc-trigger"><span>클릭 수는 어디서 확인하나요?</span><span class="nv-acc-icon" aria-hidden="true"></span></button>
+                <div class="nv-acc-panel"><div><p>회원 홈의 ‘바로 읽는 반응’에서 전체 클릭 수를, 최근 프로젝트 카드에서 링크별 클릭 수를 볼 수 있어요.</p></div></div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -6859,6 +7491,31 @@
 
         </div>
 
+        <!-- 서비스 주소 관리 (관리자): 이름·묶음 수정, 숨기기, 링크 추가, 사이트 삭제·복원 -->
+        <div class="nv-svc" id="nv-svc-admin">
+          <div class="nv-svc-head">
+            <div>
+              <h2>서비스 주소 관리</h2>
+              <p>오라클 서버에 올라간 kfcman.link 하위 주소입니다. 이름과 묶음을 바꾸거나 푸터 ‘서비스 모음’에서 숨길 수 있어요. 사이트를 삭제하면 주소가 바로 닫히고 파일은 휴지통으로 옮겨져, 복원하거나 영구 삭제할 수 있어요.</p>
+            </div>
+            <div class="nv-svc-actions">
+              <button type="button" class="nv-svc-btn" data-svc-action="reload"><i data-lucide="refresh-cw"></i><span>새로고침</span></button>
+              <button type="button" class="nv-svc-btn is-primary" data-svc-action="add-link"><i data-lucide="plus"></i><span>링크 추가</span></button>
+            </div>
+          </div>
+          <div class="nv-svc-summary" id="nv-svc-summary"></div>
+          <div class="nv-svc-table-wrap">
+            <table class="nv-svc-table">
+              <thead><tr><th>서비스</th><th>묶음</th><th>상태</th><th>연결 방식</th><th class="is-right">관리</th></tr></thead>
+              <tbody id="nv-svc-rows"></tbody>
+            </table>
+          </div>
+          <h3 class="nv-svc-sub">추가한 링크</h3>
+          <div class="nv-svc-list" id="nv-svc-links"></div>
+          <h3 class="nv-svc-sub">휴지통</h3>
+          <div class="nv-svc-list" id="nv-svc-trash"></div>
+        </div>
+
       </section>
 
     </div>
@@ -7998,7 +8655,8 @@
           if (!data || !data.groups || !data.groups.length) return;
           grid.innerHTML = data.groups.map(function (group) {
             return '<section><h3>' + esc(group.title) + '</h3><ul>' + group.items.map(function (item) {
-              return '<li><a href="' + esc(item.href) + '"><span>' + esc(item.label) + '</span><small>kfcman.link/' + esc(item.name) + '</small></a></li>';
+              var where = item.external ? esc(String(item.href).replace(/^https?:\/\//, '').replace(/\/$/, '')) : 'kfcman.link/' + esc(item.name);
+              return '<li><a href="' + esc(item.href) + '"' + (item.external ? ' target="_blank" rel="noopener"' : '') + '><span>' + esc(item.label) + '</span><small>' + where + '</small></a></li>';
             }).join('') + '</ul></section>';
           }).join('');
         })
@@ -8097,6 +8755,466 @@
         copy();
         new MutationObserver(copy).observe(src, { childList: true, characterData: true, subtree: true });
       });
+    });
+  </script>
+  <script>
+    // 모션 & 컴포넌트: 탭, 아코디언, 스켈레톤, 스크롤 리빌·스태거, 패럴랙스, 리플, 스크롤 진행 막대, 숫자 카운트업
+    document.addEventListener('DOMContentLoaded', function () {
+      var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+      // 탭: 클릭·방향키 전환, 밑줄 이동, 패널 등장
+      document.querySelectorAll('[data-nv-tabs]').forEach(function (root, n) {
+        var tabs = Array.prototype.slice.call(root.querySelectorAll('[role="tab"]'));
+        var panels = root.querySelectorAll('[role="tabpanel"]');
+        var ink = root.querySelector('.nv-tab-ink');
+        var current = 0;
+        function moveInk() {
+          var active = tabs[current];
+          if (!ink || !active.offsetWidth) return;
+          ink.style.width = active.offsetWidth + 'px';
+          ink.style.transform = 'translateX(' + active.offsetLeft + 'px)';
+        }
+        function select(index, focus) {
+          current = index;
+          tabs.forEach(function (tab, i) {
+            var on = i === index;
+            tab.setAttribute('aria-selected', on ? 'true' : 'false');
+            tab.tabIndex = on ? 0 : -1;
+            panels[i].hidden = !on;
+            if (on) {
+              panels[i].classList.remove('is-entering');
+              void panels[i].offsetWidth;
+              panels[i].classList.add('is-entering');
+            }
+          });
+          if (focus) tabs[index].focus();
+          moveInk();
+        }
+        tabs.forEach(function (tab, i) {
+          var id = 'nv-tabs-' + n + '-' + i;
+          tab.id = id + '-tab';
+          panels[i].id = id + '-panel';
+          tab.setAttribute('aria-controls', panels[i].id);
+          panels[i].setAttribute('aria-labelledby', tab.id);
+          tab.addEventListener('click', function () { select(i, false); });
+          tab.addEventListener('keydown', function (e) {
+            var keys = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 };
+            if (!(e.key in keys)) return;
+            e.preventDefault();
+            select((keys[e.key] + tabs.length) % tabs.length, true);
+          });
+        });
+        select(0, false);
+        // 회원/게스트 화면 전환으로 처음 보일 때도 밑줄 위치를 다시 잡음
+        if ('ResizeObserver' in window) new ResizeObserver(moveInk).observe(root);
+        else window.addEventListener('resize', moveInk);
+      });
+
+      // 아코디언: 한 번에 하나만 펼침
+      document.querySelectorAll('.nv-acc').forEach(function (acc, n) {
+        var setters = [];
+        acc.querySelectorAll('.nv-acc-item').forEach(function (item, i) {
+          var btn = item.querySelector('.nv-acc-trigger');
+          var panel = item.querySelector('.nv-acc-panel');
+          btn.id = 'nv-acc-' + n + '-' + i + '-btn';
+          panel.id = 'nv-acc-' + n + '-' + i + '-panel';
+          btn.setAttribute('aria-controls', panel.id);
+          panel.setAttribute('role', 'region');
+          panel.setAttribute('aria-labelledby', btn.id);
+          var set = function (open) {
+            item.classList.toggle('is-open', open);
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            panel.inert = !open;
+          };
+          setters.push(set);
+          set(false);
+          btn.addEventListener('click', function () {
+            var open = !item.classList.contains('is-open');
+            setters.forEach(function (fn) { fn(false); });
+            set(open);
+          });
+        });
+      });
+
+      // 스크롤 리빌 + 스태거: 한 번에 화면에 들어온 요소끼리 70ms 간격
+      var io = !reduceMotion.matches && 'IntersectionObserver' in window ? new IntersectionObserver(function (entries) {
+        entries.filter(function (e) { return e.isIntersecting; }).forEach(function (e, i) {
+          e.target.style.setProperty('--nv-i', Math.min(i, 8));
+          e.target.classList.add('is-in');
+          io.unobserve(e.target);
+        });
+      }, { rootMargin: '0px 0px -6% 0px', threshold: 0.1 }) : null;
+      function reveal(el) {
+        if (el.classList.contains('nv-reveal') || el.classList.contains('fs-reveal')) return;
+        el.classList.add('nv-reveal');
+        if (io) io.observe(el); else el.classList.add('is-in');
+      }
+      document.querySelectorAll([
+        '.ds-member-hero .future-hero-inner > *',
+        '.ds-section-head', '.ds-bento > *', '.ds-cards > *',
+        '.nv-tabs', '.nv-guide-step', '.nv-acc-item', '#nv-sitemap-grid'
+      ].join(',')).forEach(reveal);
+
+      // 스켈레톤: 최근 프로젝트 · 통계 타일 (app.js가 목록을 그리면 자동으로 교체됨)
+      var grid = document.getElementById('canva-recent-grid');
+      var statTile = document.querySelector('#canva-highlights .ds-tile-lg');
+      var token = null;
+      try { token = localStorage.getItem('kfcman_auth_token'); } catch (e) {}
+      function doneLoading() { if (statTile) statTile.classList.remove('nv-loading'); }
+      if (grid) {
+        new MutationObserver(function () {
+          if (grid.querySelector('.nv-skel-card')) return;
+          doneLoading();
+          Array.prototype.forEach.call(grid.children, function (card, i) {
+            if (!card.classList.contains('canva-card')) return;
+            card.style.setProperty('--nv-i', Math.min(i, 8));
+            card.classList.add('nv-reveal', 'is-in');
+          });
+        }).observe(grid, { childList: true });
+        if (token && !grid.children.length) {
+          var skel = '<div class="nv-skel-card" aria-hidden="true"><span class="nv-skel nv-skel-thumb"></span><span class="nv-skel nv-skel-line nv-skel-w70"></span><span class="nv-skel nv-skel-line nv-skel-w90"></span><span class="nv-skel nv-skel-line nv-skel-w40"></span></div>';
+          grid.innerHTML = skel + skel + skel + skel;
+          grid.setAttribute('aria-busy', 'true');
+          if (statTile) {
+            statTile.classList.add('nv-loading');
+            statTile.insertAdjacentHTML('beforeend', '<span class="nv-skel nv-tile-skel nv-skel-stat" aria-hidden="true"></span><span class="nv-skel nv-tile-skel nv-skel-meta" aria-hidden="true"></span>');
+            var label = statTile.querySelector('.ds-tile-label');
+            var skels = statTile.querySelectorAll('.nv-tile-skel');
+            if (label) label.after(skels[0], skels[1]);
+          }
+          setTimeout(function () {
+            if (grid.querySelector('.nv-skel-card')) grid.innerHTML = '<div class="nv-load-error col-span-full">최근 프로젝트를 불러오지 못했어요. 잠시 후 새로고침해 주세요.</div>';
+            grid.removeAttribute('aria-busy');
+            doneLoading();
+          }, 15000);
+        }
+      }
+
+      // 통계 숫자 카운트업
+      ['ds-stat-clicks', 'ds-stat-links'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el || reduceMotion.matches) return;
+        var lastWritten = null, raf = 0;
+        new MutationObserver(function () {
+          var text = el.textContent;
+          if (text === lastWritten) return;
+          var target = Number(text.replace(/,/g, ''));
+          if (!isFinite(target) || target <= 0) return;
+          cancelAnimationFrame(raf);
+          var start = performance.now();
+          (function step(now) {
+            var t = Math.min((now - start) / 900, 1);
+            lastWritten = Math.round(target * (1 - Math.pow(1 - t, 3))).toLocaleString('ko-KR');
+            el.textContent = lastWritten;
+            if (t < 1) raf = requestAnimationFrame(step);
+          })(start);
+        }).observe(el, { childList: true, characterData: true, subtree: true });
+      });
+
+      // 패럴랙스 히어로(내용이 천천히 밀려남) + 헤더 스크롤 진행 막대
+      var heroes = Array.prototype.slice.call(document.querySelectorAll('.ds-hero'));
+      var header = document.querySelector('header.sticky');
+      if (header) header.insertAdjacentHTML('beforeend', '<span class="nv-scroll-progress" aria-hidden="true"></span>');
+      var ticking = false;
+      function update() {
+        ticking = false;
+        var y = window.scrollY;
+        var max = document.documentElement.scrollHeight - window.innerHeight;
+        if (header) header.style.setProperty('--nv-progress', max > 0 ? Math.min(y / max, 1).toFixed(4) : 0);
+        if (reduceMotion.matches) return;
+        heroes.forEach(function (hero) {
+          if (!hero.offsetParent) return;
+          var rect = hero.getBoundingClientRect();
+          if (rect.bottom < 0 || rect.top > window.innerHeight) return;
+          var past = Math.max(-rect.top, 0);
+          var inner = hero.querySelector('.future-hero-inner');
+          if (inner) {
+            inner.style.setProperty('--nv-py', (past * 0.18).toFixed(1) + 'px');
+            inner.style.setProperty('--nv-po', Math.max(0.35, 1 - past / rect.height).toFixed(3));
+          }
+        });
+      }
+      function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll);
+      update();
+
+      // 리플: 주요 버튼·타일·탭을 누른 지점에서 퍼지는 원
+      document.addEventListener('pointerdown', function (e) {
+        var host = e.target.closest && e.target.closest('.nv-search-btn, .ds-header-cta, .nv-guide-cta, button.ds-tile, .nv-tab');
+        if (!host || reduceMotion.matches) return;
+        if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+        host.classList.add('nv-ripple-host');
+        var r = host.getBoundingClientRect();
+        var size = Math.max(r.width, r.height) * 2.2;
+        var dot = document.createElement('span');
+        dot.className = 'nv-ripple';
+        dot.style.cssText = 'width:' + size + 'px;height:' + size + 'px;left:' + (e.clientX - r.left - size / 2) + 'px;top:' + (e.clientY - r.top - size / 2) + 'px';
+        host.appendChild(dot);
+        dot.addEventListener('animationend', function () { dot.remove(); });
+      });
+    });
+  </script>
+  <script>
+    // 관리자: 서비스 주소 관리 — 오라클 서버 관제 화면이 열릴 때 목록을 불러옴
+    document.addEventListener('DOMContentLoaded', function () {
+      var root = document.getElementById('nv-svc-admin');
+      var section = document.getElementById('oracle-server-section');
+      if (!root || !section) return;
+      var rowsEl = document.getElementById('nv-svc-rows');
+      var summaryEl = document.getElementById('nv-svc-summary');
+      var linksEl = document.getElementById('nv-svc-links');
+      var trashEl = document.getElementById('nv-svc-trash');
+      var state = { items: [], links: [], trash: [], groups: [] };
+      var loading = false;
+
+      var esc = function (text) {
+        return String(text == null ? '' : text).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+      };
+      function token() { try { return localStorage.getItem('kfcman_auth_token') || ''; } catch (e) { return ''; } }
+      function api(method, url, body) {
+        var opts = { method: method, headers: { 'X-KFCMan-Auth': token() } };
+        if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+        return fetch(url, opts).then(function (res) {
+          return res.json().catch(function () { return {}; }).then(function (data) {
+            if (!res.ok) throw new Error(data.error || ('요청에 실패했어요 (' + res.status + ')'));
+            return data;
+          });
+        });
+      }
+      function toast(title, message, type) {
+        var box = document.getElementById('toast-container');
+        if (!box) return;
+        var el = document.createElement('div');
+        el.className = 'toast toast-' + (type || 'info');
+        el.innerHTML = '<div class="toast-content"><h4 class="toast-title">' + esc(title) + '</h4><p class="toast-message">' + esc(message) + '</p></div>';
+        box.appendChild(el);
+        setTimeout(function () { el.remove(); }, 4500);
+      }
+      function fmtDate(iso) {
+        var d = new Date(iso);
+        return isNaN(d) ? '' : d.toLocaleString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      }
+
+      // ── 모달 ──
+      var modal = document.createElement('div');
+      modal.className = 'nv-svc-modal hidden';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-labelledby', 'nv-svc-modal-title');
+      modal.innerHTML = '<div class="nv-svc-dialog"><h3 id="nv-svc-modal-title"></h3><div id="nv-svc-modal-body"></div>' +
+        '<p class="nv-svc-modal-msg" id="nv-svc-modal-msg" role="alert"></p>' +
+        '<div class="nv-svc-modal-foot"><button type="button" class="nv-svc-btn" id="nv-svc-modal-cancel">취소</button><button type="button" class="nv-svc-btn is-primary" id="nv-svc-modal-ok"></button></div></div>';
+      document.body.appendChild(modal);
+      var modalOk = modal.querySelector('#nv-svc-modal-ok');
+      var modalMsg = modal.querySelector('#nv-svc-modal-msg');
+      var modalAction = null, lastFocus = null;
+      function openModal(opts) {
+        lastFocus = document.activeElement;
+        modal.querySelector('#nv-svc-modal-title').textContent = opts.title;
+        modal.querySelector('#nv-svc-modal-body').innerHTML = opts.body;
+        modalOk.textContent = opts.ok;
+        modalOk.className = 'nv-svc-btn ' + (opts.danger ? 'is-danger-fill' : 'is-primary');
+        modalMsg.textContent = '';
+        modalAction = opts.action;
+        var confirmInput = modal.querySelector('[data-confirm]');
+        modalOk.disabled = !!confirmInput;
+        if (confirmInput) confirmInput.addEventListener('input', function () { modalOk.disabled = confirmInput.value.trim() !== confirmInput.dataset.confirm; });
+        modal.classList.remove('hidden');
+        var first = modal.querySelector('input') || modalOk;
+        setTimeout(function () { first.focus(); }, 30);
+      }
+      function closeModal() {
+        modal.classList.add('hidden');
+        modalAction = null;
+        if (lastFocus && lastFocus.focus) lastFocus.focus();
+      }
+      modal.querySelector('#nv-svc-modal-cancel').addEventListener('click', closeModal);
+      modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+      modal.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && e.target.tagName === 'INPUT' && !modalOk.disabled) modalOk.click();
+      });
+      // 처리 중 버튼이 비활성화되면 포커스가 모달 밖으로 빠지므로 Esc는 문서 전체에서 받음
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+      });
+      modalOk.addEventListener('click', function () {
+        if (!modalAction) return;
+        var label = modalOk.textContent;
+        modalOk.disabled = true;
+        modalOk.textContent = '처리 중…';
+        modalMsg.textContent = '';
+        Promise.resolve(modalAction()).then(function () {
+          closeModal();
+          load();
+        }).catch(function (err) {
+          modalMsg.textContent = err.message;
+          modalOk.disabled = false;
+          modalOk.textContent = label;
+          modalOk.focus();
+        });
+      });
+      function field(id, label, value, hint, extra) {
+        return '<label class="nv-svc-field" for="' + id + '"><span>' + label + '</span><input id="' + id + '" value="' + esc(value) + '" ' + (extra || '') + '>' + (hint ? '<small>' + hint + '</small>' : '') + '</label>';
+      }
+      function groupList() {
+        return '<datalist id="nv-svc-groups">' + state.groups.map(function (g) { return '<option value="' + esc(g) + '"></option>'; }).join('') + '</datalist>';
+      }
+      function val(id) { return modal.querySelector('#' + id).value.trim(); }
+
+      // ── 목록 그리기 ──
+      function kindHtml(item) {
+        var parts = [];
+        if (item.publicFolder) parts.push('<span>정적 폴더 <code>public/' + esc(item.name) + '</code></span>');
+        item.folders.forEach(function (dir) { parts.push('<span>서버 폴더 <code>' + esc(dir) + '</code></span>'); });
+        item.appPorts.forEach(function (port) { parts.push('<span>앱 연결 <code>포트 ' + port + '</code></span>'); });
+        if (!parts.length && item.nginxRoutes.length) parts.push('<span>nginx 경로 ' + item.nginxRoutes.length + '개</span>');
+        return '<div class="nv-svc-kind">' + (parts.join('') || '<span>-</span>') + '</div>';
+      }
+      function statusHtml(item) {
+        var s = item.status === 200 ? '<span class="nv-svc-badge ok">열림</span>'
+          : item.status ? '<span class="nv-svc-badge bad">응답 ' + item.status + '</span>' : '<span class="nv-svc-badge bad">응답 없음</span>';
+        if (item.hidden) s += '<span class="nv-svc-badge muted">푸터에서 숨김</span>';
+        if (item.status !== 200 && !item.hidden) s += '<span class="nv-svc-badge muted">푸터에 안 보임</span>';
+        return s;
+      }
+      function render() {
+        var open = state.items.filter(function (i) { return i.status === 200; }).length;
+        var hidden = state.items.filter(function (i) { return i.hidden; }).length;
+        summaryEl.innerHTML = '<span>서비스 <b>' + state.items.length + '</b>개</span><span>·</span><span>열림 <b>' + open + '</b></span><span>·</span><span>숨김 <b>' + hidden + '</b></span><span>·</span><span>휴지통 <b>' + state.trash.length + '</b></span>';
+        rowsEl.innerHTML = state.items.map(function (item, i) {
+          var renamed = item.label !== item.defaultLabel ? '<small>기본 이름: ' + esc(item.defaultLabel) + '</small>' : '';
+          return '<tr><td><div class="nv-svc-name"><b>' + esc(item.label) + '</b><a href="' + esc(item.href) + '" target="_blank" rel="noopener">kfcman.link' + esc(item.href) + '</a>' + renamed + '</div></td>' +
+            '<td>' + esc(item.group) + '</td><td>' + statusHtml(item) + '</td><td>' + kindHtml(item) + '</td>' +
+            '<td><div class="nv-svc-row-actions">' +
+            '<button type="button" class="nv-svc-btn is-small" data-svc-action="edit" data-i="' + i + '">수정</button>' +
+            '<button type="button" class="nv-svc-btn is-small" data-svc-action="toggle" data-i="' + i + '">' + (item.hidden ? '보이기' : '숨기기') + '</button>' +
+            '<button type="button" class="nv-svc-btn is-small is-danger" data-svc-action="delete" data-i="' + i + '"' + (item.deletable ? '' : ' disabled title="삭제할 수 없는 주소"') + '>삭제</button>' +
+            '</div></td></tr>';
+        }).join('') || '<tr><td colspan="5"><div class="nv-svc-empty">서버에서 찾은 하위 주소가 없어요.</div></td></tr>';
+        linksEl.innerHTML = state.links.map(function (link, i) {
+          return '<div class="nv-svc-item"><div><b>' + esc(link.label) + '</b><small>' + esc(link.group || '바로가기') + ' · ' + esc(link.url) + '</small></div>' +
+            '<button type="button" class="nv-svc-btn is-small is-danger" data-svc-action="remove-link" data-i="' + i + '">삭제</button></div>';
+        }).join('') || '<div class="nv-svc-empty">추가한 외부 링크가 없어요. ‘링크 추가’로 다른 사이트 주소를 서비스 모음에 넣을 수 있어요.</div>';
+        trashEl.innerHTML = state.trash.map(function (t, i) {
+          return '<div class="nv-svc-item"><div><b>kfcman.link/' + esc(t.name) + '</b><small>' + fmtDate(t.deletedAt) + ' 삭제' + (t.deletedBy ? ' · ' + esc(t.deletedBy) : '') + '</small></div>' +
+            '<div class="nv-svc-row-actions"><button type="button" class="nv-svc-btn is-small" data-svc-action="restore" data-i="' + i + '">복원</button>' +
+            '<button type="button" class="nv-svc-btn is-small is-danger" data-svc-action="purge" data-i="' + i + '">영구 삭제</button></div></div>';
+        }).join('') || '<div class="nv-svc-empty">휴지통이 비어 있어요.</div>';
+      }
+      function load() {
+        if (loading) return;
+        loading = true;
+        if (!state.items.length) {
+          rowsEl.innerHTML = [0, 1, 2, 3].map(function () { return '<tr><td colspan="5"><span class="nv-skel nv-skel-line nv-skel-w70"></span></td></tr>'; }).join('');
+          summaryEl.textContent = '서버의 하위 주소를 확인하는 중이에요. 처음에는 몇 초 걸릴 수 있어요.';
+        }
+        api('GET', '/api/admin/sub-services').then(function (data) {
+          state = data;
+          render();
+        }).catch(function (err) {
+          summaryEl.innerHTML = '<div class="nv-svc-error">목록을 불러오지 못했어요: ' + esc(err.message) + ' 새로고침을 눌러 다시 시도해 주세요.</div>';
+          rowsEl.innerHTML = '';
+        }).then(function () { loading = false; });
+      }
+
+      // ── 버튼 동작 ──
+      root.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-svc-action]');
+        if (!btn || btn.disabled) return;
+        var action = btn.dataset.svcAction;
+        var item = state.items[btn.dataset.i];
+        if (action === 'reload') return load();
+        if (action === 'edit') {
+          return openModal({
+            title: 'kfcman.link' + item.href + ' 수정', ok: '저장',
+            body: field('nv-svc-label', '표시 이름', item.label, '비우면 기본 이름(' + esc(item.defaultLabel) + ')으로 돌아가요.', 'maxlength="40"') +
+              field('nv-svc-group', '묶음', item.group, '목록에서 고르거나 새 묶음 이름을 적으세요.', 'list="nv-svc-groups" maxlength="30"') + groupList(),
+            action: function () {
+              var label = val('nv-svc-label'), group = val('nv-svc-group');
+              return api('PUT', '/api/admin/sub-services/' + encodeURIComponent(item.name), {
+                label: label === item.defaultLabel ? '' : label,
+                group: group === item.defaultGroup ? '' : group
+              }).then(function () { toast('저장했어요', '푸터 서비스 모음에 1분 안에 반영돼요.', 'success'); });
+            }
+          });
+        }
+        if (action === 'toggle') {
+          btn.disabled = true;
+          return api('PUT', '/api/admin/sub-services/' + encodeURIComponent(item.name), { hidden: !item.hidden }).then(function () {
+            toast(item.hidden ? '다시 보이게 했어요' : '숨겼어요', item.label + ' · 푸터 서비스 모음에 1분 안에 반영돼요.', 'success');
+            load();
+          }).catch(function (err) { btn.disabled = false; toast('바꾸지 못했어요', err.message, 'error'); });
+        }
+        if (action === 'delete') {
+          var steps = ['<li><code>kfcman.link' + esc(item.href) + '</code> 주소가 바로 닫혀요.</li>'];
+          if (item.nginxRoutes.length) steps.push('<li>nginx 경로 ' + item.nginxRoutes.length + '개를 지워요: <code>' + item.nginxRoutes.map(esc).join(', ') + '</code></li>');
+          item.folders.forEach(function (dir) { steps.push('<li>서버 폴더 <code>' + esc(dir) + '</code>를 휴지통으로 옮겨요.</li>'); });
+          if (item.publicFolder) steps.push('<li><code>public/' + esc(item.name) + '</code>를 휴지통으로 옮겨요.</li>');
+          var appNote = item.appPorts.length ? '<div class="nv-svc-warn">포트 ' + item.appPorts.join(', ') + '에서 도는 앱은 계속 실행돼요. 주소 연결만 끊기니, 앱까지 끄려면 서버에서 pm2로 직접 정리해 주세요.</div>' : '';
+          return openModal({
+            title: item.label + ' 사이트 삭제', ok: '사이트 삭제', danger: true,
+            body: '<ul>' + steps.join('') + '</ul>' + appNote + '<p>휴지통에서 언제든 복원할 수 있어요.</p>' +
+              field('nv-svc-confirm', '확인을 위해 ' + esc(item.name) + ' 을(를) 입력하세요', '', '', 'data-confirm="' + esc(item.name) + '" autocomplete="off"'),
+            action: function () {
+              return api('DELETE', '/api/admin/sub-services/' + encodeURIComponent(item.name), { confirm: val('nv-svc-confirm') })
+                .then(function () { toast('사이트를 삭제했어요', 'kfcman.link' + item.href + ' · 휴지통에서 복원할 수 있어요.', 'success'); });
+            }
+          });
+        }
+        if (action === 'add-link') {
+          return openModal({
+            title: '서비스 모음에 링크 추가', ok: '추가',
+            body: field('nv-svc-link-label', '이름', '', '', 'maxlength="40" placeholder="예: 학교 홈페이지"') +
+              field('nv-svc-link-url', '주소', '', 'http:// 또는 https://로 시작하는 주소', 'type="url" placeholder="https://"') +
+              field('nv-svc-link-group', '묶음', '바로가기', '', 'list="nv-svc-groups" maxlength="30"') + groupList(),
+            action: function () {
+              return api('POST', '/api/admin/sub-services/links', { label: val('nv-svc-link-label'), url: val('nv-svc-link-url'), group: val('nv-svc-link-group') })
+                .then(function () { toast('링크를 추가했어요', '푸터 서비스 모음에 1분 안에 반영돼요.', 'success'); });
+            }
+          });
+        }
+        if (action === 'remove-link') {
+          var link = state.links[btn.dataset.i];
+          return openModal({
+            title: '링크 삭제', ok: '삭제', danger: true,
+            body: '<p><b>' + esc(link.label) + '</b> (' + esc(link.url) + ')를 서비스 모음에서 지워요. 상대 사이트에는 영향이 없어요.</p>',
+            action: function () {
+              return api('DELETE', '/api/admin/sub-services/links/' + encodeURIComponent(link.id)).then(function () { toast('링크를 지웠어요', link.label, 'success'); });
+            }
+          });
+        }
+        var entry = state.trash[btn.dataset.i];
+        if (action === 'restore') {
+          return openModal({
+            title: 'kfcman.link/' + entry.name + ' 복원', ok: '복원',
+            body: '<p>휴지통의 파일과 nginx 경로를 원래 자리로 되돌려 주소를 다시 열어요.</p>',
+            action: function () {
+              return api('POST', '/api/admin/sub-services/trash/' + encodeURIComponent(entry.id) + '/restore').then(function () { toast('복원했어요', 'kfcman.link/' + entry.name + ' 주소가 다시 열렸어요.', 'success'); });
+            }
+          });
+        }
+        if (action === 'purge') {
+          return openModal({
+            title: 'kfcman.link/' + entry.name + ' 영구 삭제', ok: '영구 삭제', danger: true,
+            body: '<div class="nv-svc-warn">휴지통의 파일을 서버에서 완전히 지워요. 되돌릴 수 없어요.</div>' +
+              field('nv-svc-confirm', '확인을 위해 ' + esc(entry.name) + ' 을(를) 입력하세요', '', '', 'data-confirm="' + esc(entry.name) + '" autocomplete="off"'),
+            action: function () {
+              return api('DELETE', '/api/admin/sub-services/trash/' + encodeURIComponent(entry.id), { confirm: val('nv-svc-confirm') })
+                .then(function () { toast('영구 삭제했어요', 'kfcman.link/' + entry.name, 'success'); });
+            }
+          });
+        }
+      });
+
+      // 관제 화면이 보일 때 불러옴
+      var wasHidden = true;
+      new MutationObserver(function () {
+        var hidden = section.classList.contains('hidden');
+        if (wasHidden && !hidden) load();
+        wasHidden = hidden;
+      }).observe(section, { attributes: true, attributeFilter: ['class'] });
+      if (!section.classList.contains('hidden')) { wasHidden = false; load(); }
     });
   </script>
 </body>
