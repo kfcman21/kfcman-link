@@ -1,5 +1,7 @@
 # OMD-PLAN — kfcman.link 전체 리스킨
 
+> **보관용 기록** — 이 계획이 따르던 `DESIGN.md`는 2026-11-01에 삭제되었다. 아래 내용은 당시 작업 기록으로만 남긴다.
+
 - run_id: `run-2026-08-10T19-46-27-012Z-kfcman-link-전체-리스킨-drdiary-기반`
 - created_at: 2026-08-11
 
